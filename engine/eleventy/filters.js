@@ -4,7 +4,7 @@ import {
   getDegreeTypeLabel,
   getCollectionLabel
 } from '../config/mappings.js';
-import { renderMarkdownToHtml } from '../pipeline/collection-synthesizer.js';
+import { renderMarkdown } from '../pipeline/markdown-renderer.js';
 
 /**
  * Formats a date string ('YYYY-MM-DD', 'YYYY-MM', 'YYYY', or 'present')
@@ -52,5 +52,5 @@ export function registerFilters(eleventyConfig) {
   eleventyConfig.addFilter('degreeTypeLabel', (val) => getDegreeTypeLabel(val));
   eleventyConfig.addFilter('collectionLabel', (val, plural) => getCollectionLabel(val, plural));
   eleventyConfig.addFilter('formatDate', (val, locale) => formatDate(val, locale));
-  eleventyConfig.addFilter('markdown', (content) => renderMarkdownToHtml(content));
+  eleventyConfig.addFilter('markdown', (content) => renderMarkdown(content));
 }

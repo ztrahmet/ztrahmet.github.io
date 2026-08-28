@@ -12,8 +12,12 @@ export * from './pipeline/yaml-loader.js';
 export * from './pipeline/frontmatter-loader.js';
 export * from './pipeline/asset-normalizer.js';
 export * from './pipeline/content-ref.js';
+export * from './pipeline/markdown-renderer.js';
 export * from './pipeline/collection-synthesizer.js';
 export * from './pipeline/data-loader.js';
+
+// Search
+export * from './search/index.js';
 
 // Eleventy
 export * from './eleventy/filters.js';

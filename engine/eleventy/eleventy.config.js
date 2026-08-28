@@ -5,6 +5,7 @@ import { COLLECTION_TYPES } from '../config/enums.js';
 import { loadEngineData } from '../pipeline/data-loader.js';
 import { registerFilters } from './filters.js';
 import { resolveContentDir, PROJECT_ROOT, SCHEMAS_DIR } from '../config/paths.js';
+import { writeSearchIndexFile } from '../search/search-indexer.js';
 
 /**
  * Registers passthrough copy rules for top-level asset folders and co-located collection media.
@@ -46,7 +47,7 @@ export function registerAssetPassthroughs(eleventyConfig, contentDir) {
 
 /**
  * Configures the Eleventy engine for the static site generator.
- * Exposes dynamic reactive global data, collections, filters, asset passthroughs, and watch targets.
+ * Exposes dynamic reactive global data, collections, filters, asset passthroughs, search artifact emission, and watch targets.
  *
  * @param {object} eleventyConfig - Eleventy configuration object
  * @param {object} [options={}] - Custom engine options
@@ -75,6 +76,7 @@ export default function configureEleventy(eleventyConfig, options = {}) {
   eleventyConfig.addGlobalData('collections_data', () => getFreshData().collections);
   eleventyConfig.addGlobalData('pinned_items', () => getFreshData().pinned_items);
   eleventyConfig.addGlobalData('mappings', () => getFreshData().mappings);
+  eleventyConfig.addGlobalData('search_index', () => getFreshData().search_index);
   eleventyConfig.addGlobalData('contentDir', () => getFreshData().contentDir);
 
   // 5. Register Custom Eleventy Collections (reactive on reload)
@@ -98,7 +100,16 @@ export default function configureEleventy(eleventyConfig, options = {}) {
   // 7. Register Dynamic Asset Passthrough Copies
   registerAssetPassthroughs(eleventyConfig, contentDir);
 
-  // 8. Watch Targets for Live Reload Reactivity
+  // 8. Search Artifact Emission on Build / Rebuild
+  if (typeof eleventyConfig.on === 'function') {
+    eleventyConfig.on('eleventy.after', async ({ dir }) => {
+      const outputDir = dir?.output ? path.resolve(PROJECT_ROOT, dir.output) : path.resolve(PROJECT_ROOT, '_site');
+      const searchIndexPath = path.join(outputDir, 'search-index.json');
+      writeSearchIndexFile(getFreshData(), searchIndexPath);
+    });
+  }
+
+  // 9. Watch Targets for Live Reload Reactivity
   eleventyConfig.addWatchTarget(contentDir);
   eleventyConfig.addWatchTarget(SCHEMAS_DIR);
 

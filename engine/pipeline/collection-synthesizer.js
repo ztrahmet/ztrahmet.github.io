@@ -1,28 +1,19 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import fg from 'fast-glob';
-import MarkdownIt from 'markdown-it';
 import { COLLECTION_TYPES } from '../config/enums.js';
 import { loadMarkdownFile } from './frontmatter-loader.js';
 import { normalizeAsset } from './asset-normalizer.js';
 import { validateCollectionItem } from '../validation/validator.js';
-
-const mdRenderer = new MarkdownIt({
-  html: true,
-  linkify: true,
-  typographer: true
-});
+import { renderMarkdown } from './markdown-renderer.js';
 
 /**
- * Renders a Markdown string to sanitized HTML.
+ * Renders a Markdown string to sanitized HTML with pre-rendered KaTeX math.
  * @param {string} markdown - Raw markdown text
  * @returns {string} Rendered HTML string
  */
 export function renderMarkdownToHtml(markdown) {
-  if (typeof markdown !== 'string' || !markdown.trim()) {
-    return '';
-  }
-  return mdRenderer.render(markdown).trim();
+  return renderMarkdown(markdown);
 }
 
 /**
@@ -163,7 +154,7 @@ export function synthesizeCollection(contentDir, collectionType, declaredEntries
       );
 
       const rawContent = normalized.content || '';
-      const renderedHtml = renderMarkdownToHtml(rawContent);
+      const renderedHtml = renderMarkdown(rawContent);
 
       synthesized.push({
         ...normalized,
@@ -215,7 +206,7 @@ export function synthesizeCollection(contentDir, collectionType, declaredEntries
     );
 
     const rawContent = normalized.content || '';
-    const renderedHtml = renderMarkdownToHtml(rawContent);
+    const renderedHtml = renderMarkdown(rawContent);
 
     synthesized.push({
       ...normalized,

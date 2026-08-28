@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
+import path from 'node:path';
 import Eleventy from '@11ty/eleventy';
 import { loadEngineData } from './pipeline/data-loader.js';
-import { extractArgValue, resolveContentDir } from './config/paths.js';
+import { extractArgValue, resolveContentDir, PROJECT_ROOT } from './config/paths.js';
+import { writeSearchIndexFile } from './search/search-indexer.js';
 
 /**
  * Displays CLI usage and available commands.
@@ -93,22 +95,27 @@ async function main() {
         console.log(`    - ${col}: ${items.length} items (${mdCount} markdown-driven, ${inlineCount} inline-driven)`);
       }
       console.log(`  • Pinned items: ${data.pinned_items.length} resolved`);
+      console.log(`  • Search index: ${data.search_index.totalRecords} records indexed`);
       process.exit(0);
     }
 
     if (command === 'build') {
       console.log(`🔨 Building static site with content from: ${targetDir}`);
-      loadEngineData(targetDir);
+      const data = loadEngineData(targetDir);
 
-      const outputDir = extractArgValue(rawArgs, ['--output', '-o']) || '_site';
-      const elev = new Eleventy('theme', outputDir, {
+      const outputDirName = extractArgValue(rawArgs, ['--output', '-o']) || '_site';
+      const elev = new Eleventy('theme', outputDirName, {
         configPath: 'eleventy.config.js'
       });
 
       await elev.init();
       await elev.write();
 
-      console.log(`\n✅ Build complete! Static site generated in '${outputDir}'.`);
+      // Ensure search-index.json is written
+      const absOutputDir = path.resolve(PROJECT_ROOT, outputDirName);
+      writeSearchIndexFile(data, path.join(absOutputDir, 'search-index.json'));
+
+      console.log(`\n✅ Build complete! Static site and search-index.json generated in '${outputDirName}'.`);
       process.exit(0);
     }
 

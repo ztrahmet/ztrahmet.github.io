@@ -6,6 +6,7 @@ import { validateAndResolvePinnedContent } from './content-ref.js';
 import { normalizeAsset } from './asset-normalizer.js';
 import { UI_MAPPINGS } from '../config/mappings.js';
 import { resolveContentDir } from '../config/paths.js';
+import { buildSearchIndex } from '../search/search-indexer.js';
 
 /**
  * Normalizes all asset paths in data.yaml (site and profile entities).
@@ -58,7 +59,7 @@ export function normalizeDataAssets(data) {
 
 /**
  * Executes the complete data ingestion, schema validation, collection synthesis,
- * and asset normalization lifecycle.
+ * asset normalization, and search indexing lifecycle.
  *
  * @param {string} [customContentDir] - Optional path to custom content directory
  * @returns {{
@@ -68,6 +69,7 @@ export function normalizeDataAssets(data) {
  *   collections: Record<string, Array<object>>,
  *   pinned_items: Array<object>,
  *   mappings: object,
+ *   search_index: object,
  *   contentDir: string
  * }} Fully normalized and validated data tree
  * @throws {ValidationError} If any schema or reference validation fails
@@ -94,7 +96,8 @@ export function loadEngineData(customContentDir) {
   // 5. Validate and resolve pinned_content integrity
   const pinnedItems = validateAndResolvePinnedContent(rawContent.pinned_content, collections);
 
-  return {
+  // 6. Build unified search index
+  const baseData = {
     site: normalizedData.site,
     profile: normalizedData.profile,
     content: rawContent,
@@ -102,5 +105,12 @@ export function loadEngineData(customContentDir) {
     pinned_items: pinnedItems,
     mappings: UI_MAPPINGS,
     contentDir
+  };
+
+  const searchIndex = buildSearchIndex(baseData);
+
+  return {
+    ...baseData,
+    search_index: searchIndex
   };
 }
