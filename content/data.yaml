@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=../engine/schemas/data.schema.json
+# content/data.yaml
+
+site:
+  url: https://username.github.io
+  title: Portfolio
+  description: Engineer — work and writing.
+  lang: en
+  locale: en_US
+  favicon: /images/favicon.svg
+  share_image: /images/share.png
+
+profile:
+  name: Name Surname
+  handle: username
+  role: Software Engineer
+  avatar: /images/avatar.svg
+  location: San Francisco, CA
+  summary: >-
+    Engineer with experience in Software Development and Open Source Contributions.
+    Passionate about building scalable applications and contributing to the tech community.
+  resume: /documents/resume.pdf
+  social:
+    - label: GitHub
+      url: https://github.com/username
+    - label: LinkedIn
+      url: https://linkedin.com/in/username
+      icon: https://thesvg.org/icons/linkedin/default.svg
+    - label: Email
+      url: mailto:username@example.com
+      icon: gmail
+  experience:
+    - title: Software Engineer
+      organization: Example Corp
+      logo:
+        light: /images/organizations/example-corp-light.svg
+        dark: /images/organizations/example-corp-dark.svg
+      url: https://example.com
+      type: full-time
+      start: 2022-01
+      end: present
+      location: San Francisco, CA
+      modality: in-person
+      description: |-
+        Developed and maintained web applications using React and Node.js.
+        Collaborated with cross-functional teams to deliver high-quality software.
+      skills:
+        - JavaScript
+        - React
+        - Node.js
+  education:
+    - title: B.Sc. Computer Engineering
+      organization: University of Example
+      logo: /images/organizations/university-logo.svg
+      url: https://example.edu
+      type: bachelor
+      start: 2018-09
+      end: 2022-06
+      grade: 3.64 GPA
+      location: Example City
+      modality: in-person
+      description: |-
+        Focused on software development and algorithms. Completed a capstone project
+        on machine learning applications in healthcare.
+      skills:
+        - Algorithms
+        - Machine Learning

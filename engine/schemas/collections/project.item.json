@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "project.item.json",
+  "type": "object",
+  "required": ["slug", "title", "start"],
+  "additionalProperties": false,
+  "properties": {
+    "slug": { "$ref": "common.defs.json#/definitions/Slug" },
+    "title": { "$ref": "common.defs.json#/definitions/Text" },
+    "start": { "$ref": "common.defs.json#/definitions/Date" },
+    "end": { "$ref": "common.defs.json#/definitions/DateOrPresent" },
+    "url": { "$ref": "common.defs.json#/definitions/URI" },
+    "repository": { "$ref": "common.defs.json#/definitions/URI" },
+    "image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+    "description": { "$ref": "common.defs.json#/definitions/MultilineText" },
+    "skills": {
+      "type": "array",
+      "items": { "$ref": "common.defs.json#/definitions/Text" }
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "common.defs.json",
+  "definitions": {
+    "Slug": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "Text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "MultilineText": {
+      "type": "string",
+      "minLength": 1
+    },
+    "URI": {
+      "type": "string",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9+.-]*:[^\\s]+$"
+    },
+    "Date": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12]\\d|3[01]))?)?$"
+        },
+        {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 9999
+        }
+      ]
+    },
+    "DateOrPresent": {
+      "oneOf": [
+        { "$ref": "#/definitions/Date" },
+        { "type": "string", "enum": ["present"] }
+      ]
+    },
+    "Path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^/?[^\\s]+$"
+    },
+    "Asset": {
+      "anyOf": [
+        { "$ref": "#/definitions/Path" },
+        { "$ref": "#/definitions/URI" }
+      ]
+    },
+    "ThemedAsset": {
+      "anyOf": [
+        { "$ref": "#/definitions/Asset" },
+        {
+          "type": "object",
+          "required": ["light", "dark"],
+          "additionalProperties": false,
+          "properties": {
+            "light": { "$ref": "#/definitions/Asset" },
+            "dark": { "$ref": "#/definitions/Asset" }
+          }
+        }
+      ]
+    },
+    "Icon": {
+      "anyOf": [
+        { "$ref": "#/definitions/ThemedAsset" },
+        { "$ref": "#/definitions/Slug" }
+      ]
+    },
+    "EmploymentType": {
+      "type": "string",
+      "enum": ["full-time", "part-time", "contract", "freelance", "internship", "volunteer"]
+    },
+    "DegreeType": {
+      "type": "string",
+      "enum": ["bachelor", "master", "doctorate", "associate", "bootcamp", "certificate"]
+    },
+    "Modality": {
+      "type": "string",
+      "enum": ["in-person", "hybrid", "remote"]
+    },
+    "ContentRef": {
+      "type": "string",
+      "pattern": "^(blog|project|publication|certificate|award):[a-zA-Z0-9_-]+$"
+    }
+  }
+}

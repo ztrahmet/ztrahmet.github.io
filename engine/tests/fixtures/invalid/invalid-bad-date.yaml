@@ -1,0 +1,13 @@
+site:
+  url: https://example.com
+  title: Bad Date Data
+  description: Example site
+profile:
+  name: Bob
+  handle: bob
+  role: Engineer
+  experience:
+    - title: Dev
+      organization: Corp
+      start: 2023-99-99
+      end: present

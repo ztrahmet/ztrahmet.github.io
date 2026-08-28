@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "data.schema.json",
+  "type": "object",
+  "required": ["site", "profile"],
+  "additionalProperties": false,
+  "properties": {
+    "site": {
+      "type": "object",
+      "required": ["url", "title", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "url": { "$ref": "common.defs.json#/definitions/URI" },
+        "title": { "$ref": "common.defs.json#/definitions/Text" },
+        "description": { "$ref": "common.defs.json#/definitions/MultilineText" },
+        "lang": { "$ref": "common.defs.json#/definitions/Slug" },
+        "locale": { "$ref": "common.defs.json#/definitions/Slug" },
+        "favicon": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+        "share_image": { "$ref": "common.defs.json#/definitions/ThemedAsset" }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "required": ["name", "handle", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "common.defs.json#/definitions/Text" },
+        "handle": { "$ref": "common.defs.json#/definitions/Slug" },
+        "role": { "$ref": "common.defs.json#/definitions/Text" },
+        "avatar": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+        "location": { "$ref": "common.defs.json#/definitions/Text" },
+        "summary": { "$ref": "common.defs.json#/definitions/MultilineText" },
+        "resume": { "$ref": "common.defs.json#/definitions/Asset" },
+        "social": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "url"],
+            "additionalProperties": false,
+            "properties": {
+              "label": { "$ref": "common.defs.json#/definitions/Text" },
+              "url": { "$ref": "common.defs.json#/definitions/URI" },
+              "icon": { "$ref": "common.defs.json#/definitions/Icon" }
+            }
+          }
+        },
+        "experience": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title", "organization", "start", "end"],
+            "additionalProperties": false,
+            "properties": {
+              "title": { "$ref": "common.defs.json#/definitions/Text" },
+              "organization": { "$ref": "common.defs.json#/definitions/Text" },
+              "logo": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+              "start": { "$ref": "common.defs.json#/definitions/Date" },
+              "end": { "$ref": "common.defs.json#/definitions/DateOrPresent" },
+              "url": { "$ref": "common.defs.json#/definitions/URI" },
+              "type": { "$ref": "common.defs.json#/definitions/EmploymentType" },
+              "location": { "$ref": "common.defs.json#/definitions/Text" },
+              "modality": { "$ref": "common.defs.json#/definitions/Modality" },
+              "description": { "$ref": "common.defs.json#/definitions/MultilineText" },
+              "skills": {
+                "type": "array",
+                "items": { "$ref": "common.defs.json#/definitions/Text" }
+              }
+            }
+          }
+        },
+        "education": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title", "organization", "start", "end"],
+            "additionalProperties": false,
+            "properties": {
+              "title": { "$ref": "common.defs.json#/definitions/Text" },
+              "organization": { "$ref": "common.defs.json#/definitions/Text" },
+              "logo": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+              "start": { "$ref": "common.defs.json#/definitions/Date" },
+              "end": { "$ref": "common.defs.json#/definitions/DateOrPresent" },
+              "url": { "$ref": "common.defs.json#/definitions/URI" },
+              "type": { "$ref": "common.defs.json#/definitions/DegreeType" },
+              "grade": { "$ref": "common.defs.json#/definitions/Text" },
+              "location": { "$ref": "common.defs.json#/definitions/Text" },
+              "modality": { "$ref": "common.defs.json#/definitions/Modality" },
+              "description": { "$ref": "common.defs.json#/definitions/MultilineText" },
+              "skills": {
+                "type": "array",
+                "items": { "$ref": "common.defs.json#/definitions/Text" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

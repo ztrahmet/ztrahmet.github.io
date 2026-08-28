@@ -1,0 +1,7 @@
+pinned_content:
+  - "not a valid content ref"
+
+blog:
+  - slug: valid-slug
+    title: Valid Blog
+    date: 2023-01-01

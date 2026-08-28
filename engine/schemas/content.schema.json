@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "content.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "pinned_content": {
+      "type": "array",
+      "items": {
+        "$ref": "common.defs.json#/definitions/ContentRef"
+      }
+    },
+    "blog": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/BlogEntry"
+      }
+    },
+    "project": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ProjectEntry"
+      }
+    },
+    "publication": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/PublicationEntry"
+      }
+    },
+    "certificate": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/CertificateEntry"
+      }
+    },
+    "award": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/AwardEntry"
+      }
+    }
+  },
+  "definitions": {
+    "BlogEntry": {
+      "type": "object",
+      "required": ["slug"],
+      "additionalProperties": false,
+      "properties": {
+        "slug": { "$ref": "common.defs.json#/definitions/Slug" },
+        "title": { "$ref": "common.defs.json#/definitions/Text" },
+        "date": { "$ref": "common.defs.json#/definitions/Date" },
+        "url": { "$ref": "common.defs.json#/definitions/URI" },
+        "image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+        "description": { "$ref": "common.defs.json#/definitions/MultilineText" },
+        "skills": {
+          "type": "array",
+          "items": { "$ref": "common.defs.json#/definitions/Text" }
+        }
+      }
+    },
+    "ProjectEntry": {
+      "type": "object",
+      "required": ["slug"],
+      "additionalProperties": false,
+      "properties": {
+        "slug": { "$ref": "common.defs.json#/definitions/Slug" },
+        "title": { "$ref": "common.defs.json#/definitions/Text" },
+        "start": { "$ref": "common.defs.json#/definitions/Date" },
+        "end": { "$ref": "common.defs.json#/definitions/DateOrPresent" },
+        "url": { "$ref": "common.defs.json#/definitions/URI" },
+        "repository": { "$ref": "common.defs.json#/definitions/URI" },
+        "image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+        "description": { "$ref": "common.defs.json#/definitions/MultilineText" },
+        "skills": {
+          "type": "array",
+          "items": { "$ref": "common.defs.json#/definitions/Text" }
+        }
+      }
+    },
+    "PublicationEntry": {
+      "type": "object",
+      "required": ["slug"],
+      "additionalProperties": false,
+      "properties": {
+        "slug": { "$ref": "common.defs.json#/definitions/Slug" },
+        "title": { "$ref": "common.defs.json#/definitions/Text" },
+        "publisher": { "$ref": "common.defs.json#/definitions/Text" },
+        "date": { "$ref": "common.defs.json#/definitions/Date" },
+        "url": { "$ref": "common.defs.json#/definitions/URI" },
+        "image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+        "authors": {
+          "type": "array",
+          "items": { "$ref": "common.defs.json#/definitions/Text" }
+        },
+        "description": { "$ref": "common.defs.json#/definitions/MultilineText" },
+        "skills": {
+          "type": "array",
+          "items": { "$ref": "common.defs.json#/definitions/Text" }
+        }
+      }
+    },
+    "CertificateEntry": {
+      "type": "object",
+      "required": ["slug"],
+      "additionalProperties": false,
+      "properties": {
+        "slug": { "$ref": "common.defs.json#/definitions/Slug" },
+        "title": { "$ref": "common.defs.json#/definitions/Text" },
+        "issuer": { "$ref": "common.defs.json#/definitions/Text" },
+        "date": { "$ref": "common.defs.json#/definitions/Date" },
+        "expires": { "$ref": "common.defs.json#/definitions/Date" },
+        "url": { "$ref": "common.defs.json#/definitions/URI" },
+        "credential_id": { "$ref": "common.defs.json#/definitions/Text" },
+        "image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+        "skills": {
+          "type": "array",
+          "items": { "$ref": "common.defs.json#/definitions/Text" }
+        }
+      }
+    },
+    "AwardEntry": {
+      "type": "object",
+      "required": ["slug"],
+      "additionalProperties": false,
+      "properties": {
+        "slug": { "$ref": "common.defs.json#/definitions/Slug" },
+        "title": { "$ref": "common.defs.json#/definitions/Text" },
+        "issuer": { "$ref": "common.defs.json#/definitions/Text" },
+        "date": { "$ref": "common.defs.json#/definitions/Date" },
+        "url": { "$ref": "common.defs.json#/definitions/URI" },
+        "image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+        "description": { "$ref": "common.defs.json#/definitions/MultilineText" },
+        "skills": {
+          "type": "array",
+          "items": { "$ref": "common.defs.json#/definitions/Text" }
+        }
+      }
+    }
+  }
+}

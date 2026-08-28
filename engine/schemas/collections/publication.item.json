@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "publication.item.json",
+  "type": "object",
+  "required": ["slug", "title", "publisher", "date"],
+  "additionalProperties": false,
+  "properties": {
+    "slug": { "$ref": "common.defs.json#/definitions/Slug" },
+    "title": { "$ref": "common.defs.json#/definitions/Text" },
+    "publisher": { "$ref": "common.defs.json#/definitions/Text" },
+    "date": { "$ref": "common.defs.json#/definitions/Date" },
+    "url": { "$ref": "common.defs.json#/definitions/URI" },
+    "image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+    "authors": {
+      "type": "array",
+      "items": { "$ref": "common.defs.json#/definitions/Text" }
+    },
+    "description": { "$ref": "common.defs.json#/definitions/MultilineText" },
+    "skills": {
+      "type": "array",
+      "items": { "$ref": "common.defs.json#/definitions/Text" }
+    }
+  }
+}

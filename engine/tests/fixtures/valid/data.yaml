@@ -1,0 +1,57 @@
+site:
+  url: https://developer.example.com
+  title: Developer Portfolio
+  description: Platform & Tooling Engineer.
+  lang: en
+  locale: en_US
+  favicon: /assets/favicon.svg
+  share_image:
+    light: /assets/share-light.png
+    dark: /assets/share-dark.png
+
+profile:
+  name: Alice Engineer
+  handle: alice-eng
+  role: Senior Platform Engineer
+  avatar:
+    light: /assets/avatar-light.svg
+    dark: /assets/avatar-dark.svg
+  location: Berlin, Germany
+  summary: Building scalable tooling and static site infrastructure.
+  resume: /assets/resume.pdf
+  social:
+    - label: GitHub
+      url: https://github.com/alice-eng
+      icon: github
+    - label: Email
+      url: mailto:alice@example.com
+      icon: gmail
+  experience:
+    - title: Lead Tooling Engineer
+      organization: Tech Corp
+      logo: /assets/tech-corp.svg
+      url: https://techcorp.example.com
+      type: full-time
+      start: 2021-03
+      end: present
+      location: Berlin
+      modality: hybrid
+      description: Leading architecture of internal platforms.
+      skills:
+        - Node.js
+        - TypeScript
+  education:
+    - title: M.Sc. Computer Science
+      organization: TU Berlin
+      logo: /assets/tu-berlin.svg
+      url: https://tu.example.edu
+      type: master
+      start: 2016-10
+      end: 2018-09
+      grade: 1.1 with Distinction
+      location: Berlin
+      modality: in-person
+      description: Focused on distributed systems and compiler design.
+      skills:
+        - Distributed Systems
+        - Compilers

@@ -1,0 +1,41 @@
+{
+  "name": "ztrahmet.github.io",
+  "version": "1.0.0",
+  "description": "Modular, data-driven Static Site Generator powered by Eleventy",
+  "type": "module",
+  "main": "engine/index.js",
+  "scripts": {
+    "build": "node engine/cli.js build",
+    "dev": "node engine/cli.js dev",
+    "start": "npm run dev",
+    "validate": "node engine/cli.js validate",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ztrahmet/ztrahmet.github.io.git"
+  },
+  "keywords": [
+    "eleventy",
+    "ssg",
+    "portfolio",
+    "markdown",
+    "yaml",
+    "schema-driven"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@11ty/eleventy": "^3.1.6",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "fast-glob": "^3.3.3",
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^5.4.1",
+    "markdown-it": "^15.0.1"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  }
+}

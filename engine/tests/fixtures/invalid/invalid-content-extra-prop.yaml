@@ -1,0 +1,5 @@
+blog:
+  - slug: test-blog
+    title: Test Blog
+    date: 2023-01-01
+    forbidden_property: "this should fail additionalProperties: false"

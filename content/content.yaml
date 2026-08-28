@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=../engine/schemas/content.schema.json
+# content/content.yaml
+
+pinned_content:
+  - blog:how-to-sign-commits
+  - project:open-source-engine
+  - award:second-ranked-graduate
+
+blog:
+  - slug: how-to-sign-commits
+  - slug: why-static-site-generators-win
+    title: Why Static Site Generators Win
+    date: 2023-08-15
+    image: /images/blogs/ssg-cover.png
+    description: |-
+      An exploration of why markdown-driven static sites remain superior for personal engineering blogs.
+    skills:
+      - Web Development
+      - Architecture
+
+project:
+  - slug: first-android-app
+  - slug: open-source-engine
+    title: Open Source Static Site Engine
+    start: 2023-01
+    end: present
+    url: https://engine.example.dev
+    repository: https://github.com/username/engine
+    image:
+      light: /images/projects/engine-light.png
+      dark: /images/projects/engine-dark.png
+    description: |-
+      High-performance static site generator powered by YAML configuration and Markdown files.
+    skills:
+      - TypeScript
+      - Node.js
+      - AST
+
+publication:
+  - slug: optimizing-static-web-generators
+  - slug: icwe-2023-paper
+    title: "Optimizing Static Web Generators for Scale"
+    publisher: International Conference on Web Engineering (ICWE)
+    date: 2023-11
+    url: https://doi.org/10.1000/182
+    image: /images/publications/icwe-paper-preview.png
+    authors:
+      - Name Surname
+      - Jane Doe
+    description: |-
+      A comparative study on build optimizations, incremental static regeneration, and AST compilation speed.
+    skills:
+      - Web Performance
+      - Compilers
+
+certificate:
+  - slug: aws-solutions-architect
+  - slug: aws-csa-2023
+    title: AWS Certified Solutions Architect – Associate
+    issuer: Amazon Web Services
+    date: 2023-04
+    expires: 2026-04
+    url: https://aws.amazon.com/verification
+    credential_id: AWS-PSA-123456
+    image: /images/certificates/aws-csa-badge.png
+    skills:
+      - Cloud Architecture
+      - AWS
+
+award:
+  - slug: second-ranked-graduate
+  - slug: honor-graduate-2022
+    title: Honor Graduate
+    issuer: Example University
+    date: 2022-06
+    url: https://example.edu/honors
+    image: /images/awards/honor-medal.png
+    description: |-
+      Graduated ranked top 5% among all engineering faculty graduates for academic excellence.
+    skills:
+      - Academic Excellence

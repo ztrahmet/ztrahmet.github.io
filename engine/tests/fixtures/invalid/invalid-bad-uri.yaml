@@ -1,0 +1,8 @@
+site:
+  url: "not a valid uri"
+  title: Bad URI
+  description: Example site
+profile:
+  name: Bob
+  handle: bob
+  role: Engineer

@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "certificate.item.json",
+  "type": "object",
+  "required": ["slug", "title", "issuer", "date"],
+  "additionalProperties": false,
+  "properties": {
+    "slug": { "$ref": "common.defs.json#/definitions/Slug" },
+    "title": { "$ref": "common.defs.json#/definitions/Text" },
+    "issuer": { "$ref": "common.defs.json#/definitions/Text" },
+    "date": { "$ref": "common.defs.json#/definitions/Date" },
+    "expires": { "$ref": "common.defs.json#/definitions/Date" },
+    "url": { "$ref": "common.defs.json#/definitions/URI" },
+    "credential_id": { "$ref": "common.defs.json#/definitions/Text" },
+    "image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+    "skills": {
+      "type": "array",
+      "items": { "$ref": "common.defs.json#/definitions/Text" }
+    }
+  }
+}
