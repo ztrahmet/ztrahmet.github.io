@@ -1,5 +1,72 @@
 import MarkdownIt from 'markdown-it';
 import katex from 'katex';
+import { stripMarkdownAndHtml } from '../search/text-sanitizer.js';
+
+/**
+ * Generates a URL-safe anchor slug from heading text.
+ * @param {string} text - Raw heading text
+ * @returns {string} Anchor slug
+ */
+export function slugifyHeading(text) {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Extracts a structured Table of Contents (TOC) tree from Markdown content for h2 and h3 levels.
+ *
+ * @param {string} markdown - Raw Markdown text
+ * @returns {Array<{ id: string, slug: string, text: string, level: number }>} TOC items
+ */
+export function extractTableOfContents(markdown) {
+  if (typeof markdown !== 'string' || !markdown.trim()) {
+    return [];
+  }
+
+  const lines = markdown.split('\n');
+  const toc = [];
+  const slugCounts = new Map();
+  let inCodeBlock = false;
+
+  for (const line of lines) {
+    // Track fenced code blocks to prevent false positive heading matches inside code
+    if (/^\s*```/.test(line)) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) continue;
+
+    const match = line.match(/^\s*(#{2,3})\s+(.+)$/);
+    if (match) {
+      const level = match[1].length; // 2 for ##, 3 for ###
+      const rawText = match[2].trim();
+      const text = stripMarkdownAndHtml(rawText);
+      let baseSlug = slugifyHeading(text);
+      if (!baseSlug) baseSlug = `section-${toc.length + 1}`;
+
+      let slug = baseSlug;
+      const count = slugCounts.get(baseSlug) || 0;
+      if (count > 0) {
+        slug = `${baseSlug}-${count}`;
+      }
+      slugCounts.set(baseSlug, count + 1);
+
+      toc.push({
+        id: slug,
+        slug,
+        text,
+        level
+      });
+    }
+  }
+
+  return toc;
+}
 
 /**
  * Renders LaTeX math expression using KaTeX in static HTML/MathML mode.
@@ -22,20 +89,6 @@ export function renderKaTeX(latex, isDisplayMode = false) {
 /**
  * Markdown-it plugin implementing LaTeX math support with strict Pandoc/TeX disambiguation rules.
  *
- * Rules:
- * 1. Inline math ($...$):
- *    - Opening $ must not be preceded by backslash escape.
- *    - Opening $ must not be followed by whitespace (\s).
- *    - Closing $ must not be preceded by whitespace (\s).
- *    - Closing $ must not be immediately followed by a digit (0-9) to prevent currency range collisions ($5 - $10).
- *    - Inline math must be contained within a single line (no newlines).
- * 2. Block math ($$...$$):
- *    - Can be single-line ($$formula$$) or multi-line block.
- * 3. Currency protection:
- *    - Single currency numbers ($50), ranges ($5 to $10, $50 - $100), and escaped dollars (\$50) remain literal text.
- * 4. Code protection:
- *    - Dollar signs and variables in inline code (`$VAR`) or fenced blocks (```bash echo $VAR```) remain untouched.
- *
  * @param {MarkdownIt} md - Markdown-it instance
  */
 export function markdownItMath(md) {
@@ -47,7 +100,6 @@ export function markdownItMath(md) {
     const start = state.pos;
     const max = state.posMax;
 
-    // Check if preceded by backslash escape (e.g. \$)
     if (start > 0 && state.src.charCodeAt(start - 1) === 0x5c) {
       return false;
     }
@@ -56,7 +108,6 @@ export function markdownItMath(md) {
     const marker = isDouble ? '$$' : '$';
     const markerLen = marker.length;
 
-    // Rule 1: Opening marker must not be followed by whitespace
     const nextChar = state.src.charCodeAt(start + markerLen);
     if (nextChar === 0x20 || nextChar === 0x09 || nextChar === 0x0a) {
       return false;
@@ -88,13 +139,11 @@ export function markdownItMath(md) {
       return false;
     }
 
-    // Rule 2: Closing marker must not be preceded by whitespace
     const prevChar = state.src.charCodeAt(match - 1);
     if (prevChar === 0x20 || prevChar === 0x09 || prevChar === 0x0a) {
       return false;
     }
 
-    // Rule 3: For inline single $, closing marker must not be immediately followed by a digit (currency protection like $5 - $10)
     if (!isDouble && match + 1 < max) {
       const afterClosing = state.src.charCodeAt(match + 1);
       if (afterClosing >= 0x30 && afterClosing <= 0x39) {
@@ -132,7 +181,6 @@ export function markdownItMath(md) {
     pos += 2;
     const firstLine = state.src.slice(pos, max);
 
-    // Single-line block math ($$content$$)
     if (firstLine.trim().endsWith('$$') && firstLine.trim().length >= 2) {
       const trimmed = firstLine.trim();
       const content = trimmed.slice(0, -2);
@@ -147,7 +195,6 @@ export function markdownItMath(md) {
       return true;
     }
 
-    // Multi-line block math
     let nextLine = startLine;
     let closed = false;
 
@@ -192,10 +239,7 @@ export function markdownItMath(md) {
     return true;
   }
 
-  // Register inline math after escape rule
   md.inline.ruler.after('escape', 'math_inline', mathInline);
-
-  // Register block math before fence rule
   md.block.ruler.before('fence', 'math_block', mathBlock, {
     alt: ['paragraph', 'reference', 'blockquote', 'list']
   });
@@ -205,7 +249,7 @@ export function markdownItMath(md) {
 }
 
 /**
- * Creates and configures a MarkdownIt instance with KaTeX math and standard markdown extensions.
+ * Creates and configures a MarkdownIt instance with KaTeX math, anchor IDs on headings, and extensions.
  * @returns {MarkdownIt} Configured MarkdownIt instance
  */
 export function createMarkdownRenderer() {
@@ -216,13 +260,41 @@ export function createMarkdownRenderer() {
   });
 
   md.use(markdownItMath);
+
+  // Add auto-generated anchor IDs to heading tags
+  const slugCounts = new Map();
+  md.core.ruler.push('heading_slug_reset', () => {
+    slugCounts.clear();
+  });
+
+  md.renderer.rules.heading_open = (tokens, idx, options, env, self) => {
+    const token = tokens[idx];
+    const nextToken = tokens[idx + 1];
+    if (nextToken && nextToken.children) {
+      const text = nextToken.children.reduce((acc, t) => acc + (t.content || ''), '');
+      const cleanText = stripMarkdownAndHtml(text);
+      let baseSlug = slugifyHeading(cleanText);
+      if (!baseSlug) baseSlug = 'heading';
+
+      let slug = baseSlug;
+      const count = slugCounts.get(baseSlug) || 0;
+      if (count > 0) {
+        slug = `${baseSlug}-${count}`;
+      }
+      slugCounts.set(baseSlug, count + 1);
+
+      token.attrSet('id', slug);
+    }
+    return self.renderToken(tokens, idx, options);
+  };
+
   return md;
 }
 
 const defaultRenderer = createMarkdownRenderer();
 
 /**
- * Renders Markdown text to static HTML with pre-rendered KaTeX math.
+ * Renders Markdown text to static HTML with pre-rendered KaTeX math and heading anchor IDs.
  * @param {string} markdown - Raw Markdown string
  * @returns {string} Rendered HTML string
  */

@@ -50,12 +50,12 @@ describe('End-to-End Data Engine Pipeline & Eleventy Integration', () => {
     expect(pinnedSlugs).toContain('open-source-engine');
     expect(pinnedSlugs).toContain('second-ranked-graduate');
 
-    // Verify Markdown-driven items extracted frontmatter and rendered HTML
+    // Verify Markdown-driven items extracted frontmatter and rendered HTML with anchor IDs
     const gpgPost = data.collections.blog.find((b) => b.slug === 'how-to-sign-commits');
     expect(gpgPost.hasMarkdown).toBe(true);
     expect(gpgPost.title).toBe('How to Sign Commits with GPG');
     expect(gpgPost.content).toContain('Signing commits ensures that others can verify');
-    expect(gpgPost.html).toContain('<h1>How to Sign Commits with GPG</h1>');
+    expect(gpgPost.html).toContain('How to Sign Commits with GPG</h1>');
     expect(gpgPost.permalink).toBe('/blog/how-to-sign-commits/');
 
     // Verify Inline-driven items
@@ -106,6 +106,7 @@ describe('End-to-End Data Engine Pipeline & Eleventy Integration', () => {
       expect(globalData.content_data).toBeDefined();
       expect(globalData.collections_data).toBeDefined();
       expect(globalData.pinned_items).toBeDefined();
+      expect(globalData.taxonomy).toBeDefined();
       expect(globalData.mappings).toBeDefined();
 
       // Verify collections

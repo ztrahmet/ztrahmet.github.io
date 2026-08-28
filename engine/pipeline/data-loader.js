@@ -7,6 +7,7 @@ import { normalizeAsset } from './asset-normalizer.js';
 import { UI_MAPPINGS } from '../config/mappings.js';
 import { resolveContentDir } from '../config/paths.js';
 import { buildSearchIndex } from '../search/search-indexer.js';
+import { buildTaxonomy } from './taxonomy.js';
 
 /**
  * Normalizes all asset paths in data.yaml (site and profile entities).
@@ -59,7 +60,7 @@ export function normalizeDataAssets(data) {
 
 /**
  * Executes the complete data ingestion, schema validation, collection synthesis,
- * asset normalization, and search indexing lifecycle.
+ * asset normalization, taxonomy compilation, and search indexing lifecycle.
  *
  * @param {string} [customContentDir] - Optional path to custom content directory
  * @returns {{
@@ -68,6 +69,7 @@ export function normalizeDataAssets(data) {
  *   content: object,
  *   collections: Record<string, Array<object>>,
  *   pinned_items: Array<object>,
+ *   taxonomy: object,
  *   mappings: object,
  *   search_index: object,
  *   contentDir: string
@@ -90,19 +92,26 @@ export function loadEngineData(customContentDir) {
   // 3. Normalize site and profile assets
   const normalizedData = normalizeDataAssets(rawData);
 
-  // 4. Synthesize collections (dual-mode Markdown frontmatter + inline items)
-  const collections = synthesizeAllCollections(contentDir, rawContent);
+  // 4. Synthesize collections (dual-mode Markdown frontmatter + inline items, sorting, navigation, TOC, SEO, related)
+  const collections = synthesizeAllCollections(contentDir, rawContent, normalizedData.site);
 
   // 5. Validate and resolve pinned_content integrity
   const pinnedItems = validateAndResolvePinnedContent(rawContent.pinned_content, collections);
 
-  // 6. Build unified search index
+  // 6. Build global inverted taxonomy (skills index across profile & collections)
+  const taxonomy = buildTaxonomy({
+    profile: normalizedData.profile,
+    collections
+  });
+
+  // 7. Build unified search index
   const baseData = {
     site: normalizedData.site,
     profile: normalizedData.profile,
     content: rawContent,
     collections,
     pinned_items: pinnedItems,
+    taxonomy,
     mappings: UI_MAPPINGS,
     contentDir
   };

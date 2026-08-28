@@ -5,10 +5,14 @@ import { COLLECTION_TYPES } from '../config/enums.js';
 import { loadMarkdownFile } from './frontmatter-loader.js';
 import { normalizeAsset } from './asset-normalizer.js';
 import { validateCollectionItem } from '../validation/validator.js';
-import { renderMarkdown } from './markdown-renderer.js';
+import { renderMarkdown, extractTableOfContents } from './markdown-renderer.js';
+import { calculateReadingMetrics, generateExcerpt } from './content-metrics.js';
+import { buildItemSeo } from './seo-normalizer.js';
+import { computeRelatedItems } from './content-graph.js';
+import { formatDate } from '../eleventy/filters.js';
 
 /**
- * Renders a Markdown string to sanitized HTML with pre-rendered KaTeX math.
+ * Renders a Markdown string to sanitized HTML with pre-rendered KaTeX math and heading anchor IDs.
  * @param {string} markdown - Raw markdown text
  * @returns {string} Rendered HTML string
  */
@@ -39,10 +43,11 @@ function normalizeItemAssets(item, baseDir = '') {
 /**
  * Extracts pure schema-validated payload from a synthesized collection item
  * by stripping internal pipeline and Eleventy runtime properties.
+ *
  * @param {object} item - Synthesized collection item
  * @returns {object} Sanitized item payload for schema validation
  */
-function extractSchemaPayload(item) {
+export function extractSchemaPayload(item) {
   const {
     content,
     html,
@@ -53,6 +58,13 @@ function extractSchemaPayload(item) {
     baseDir,
     permalink,
     collection,
+    newer,
+    older,
+    wordCount,
+    readingTime,
+    toc,
+    related,
+    seo,
     ...schemaPayload
   } = item;
 
@@ -121,16 +133,88 @@ export function discoverMarkdownItems(contentDir, collectionType) {
 }
 
 /**
+ * Sorts items chronologically (newest first) based on date or start date.
+ * Handles 'present' keyword as highest/newest timestamp.
+ *
+ * @param {Array<object>} items - Collection items to sort
+ * @returns {Array<object>} Sorted items
+ */
+export function sortChronologically(items = []) {
+  return [...items].sort((a, b) => {
+    const dateA = String(a.date || a.start || '').trim();
+    const dateB = String(b.date || b.start || '').trim();
+
+    if (!dateA && !dateB) return 0;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+
+    const isPresentA = dateA.toLowerCase() === 'present';
+    const isPresentB = dateB.toLowerCase() === 'present';
+
+    if (isPresentA && isPresentB) return 0;
+    if (isPresentA) return -1;
+    if (isPresentB) return 1;
+
+    return dateB.localeCompare(dateA);
+  });
+}
+
+/**
+ * Attaches bidirectional adjacent navigation pointers (newer and older) to sorted collection items.
+ *
+ * @param {Array<object>} sortedItems - Chronologically sorted collection items (newest first)
+ * @returns {Array<object>} Items with attached newer and older navigation pointers
+ */
+export function attachNavigationPointers(sortedItems = []) {
+  return sortedItems.map((item, idx) => {
+    const newerItem = idx > 0 ? sortedItems[idx - 1] : null;
+    const olderItem = idx < sortedItems.length - 1 ? sortedItems[idx + 1] : null;
+
+    const newer = newerItem
+      ? {
+          title: newerItem.title,
+          permalink: newerItem.permalink,
+          slug: newerItem.slug,
+          date: newerItem.date || newerItem.start || '',
+          dateDisplay: formatDate(newerItem.date || newerItem.start || '')
+        }
+      : null;
+
+    const older = olderItem
+      ? {
+          title: olderItem.title,
+          permalink: olderItem.permalink,
+          slug: olderItem.slug,
+          date: olderItem.date || olderItem.start || '',
+          dateDisplay: formatDate(olderItem.date || olderItem.start || '')
+        }
+      : null;
+
+    return {
+      ...item,
+      newer,
+      older
+    };
+  });
+}
+
+/**
  * Synthesizes a collection by merging Markdown files with content.yaml declarations.
- * Ensures consistent, predictable item shapes with pre-rendered HTML, canonical permalinks,
- * guaranteed arrays for skills, and normalized asset paths.
+ *
+ * Enriches every item with:
+ * - Pre-rendered HTML (`html`) with KaTeX math and heading anchor IDs
+ * - Reading metrics (`wordCount`, `readingTime`)
+ * - Structured Table of Contents (`toc`)
+ * - Fallback excerpts (`excerpt`)
+ * - Canonical permalinks and guaranteed skills array
  *
  * @param {string} contentDir - Absolute path to content/
  * @param {string} collectionType - Collection name (e.g. 'blog')
  * @param {Array<object>} [declaredEntries=[]] - Collection entries declared in content.yaml
- * @returns {Array<object>} Fully synthesized, normalized, and validated collection items
+ * @param {object} [siteData={}] - Site metadata for SEO normalization
+ * @returns {Array<object>} Synthesized collection items
  */
-export function synthesizeCollection(contentDir, collectionType, declaredEntries = []) {
+export function synthesizeCollection(contentDir, collectionType, declaredEntries = [], siteData = {}) {
   const discoveredMap = discoverMarkdownItems(contentDir, collectionType);
   const synthesized = [];
   const processedSlugs = new Set();
@@ -155,14 +239,28 @@ export function synthesizeCollection(contentDir, collectionType, declaredEntries
 
       const rawContent = normalized.content || '';
       const renderedHtml = renderMarkdown(rawContent);
+      const metrics = calculateReadingMetrics(rawContent);
+      const toc = extractTableOfContents(rawContent);
+      const excerpt = normalized.excerpt || generateExcerpt(rawContent);
 
-      synthesized.push({
+      const baseItem = {
         ...normalized,
         collection: collectionType,
         permalink,
         skills: Array.isArray(normalized.skills) ? normalized.skills : [],
         content: rawContent,
-        html: renderedHtml
+        html: renderedHtml,
+        wordCount: metrics.wordCount,
+        readingTime: metrics.readingTime,
+        toc,
+        excerpt
+      };
+
+      const seo = buildItemSeo(baseItem, siteData);
+
+      synthesized.push({
+        ...baseItem,
+        seo
       });
     } else {
       const inlineItem = {
@@ -175,7 +273,10 @@ export function synthesizeCollection(contentDir, collectionType, declaredEntries
         isMarkdown: false,
         content: null,
         html: '',
-        excerpt: '',
+        excerpt: entry.description || '',
+        wordCount: 0,
+        readingTime: 0,
+        toc: [],
         filePath: null,
         baseDir: ''
       };
@@ -188,7 +289,12 @@ export function synthesizeCollection(contentDir, collectionType, declaredEntries
         `content.yaml [${collectionType} -> slug: '${slug}']`
       );
 
-      synthesized.push(normalized);
+      const seo = buildItemSeo(normalized, siteData);
+
+      synthesized.push({
+        ...normalized,
+        seo
+      });
     }
   }
 
@@ -207,14 +313,28 @@ export function synthesizeCollection(contentDir, collectionType, declaredEntries
 
     const rawContent = normalized.content || '';
     const renderedHtml = renderMarkdown(rawContent);
+    const metrics = calculateReadingMetrics(rawContent);
+    const toc = extractTableOfContents(rawContent);
+    const excerpt = normalized.excerpt || generateExcerpt(rawContent);
 
-    synthesized.push({
+    const baseItem = {
       ...normalized,
       collection: collectionType,
       permalink,
       skills: Array.isArray(normalized.skills) ? normalized.skills : [],
       content: rawContent,
-      html: renderedHtml
+      html: renderedHtml,
+      wordCount: metrics.wordCount,
+      readingTime: metrics.readingTime,
+      toc,
+      excerpt
+    };
+
+    const seo = buildItemSeo(baseItem, siteData);
+
+    synthesized.push({
+      ...baseItem,
+      seo
     });
   }
 
@@ -222,18 +342,38 @@ export function synthesizeCollection(contentDir, collectionType, declaredEntries
 }
 
 /**
- * Synthesizes all five collections across the workspace.
+ * Synthesizes all five collections across the workspace:
+ * - Synthesizes Markdown & inline entries
+ * - Sorts date-bearing collections chronologically (newest first)
+ * - Computes bidirectional navigation pointers (newer / older)
+ * - Calculates related content recommendations across collections
+ *
  * @param {string} contentDir - Absolute path to content directory
  * @param {object} contentYamlData - Parsed content.yaml object
+ * @param {object} [siteData={}] - Site metadata for SEO normalization
  * @returns {Record<string, Array<object>>} Map of collectionType -> Array of synthesized items
  */
-export function synthesizeAllCollections(contentDir, contentYamlData = {}) {
-  const result = {};
+export function synthesizeAllCollections(contentDir, contentYamlData = {}, siteData = {}) {
+  const rawCollections = {};
 
+  // 1. Synthesize individual collections
   for (const type of COLLECTION_TYPES) {
     const declared = contentYamlData[type] || [];
-    result[type] = synthesizeCollection(contentDir, type, declared);
+    const synthesized = synthesizeCollection(contentDir, type, declared, siteData);
+    const sorted = sortChronologically(synthesized);
+    rawCollections[type] = attachNavigationPointers(sorted);
   }
 
-  return result;
+  // 2. Calculate and attach related items recommendations across all collections
+  const allItems = Object.values(rawCollections).flat();
+  const enriched = {};
+
+  for (const [type, items] of Object.entries(rawCollections)) {
+    enriched[type] = items.map((item) => ({
+      ...item,
+      related: computeRelatedItems(item, allItems, 3)
+    }));
+  }
+
+  return enriched;
 }

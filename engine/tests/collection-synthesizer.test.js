@@ -16,9 +16,9 @@ const VALID_CONTENT_DIR = path.join(FIXTURES_DIR, 'valid');
 
 describe('Collection Synthesizer & Dual-Mode Resolution', () => {
   describe('renderMarkdownToHtml', () => {
-    it('converts markdown formatting into sanitized HTML', () => {
+    it('converts markdown formatting into sanitized HTML with heading anchors', () => {
       const html = renderMarkdownToHtml('# Title\n\nA **bold** statement and a [link](https://example.com).');
-      expect(html).toContain('<h1>Title</h1>');
+      expect(html).toContain('<h1 id="title">Title</h1>');
       expect(html).toContain('<strong>bold</strong>');
       expect(html).toContain('<a href="https://example.com">link</a>');
     });
@@ -71,9 +71,12 @@ describe('Collection Synthesizer & Dual-Mode Resolution', () => {
       expect(mdItem.title).toBe('Markdown Test Post');
       expect(mdItem.image).toBe('/blog/test-post/cover.png');
       expect(mdItem.content).toContain('# Markdown Test Post Body');
-      expect(mdItem.html).toContain('<h1>Markdown Test Post Body</h1>');
+      expect(mdItem.html).toContain('Markdown Test Post Body</h1>');
       expect(Array.isArray(mdItem.skills)).toBe(true);
       expect(mdItem.skills).toContain('Vitest');
+      expect(mdItem.readingTime).toBeGreaterThanOrEqual(1);
+      expect(mdItem.wordCount).toBeGreaterThan(0);
+      expect(mdItem.seo).toBeDefined();
 
       // Inline-Driven item
       const inlineItem = synthesized.find((i) => i.slug === 'inline-blog');
@@ -85,7 +88,10 @@ describe('Collection Synthesizer & Dual-Mode Resolution', () => {
       expect(inlineItem.title).toBe('Inline Blog Post');
       expect(inlineItem.content).toBeNull();
       expect(inlineItem.html).toBe('');
+      expect(inlineItem.wordCount).toBe(0);
+      expect(inlineItem.readingTime).toBe(0);
       expect(Array.isArray(inlineItem.skills)).toBe(true);
+      expect(inlineItem.seo).toBeDefined();
     });
 
     it('gives frontmatter strict precedence for Markdown-driven items', () => {

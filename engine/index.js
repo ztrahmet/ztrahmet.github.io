@@ -13,6 +13,10 @@ export * from './pipeline/frontmatter-loader.js';
 export * from './pipeline/asset-normalizer.js';
 export * from './pipeline/content-ref.js';
 export * from './pipeline/markdown-renderer.js';
+export * from './pipeline/content-metrics.js';
+export * from './pipeline/seo-normalizer.js';
+export * from './pipeline/taxonomy.js';
+export * from './pipeline/content-graph.js';
 export * from './pipeline/collection-synthesizer.js';
 export * from './pipeline/data-loader.js';
 

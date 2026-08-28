@@ -136,6 +136,11 @@ export function buildSearchIndex(engineData) {
       if (item.expires) meta.expires = formatDate(item.expires);
       if (item.publisher) meta.publisher = item.publisher;
       if (item.issuer) meta.issuer = item.issuer;
+      if (item.readingTime) meta.readingTime = item.readingTime;
+      if (item.wordCount) meta.wordCount = item.wordCount;
+      if (Array.isArray(item.toc) && item.toc.length > 0) {
+        meta.headings = item.toc.map((t) => t.text);
+      }
 
       records.push({
         id: `${type}:${item.slug}`,

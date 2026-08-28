@@ -75,6 +75,7 @@ export default function configureEleventy(eleventyConfig, options = {}) {
   eleventyConfig.addGlobalData('site_content', () => getFreshData().content);
   eleventyConfig.addGlobalData('collections_data', () => getFreshData().collections);
   eleventyConfig.addGlobalData('pinned_items', () => getFreshData().pinned_items);
+  eleventyConfig.addGlobalData('taxonomy', () => getFreshData().taxonomy);
   eleventyConfig.addGlobalData('mappings', () => getFreshData().mappings);
   eleventyConfig.addGlobalData('search_index', () => getFreshData().search_index);
   eleventyConfig.addGlobalData('contentDir', () => getFreshData().contentDir);
