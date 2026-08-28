@@ -11,46 +11,50 @@ import { buildTaxonomy } from './taxonomy.js';
 
 /**
  * Normalizes all asset paths in data.yaml (site and profile entities).
+ * Checks physical existence of referenced assets within contentDir.
+ *
  * @param {object} data - Parsed data.yaml object
+ * @param {string} [contentDir] - Absolute path to content directory
  * @returns {object} Cloned data object with normalized assets
  */
-export function normalizeDataAssets(data) {
+export function normalizeDataAssets(data, contentDir) {
   if (!data) return data;
 
   const cloned = JSON.parse(JSON.stringify(data));
+  const options = { contentDir, warnMissing: true };
 
   if (cloned.site) {
     if (cloned.site.favicon) {
-      cloned.site.favicon = normalizeAsset(cloned.site.favicon);
+      cloned.site.favicon = normalizeAsset(cloned.site.favicon, options);
     }
     if (cloned.site.share_image) {
-      cloned.site.share_image = normalizeAsset(cloned.site.share_image);
+      cloned.site.share_image = normalizeAsset(cloned.site.share_image, options);
     }
   }
 
   if (cloned.profile) {
     if (cloned.profile.avatar) {
-      cloned.profile.avatar = normalizeAsset(cloned.profile.avatar);
+      cloned.profile.avatar = normalizeAsset(cloned.profile.avatar, options);
     }
     if (cloned.profile.resume) {
-      cloned.profile.resume = normalizeAsset(cloned.profile.resume);
+      cloned.profile.resume = normalizeAsset(cloned.profile.resume, options);
     }
     if (Array.isArray(cloned.profile.social)) {
       cloned.profile.social = cloned.profile.social.map((s) => ({
         ...s,
-        icon: s.icon ? normalizeAsset(s.icon, { isIcon: true }) : undefined
+        icon: s.icon ? normalizeAsset(s.icon, { ...options, isIcon: true }) : undefined
       }));
     }
     if (Array.isArray(cloned.profile.experience)) {
       cloned.profile.experience = cloned.profile.experience.map((exp) => ({
         ...exp,
-        logo: exp.logo ? normalizeAsset(exp.logo) : undefined
+        logo: exp.logo ? normalizeAsset(exp.logo, options) : undefined
       }));
     }
     if (Array.isArray(cloned.profile.education)) {
       cloned.profile.education = cloned.profile.education.map((edu) => ({
         ...edu,
-        logo: edu.logo ? normalizeAsset(edu.logo) : undefined
+        logo: edu.logo ? normalizeAsset(edu.logo, options) : undefined
       }));
     }
   }
@@ -90,7 +94,7 @@ export function loadEngineData(customContentDir) {
   validateContent(rawContent, path.relative(process.cwd(), contentFilePath));
 
   // 3. Normalize site and profile assets
-  const normalizedData = normalizeDataAssets(rawData);
+  const normalizedData = normalizeDataAssets(rawData, contentDir);
 
   // 4. Synthesize collections (dual-mode Markdown frontmatter + inline items, sorting, navigation, TOC, SEO, related)
   const collections = synthesizeAllCollections(contentDir, rawContent, normalizedData.site);

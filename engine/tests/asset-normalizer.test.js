@@ -1,14 +1,26 @@
 import path from 'node:path';
-import { describe, it, expect } from 'vitest';
+import { fileURLToPath } from 'node:url';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   isUri,
   isIconSlug,
   normalizeAssetPath,
   resolveAssetFsPath,
+  checkAssetExists,
+  resetMissingAssetWarnings,
   normalizeAsset
 } from '../pipeline/asset-normalizer.js';
+import { ValidationError } from '../validation/errors.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const FIXTURES_VALID_DIR = path.resolve(__dirname, 'fixtures/valid');
 
 describe('Asset Path Normalization & Resolvers', () => {
+  beforeEach(() => {
+    resetMissingAssetWarnings();
+  });
+
   describe('isUri', () => {
     it('correctly identifies URIs', () => {
       expect(isUri('https://example.com/logo.png')).toBe(true);
@@ -66,10 +78,95 @@ describe('Asset Path Normalization & Resolvers', () => {
     });
   });
 
+  describe('checkAssetExists', () => {
+    it('detects existing assets in contentDir without warning', () => {
+      const exists = checkAssetExists('/assets/favicon.svg', FIXTURES_VALID_DIR);
+      expect(exists).toBe(true);
+    });
+
+    it('detects missing assets and returns false while emitting console warning when isRequired: false', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const exists = checkAssetExists('/images/non-existent-avatar.svg', FIXTURES_VALID_DIR, { isRequired: false });
+
+      expect(exists).toBe(false);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Referenced asset not found')
+      );
+      warnSpy.mockRestore();
+    });
+
+    it('throws ValidationError immediately when isRequired: true and asset is missing', () => {
+      expect(() =>
+        checkAssetExists('/images/missing-required.svg', FIXTURES_VALID_DIR, { isRequired: true })
+      ).toThrow(ValidationError);
+
+      expect(() =>
+        checkAssetExists('/images/missing-required.svg', FIXTURES_VALID_DIR, { isRequired: true })
+      ).toThrow(/Missing required asset on disk/);
+    });
+
+    it('does not throw for valid assets when isRequired: true', () => {
+      expect(() =>
+        checkAssetExists('/assets/favicon.svg', FIXTURES_VALID_DIR, { isRequired: true })
+      ).not.toThrow();
+    });
+
+    it('does not throw for external URIs and icon slugs when isRequired: true', () => {
+      expect(() =>
+        checkAssetExists('https://example.com/cover.jpg', FIXTURES_VALID_DIR, { isRequired: true })
+      ).not.toThrow();
+
+      expect(() =>
+        checkAssetExists('github', FIXTURES_VALID_DIR, { isRequired: true })
+      ).not.toThrow();
+    });
+
+    it('suppresses console warning when silent option is true', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const exists = checkAssetExists('/images/non-existent.svg', FIXTURES_VALID_DIR, { silent: true });
+
+      expect(exists).toBe(false);
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+  });
+
+  describe('resetMissingAssetWarnings', () => {
+    it('resets warned assets set to allow repeating warnings across cycles', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      // First check -> warns
+      checkAssetExists('/images/repeat-warning-test.svg', FIXTURES_VALID_DIR);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+
+      // Second check -> deduplicated (not called again)
+      checkAssetExists('/images/repeat-warning-test.svg', FIXTURES_VALID_DIR);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+
+      // Reset cache
+      resetMissingAssetWarnings();
+
+      // Third check after reset -> warns again
+      checkAssetExists('/images/repeat-warning-test.svg', FIXTURES_VALID_DIR);
+      expect(warnSpy).toHaveBeenCalledTimes(2);
+
+      warnSpy.mockRestore();
+    });
+  });
+
   describe('normalizeAsset', () => {
     it('normalizes simple string asset paths', () => {
       expect(normalizeAsset('/images/logo.png')).toBe('/images/logo.png');
       expect(normalizeAsset('./logo.png', { baseDir: 'blog/post-1' })).toBe('/blog/post-1/logo.png');
+    });
+
+    it('throws ValidationError when isRequired: true and asset is missing', () => {
+      expect(() =>
+        normalizeAsset('/images/strictly-required.png', {
+          contentDir: FIXTURES_VALID_DIR,
+          isRequired: true
+        })
+      ).toThrow(ValidationError);
     });
 
     it('preserves simple-icon slugs when isIcon option is enabled', () => {

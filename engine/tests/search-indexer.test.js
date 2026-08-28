@@ -11,12 +11,18 @@ import {
   truncateText
 } from '../search/text-sanitizer.js';
 import { loadEngineData } from '../pipeline/data-loader.js';
+import { PROJECT_ROOT } from '../config/paths.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_CONTENT_DIR = path.resolve(__dirname, '../../content');
 const FIXTURES_VALID_DIR = path.resolve(__dirname, 'fixtures/valid');
 const TEMP_OUTPUT_DIR = path.resolve(__dirname, 'fixtures/.temp-search');
+
+const pkgPath = path.join(PROJECT_ROOT, 'package.json');
+const expectedPackageVersion = fs.existsSync(pkgPath)
+  ? JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version || '1.0.0'
+  : '1.0.0';
 
 describe('Search Indexing Subsystem', () => {
   afterEach(() => {
@@ -91,11 +97,11 @@ Here is \`inline code\` snippet.
   });
 
   describe('buildSearchIndex', () => {
-    it('indexes all entity types from the root content repository', () => {
+    it('indexes all entity types from the root content repository with dynamic package version', () => {
       const engineData = loadEngineData(ROOT_CONTENT_DIR);
       const searchIndex = buildSearchIndex(engineData);
 
-      expect(searchIndex.version).toBe('1.0.0');
+      expect(searchIndex.version).toBe(expectedPackageVersion);
       expect(searchIndex.generatedAt).toBeDefined();
       expect(searchIndex.totalRecords).toBe(searchIndex.records.length);
       expect(searchIndex.totalRecords).toBeGreaterThan(0);
@@ -188,7 +194,7 @@ Here is \`inline code\` snippet.
   });
 
   describe('writeSearchIndexFile', () => {
-    it('writes search-index.json to disk and creates parent directory if necessary', () => {
+    it('writes search-index.json to disk with dynamic package version', () => {
       const engineData = loadEngineData(FIXTURES_VALID_DIR);
       const targetFile = path.join(TEMP_OUTPUT_DIR, 'search-index.json');
 
@@ -198,7 +204,7 @@ Here is \`inline code\` snippet.
       const writtenRaw = fs.readFileSync(targetFile, 'utf-8');
       const writtenParsed = JSON.parse(writtenRaw);
 
-      expect(writtenParsed.version).toBe('1.0.0');
+      expect(writtenParsed.version).toBe(expectedPackageVersion);
       expect(writtenParsed.totalRecords).toBe(result.totalRecords);
       expect(writtenParsed.records.length).toBe(result.records.length);
     });

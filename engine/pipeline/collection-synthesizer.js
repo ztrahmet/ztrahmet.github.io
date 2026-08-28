@@ -21,20 +21,21 @@ export function renderMarkdownToHtml(markdown) {
 }
 
 /**
- * Normalizes all asset fields on a collection item.
+ * Normalizes all asset fields on a collection item and optionally checks existence.
  * @param {object} item - Raw collection item data
  * @param {string} [baseDir=''] - Referencing directory relative to content root
+ * @param {string} [contentDir=''] - Absolute path to content root for existence checking
  * @returns {object} Cloned item with normalized asset URLs
  */
-function normalizeItemAssets(item, baseDir = '') {
+function normalizeItemAssets(item, baseDir = '', contentDir = '') {
   const cloned = { ...item };
 
   if (cloned.image) {
-    cloned.image = normalizeAsset(cloned.image, { baseDir });
+    cloned.image = normalizeAsset(cloned.image, { baseDir, contentDir, warnMissing: true });
   }
 
   if (cloned.logo) {
-    cloned.logo = normalizeAsset(cloned.logo, { baseDir });
+    cloned.logo = normalizeAsset(cloned.logo, { baseDir, contentDir, warnMissing: true });
   }
 
   return cloned;
@@ -207,6 +208,7 @@ export function attachNavigationPointers(sortedItems = []) {
  * - Structured Table of Contents (`toc`)
  * - Fallback excerpts (`excerpt`)
  * - Canonical permalinks and guaranteed skills array
+ * - SEO metadata object
  *
  * @param {string} contentDir - Absolute path to content/
  * @param {string} collectionType - Collection name (e.g. 'blog')
@@ -229,7 +231,7 @@ export function synthesizeCollection(contentDir, collectionType, declaredEntries
 
     if (discoveredMap.has(slug)) {
       const mdItem = discoveredMap.get(slug);
-      const normalized = normalizeItemAssets(mdItem, mdItem.baseDir);
+      const normalized = normalizeItemAssets(mdItem, mdItem.baseDir, contentDir);
 
       validateCollectionItem(
         collectionType,
@@ -281,7 +283,7 @@ export function synthesizeCollection(contentDir, collectionType, declaredEntries
         baseDir: ''
       };
 
-      const normalized = normalizeItemAssets(inlineItem, '');
+      const normalized = normalizeItemAssets(inlineItem, '', contentDir);
 
       validateCollectionItem(
         collectionType,
@@ -303,7 +305,7 @@ export function synthesizeCollection(contentDir, collectionType, declaredEntries
     if (processedSlugs.has(slug)) continue;
 
     const permalink = `/${collectionType}/${slug}/`;
-    const normalized = normalizeItemAssets(mdItem, mdItem.baseDir);
+    const normalized = normalizeItemAssets(mdItem, mdItem.baseDir, contentDir);
 
     validateCollectionItem(
       collectionType,

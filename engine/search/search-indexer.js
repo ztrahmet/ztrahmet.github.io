@@ -9,6 +9,24 @@ import {
 } from '../config/mappings.js';
 import { formatDate } from '../eleventy/filters.js';
 import { COLLECTION_TYPES } from '../config/enums.js';
+import { PROJECT_ROOT } from '../config/paths.js';
+
+/**
+ * Reads the project version dynamically from package.json with a fallback.
+ * @returns {string} Version string
+ */
+function getProjectVersion() {
+  try {
+    const pkgPath = path.join(PROJECT_ROOT, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+      if (pkg.version) return pkg.version;
+    }
+  } catch {
+    // Fallback to default
+  }
+  return '1.0.0';
+}
 
 /**
  * Builds a search subtitle for a collection item based on its entity type.
@@ -47,9 +65,11 @@ function getCollectionSubtitle(type, item) {
  * }} Compiled search index payload
  */
 export function buildSearchIndex(engineData) {
+  const version = getProjectVersion();
+
   if (!engineData) {
     return {
-      version: '1.0.0',
+      version,
       generatedAt: new Date().toISOString(),
       totalRecords: 0,
       records: []
@@ -163,7 +183,7 @@ export function buildSearchIndex(engineData) {
   }
 
   return {
-    version: '1.0.0',
+    version,
     generatedAt: new Date().toISOString(),
     totalRecords: records.length,
     records
