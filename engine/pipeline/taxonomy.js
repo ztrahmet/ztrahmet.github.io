@@ -1,5 +1,6 @@
 import { COLLECTION_TYPES } from '../config/enums.js';
 import { slugify } from '../config/format.js';
+import { sortByRecency } from './ordering.js';
 
 /**
  * Builds a global inverted taxonomy index for skills spanning profile entries and all collections.
@@ -57,7 +58,9 @@ export function buildTaxonomy(engineData = {}) {
         organization: entry.organization || '',
         permalink: anchor,
         url: entry.url || '',
-        slug: `${type}:${idx}`
+        slug: `${type}:${idx}`,
+        date: entry.start || '',
+        end: entry.end || ''
       };
       const skills = Array.isArray(entry.skills) ? entry.skills : [];
       skills.forEach((s) => addSkillRef(s, itemRef));
@@ -76,7 +79,8 @@ export function buildTaxonomy(engineData = {}) {
         permalink: item.permalink || `/${type}/${item.slug}/`,
         url: item.url || '',
         slug: item.slug,
-        date: item.date || item.start || ''
+        date: item.date || item.start || '',
+        end: item.end || ''
       };
       const skills = Array.isArray(item.skills) ? item.skills : [];
       skills.forEach((s) => addSkillRef(s, itemRef));
@@ -97,6 +101,7 @@ export function buildTaxonomy(engineData = {}) {
     const taken = usedSlugs.get(baseSlug) || 0;
     entry.slug = taken > 0 ? `${baseSlug}-${taken}` : baseSlug;
     usedSlugs.set(baseSlug, taken + 1);
+    entry.items = sortByRecency(entry.items);
     skills[entry.key] = entry;
   }
 

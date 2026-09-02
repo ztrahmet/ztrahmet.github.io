@@ -11,6 +11,7 @@ import { renderMarkdown, renderMarkdownDocument } from './markdown-renderer.js';
 import { calculateReadingMetrics, generateExcerpt } from './content-metrics.js';
 import { buildItemSeo } from './seo-normalizer.js';
 import { attachRelatedItemsToCollections } from './content-graph.js';
+import { sortByRecency, isOngoing } from './ordering.js';
 
 /**
  * Properties synthesized by the pipeline that are not part of any content schema.
@@ -19,7 +20,8 @@ import { attachRelatedItemsToCollections } from './content-graph.js';
 const SYNTHETIC_KEYS = Object.freeze([
   'content', 'html', 'excerpt', 'hasMarkdown', 'isMarkdown', 'filePath', 'baseDir',
   'permalink', 'collection', 'newer', 'older', 'wordCount', 'readingTime', 'toc',
-  'related', 'seo', 'dateDisplay', 'dateIso', 'startDisplay', 'endDisplay'
+  'related', 'seo', 'dateDisplay', 'dateIso', 'startDisplay', 'endDisplay',
+  'isOngoing', 'isExpired'
 ]);
 
 /**
@@ -82,11 +84,17 @@ function buildDateFields(item, locale) {
 
   const fields = {
     dateDisplay: formatDate(primary, locale),
-    dateIso: toIsoDate(primary)
+    dateIso: toIsoDate(primary),
+    isOngoing: isOngoing(item)
   };
 
   if (item.start !== undefined) fields.startDisplay = formatDate(item.start, locale);
   if (item.end !== undefined) fields.endDisplay = formatDate(item.end, locale);
+
+  if (item.expires !== undefined) {
+    const expiresIso = toIsoDate(item.expires);
+    fields.isExpired = Boolean(expiresIso) && expiresIso < new Date().toISOString().slice(0, 10);
+  }
 
   return fields;
 }
@@ -112,7 +120,7 @@ export function discoverMarkdownItems(contentDir, collectionType) {
     cwd: contentDir,
     absolute: true,
     onlyFiles: true
-  });
+  }).sort();
 
   for (const filePath of files) {
     const relativeToContent = path.relative(contentDir, filePath).replace(/\\/g, '/');
@@ -143,32 +151,6 @@ export function discoverMarkdownItems(contentDir, collectionType) {
   }
 
   return itemsMap;
-}
-
-/**
- * Sorts items chronologically (newest first) based on date or start date.
- *
- * @param {Array<object>} items - Collection items to sort
- * @returns {Array<object>} Sorted items
- */
-export function sortChronologically(items = []) {
-  return [...items].sort((a, b) => {
-    const dateA = String(a.date || a.start || '').trim();
-    const dateB = String(b.date || b.start || '').trim();
-
-    if (!dateA && !dateB) return 0;
-    if (!dateA) return 1;
-    if (!dateB) return -1;
-
-    const isPresentA = dateA.toLowerCase() === 'present';
-    const isPresentB = dateB.toLowerCase() === 'present';
-
-    if (isPresentA && isPresentB) return 0;
-    if (isPresentA) return -1;
-    if (isPresentB) return 1;
-
-    return dateB.localeCompare(dateA);
-  });
 }
 
 /**
@@ -325,7 +307,7 @@ export function synthesizeCollection(contentDir, collectionType, declaredEntries
 /**
  * Synthesizes all five collections across the workspace:
  * - Synthesizes Markdown & inline entries
- * - Sorts date-bearing collections chronologically (newest first)
+ * - Orders each collection newest first, with ongoing entries ranked above finished ones
  * - Computes bidirectional navigation pointers (newer / older)
  * - Calculates related content recommendations across collections
  *
@@ -340,7 +322,7 @@ export function synthesizeAllCollections(contentDir, contentYamlData = {}, siteD
 
   for (const type of COLLECTION_TYPES) {
     const items = synthesizeCollection(contentDir, type, contentYamlData[type] || [], siteData);
-    collections[type] = attachNavigationPointers(sortChronologically(items), locale);
+    collections[type] = attachNavigationPointers(sortByRecency(items), locale);
   }
 
   return attachRelatedItemsToCollections(collections);

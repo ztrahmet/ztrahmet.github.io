@@ -1,9 +1,10 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
-import { loadEngineData } from '../pipeline/data-loader.js';
+import { loadEngineData, normalizeDataAssets } from '../pipeline/data-loader.js';
 import { formatDate } from '../eleventy/filters.js';
 import configureEleventy, { registerAssetPassthroughs } from '../eleventy/eleventy.config.js';
+import { sortByRecency } from '../pipeline/ordering.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -258,6 +259,22 @@ describe('Eleventy Reserved Data & Build Caching', () => {
     expect(state.globalData.site()).not.toBe(first);
   });
 
+  it('orders all_content across collections but leaves pinned in declared order', () => {
+    const { config, state } = createMockConfig();
+    configureEleventy(config, { contentDir: FIXTURES_VALID_DIR });
+
+    const all = state.collections.all_content();
+    const collectionsSeen = new Set(all.map((i) => i.collection));
+
+    // A combined feed interleaves types rather than grouping them
+    expect(collectionsSeen.size).toBeGreaterThan(1);
+    expect(all).toEqual(sortByRecency(all));
+
+    // Curated order is preserved
+    const pinned = state.collections.pinned();
+    expect(pinned.map((p) => p._ref)).toEqual(['blog:test-post', 'project:test-project']);
+  });
+
   it('exposes the full theme data surface', () => {
     const { config, state } = createMockConfig();
     configureEleventy(config, { contentDir: FIXTURES_VALID_DIR });
@@ -270,5 +287,30 @@ describe('Eleventy Reserved Data & Build Caching', () => {
     for (const key of ['blog', 'project', 'publication', 'certificate', 'award', 'all_content', 'pinned']) {
       expect(state.collections[key], `missing collection: ${key}`).toBeDefined();
     }
+  });
+});
+
+describe('Profile History Ordering', () => {
+  it('ranks a current role above past ones regardless of authored order', () => {
+    const { profile } = normalizeDataAssets({
+      site: { url: 'https://x.example.com', title: 'T', description: 'D' },
+      profile: {
+        name: 'N',
+        handle: 'h',
+        role: 'R',
+        experience: [
+          { title: 'Old Job', organization: 'First', start: '2018-01', end: '2021-12' },
+          { title: 'Current Job', organization: 'Now', start: '2022-01', end: 'present' },
+          { title: 'Recent Finished', organization: 'Mid', start: '2021-01', end: '2024-06' }
+        ],
+        education: [
+          { title: 'BSc', organization: 'Uni', start: '2014-09', end: '2018-06' },
+          { title: 'PhD', organization: 'Uni', start: '2023-09', end: 'present' }
+        ]
+      }
+    });
+
+    expect(profile.experience.map((e) => e.title)).toEqual(['Current Job', 'Recent Finished', 'Old Job']);
+    expect(profile.education.map((e) => e.title)).toEqual(['PhD', 'BSc']);
   });
 });

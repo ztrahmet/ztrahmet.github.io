@@ -1,4 +1,5 @@
 import { toDateString } from '../config/format.js';
+import { compareByRecency, sortByRecency, isOngoing } from './ordering.js';
 
 /**
  * Normalizes a skill list into canonical lookup keys.
@@ -27,6 +28,8 @@ function toRelatedItem(item, sharedSkills, reason) {
     slug: item.slug,
     permalink: item.permalink,
     date: toDateString(item.date || item.start),
+    end: toDateString(item.end),
+    isOngoing: isOngoing(item),
     image: item.image || null,
     description: item.description || '',
     sharedSkills,
@@ -68,9 +71,10 @@ export function computeRelatedItems(currentItem, allItems = [], limit = 3) {
       }
     }
 
+    // Strongest skill overlap first, then the shared recency ordering
     scored.sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
-      return String(b.item.date).localeCompare(String(a.item.date));
+      return compareByRecency(a.item, b.item);
     });
   }
 
@@ -79,10 +83,11 @@ export function computeRelatedItems(currentItem, allItems = [], limit = 3) {
 
   // Fill remaining slots with the most recent siblings from the same collection
   const taken = new Set(related.map((item) => `${item.collection}:${item.slug}`));
-  const siblings = allItems
-    .filter((other) => !isSelf(other) && other.collection === currentItem.collection)
-    .filter((other) => !taken.has(`${other.collection}:${other.slug}`))
-    .sort((a, b) => String(toDateString(b.date || b.start)).localeCompare(String(toDateString(a.date || a.start))));
+  const siblings = sortByRecency(
+    allItems
+      .filter((other) => !isSelf(other) && other.collection === currentItem.collection)
+      .filter((other) => !taken.has(`${other.collection}:${other.slug}`))
+  );
 
   for (const sibling of siblings) {
     if (related.length >= limit) break;

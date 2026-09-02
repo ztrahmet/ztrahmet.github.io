@@ -153,6 +153,8 @@ export interface RelatedItem {
   slug: string;
   permalink: string;
   date: string;
+  end: string;
+  isOngoing: boolean;
   image: ThemedAsset | null;
   description: string;
   sharedSkills: string[];
@@ -193,6 +195,8 @@ export interface BaseCollectionItem {
   toc: TableOfContentsItem[];
   dateDisplay: string;
   dateIso: string;
+  /** True when the entry is still running (`end: present`). Ongoing entries rank first. */
+  isOngoing: boolean;
   newer: AdjacentNavigationPointer | null;
   older: AdjacentNavigationPointer | null;
   related: RelatedItem[];
@@ -231,6 +235,8 @@ export interface CertificateItem extends BaseCollectionItem {
   issuer: string;
   date: DateValue;
   expires?: DateValue;
+  /** Present only when `expires` is set; evaluated against the build date. */
+  isExpired?: boolean;
   credential_id?: string;
 }
 
@@ -271,6 +277,7 @@ export interface TaxonomyReference {
   slug: string;
   organization?: string;
   date?: string;
+  end?: string;
 }
 
 export interface SkillTaxonomyEntry {
@@ -285,7 +292,7 @@ export interface SkillTaxonomyEntry {
 }
 
 export interface TaxonomyData {
-  /** Entries keyed by canonical key (lowercased skill name). */
+  /** Entries keyed by canonical key (lowercased skill name). References are ordered newest first. */
   skills: Record<string, SkillTaxonomyEntry>;
   /** All entries, ordered by frequency then name. */
   allSkills: SkillTaxonomyEntry[];

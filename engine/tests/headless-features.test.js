@@ -2,10 +2,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import {
-  sortChronologically,
   attachNavigationPointers,
   extractSchemaPayload
 } from '../pipeline/collection-synthesizer.js';
+import { sortByRecency, compareByRecency, isOngoing } from '../pipeline/ordering.js';
 import {
   calculateReadingMetrics,
   generateExcerpt
@@ -30,7 +30,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_CONTENT_DIR = path.resolve(__dirname, '../../content');
 
 describe('Headless Feature Backbone Subsystem', () => {
-  describe('1. Chronological Sorting & Bidirectional Navigation', () => {
+  describe('1. Recency Ordering & Bidirectional Navigation', () => {
     const items = [
       { slug: 'p1', title: 'Post 1', date: '2022-01', permalink: '/blog/p1/' },
       { slug: 'p2', title: 'Post 2', date: '2024-03-01', permalink: '/blog/p2/' },
@@ -38,13 +38,13 @@ describe('Headless Feature Backbone Subsystem', () => {
       { slug: 'p4', title: 'Post 4', date: 'present', permalink: '/blog/p4/' }
     ];
 
-    it('sorts date-bearing items chronologically with newest first', () => {
-      const sorted = sortChronologically(items);
+    it('orders date-bearing items newest first', () => {
+      const sorted = sortByRecency(items);
       expect(sorted.map((i) => i.slug)).toEqual(['p4', 'p2', 'p3', 'p1']);
     });
 
     it('attaches accurate newer and older navigation pointers', () => {
-      const sorted = sortChronologically(items);
+      const sorted = sortByRecency(items);
       const withNav = attachNavigationPointers(sorted);
 
       // Newest item (index 0) has newer: null and older pointing to index 1

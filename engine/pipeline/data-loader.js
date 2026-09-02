@@ -10,6 +10,7 @@ import { resolveLocale } from '../config/format.js';
 import { COLLECTION_TYPES } from '../config/enums.js';
 import { buildSearchIndex } from '../search/search-indexer.js';
 import { buildTaxonomy } from './taxonomy.js';
+import { sortByRecency } from './ordering.js';
 
 /**
  * Normalizes an optional asset field, leaving the property absent when unset.
@@ -52,6 +53,14 @@ export function normalizeDataAssets(data, contentDir) {
 
     for (const entry of [...(cloned.profile.experience || []), ...(cloned.profile.education || [])]) {
       normalizeOptionalAsset(entry, 'logo', options);
+    }
+
+    // Order profile history newest first, with current roles ranked above past ones
+    if (Array.isArray(cloned.profile.experience)) {
+      cloned.profile.experience = sortByRecency(cloned.profile.experience);
+    }
+    if (Array.isArray(cloned.profile.education)) {
+      cloned.profile.education = sortByRecency(cloned.profile.education);
     }
   }
 

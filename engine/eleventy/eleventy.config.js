@@ -6,6 +6,7 @@ import { loadEngineData } from '../pipeline/data-loader.js';
 import { registerFilters } from './filters.js';
 import { resolveContentDir, PROJECT_ROOT, SCHEMAS_DIR } from '../config/paths.js';
 import { writeSearchIndexFile } from '../search/search-indexer.js';
+import { sortByRecency } from '../pipeline/ordering.js';
 
 /**
  * Registers passthrough copy rules for top-level asset folders and co-located collection media.
@@ -87,7 +88,10 @@ export default function configureEleventy(eleventyConfig, options = {}) {
     eleventyConfig.addCollection(name, () => getData().collections[name] || []);
   }
 
-  eleventyConfig.addCollection('all_content', () => Object.values(getData().collections).flat());
+  // A combined feed is ordered across collections, not grouped by type
+  eleventyConfig.addCollection('all_content', () => sortByRecency(Object.values(getData().collections).flat()));
+
+  // Pinned content keeps the order declared in content.yaml, which is a curation choice
   eleventyConfig.addCollection('pinned', () => getData().pinned_items);
 
   // 5. Register template filters (mappings, dates, markdown, urls)
