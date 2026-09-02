@@ -16,7 +16,9 @@ export interface ThemedAssetObject {
 }
 
 export type ThemedAsset = Asset | ThemedAssetObject;
-export type Icon = string | ThemedAsset;
+
+/** Either an asset reference or a simple-icon slug such as "github". */
+export type Icon = ThemedAsset;
 
 export type EmploymentType =
   | 'full-time'
@@ -40,24 +42,28 @@ export type CollectionType = 'blog' | 'project' | 'publication' | 'certificate' 
 
 export type ContentRef = `${CollectionType}:${string}`;
 
+/** Dates are authored as YYYY, YYYY-MM or YYYY-MM-DD. Bare years arrive as integers from YAML. */
+export type DateValue = string | number;
+export type DateOrPresent = DateValue | 'present';
+
 /**
  * Site entity (data.yaml -> site)
  */
 export interface SiteData {
+  url: string;
   title: string;
   description: string;
-  url: string;
-  language?: string;
+  lang?: string;
+  locale?: string;
   favicon?: ThemedAsset;
   share_image?: ThemedAsset;
-  copyright?: string;
 }
 
 /**
  * Profile social link
  */
 export interface SocialLink {
-  name: string;
+  label: string;
   url: string;
   icon?: Icon;
 }
@@ -68,15 +74,15 @@ export interface SocialLink {
 export interface ExperienceItem {
   title: string;
   organization: string;
-  location?: string;
-  modality?: Modality;
-  type?: EmploymentType;
-  start: string | number;
-  end?: string | number | 'present' | 'Present';
-  description?: string;
-  skills?: string[];
+  start: DateValue;
+  end: DateOrPresent;
   logo?: ThemedAsset;
   url?: string;
+  type?: EmploymentType;
+  location?: string;
+  modality?: Modality;
+  description?: string;
+  skills?: string[];
 }
 
 /**
@@ -85,16 +91,16 @@ export interface ExperienceItem {
 export interface EducationItem {
   title: string;
   organization: string;
-  location?: string;
-  modality?: Modality;
-  type?: DegreeType;
-  start: string | number;
-  end?: string | number | 'present' | 'Present';
-  grade?: string;
-  description?: string;
-  skills?: string[];
+  start: DateValue;
+  end: DateOrPresent;
   logo?: ThemedAsset;
   url?: string;
+  type?: DegreeType;
+  grade?: string;
+  location?: string;
+  modality?: Modality;
+  description?: string;
+  skills?: string[];
 }
 
 /**
@@ -104,9 +110,9 @@ export interface ProfileData {
   name: string;
   handle: string;
   role: string;
-  headline?: string;
-  bio?: string;
   avatar?: ThemedAsset;
+  location?: string;
+  summary?: string;
   resume?: Asset;
   social?: SocialLink[];
   experience?: ExperienceItem[];
@@ -114,7 +120,8 @@ export interface ProfileData {
 }
 
 /**
- * Structured Table of Contents heading entry
+ * Structured Table of Contents heading entry.
+ * Slugs always match a heading anchor present in the rendered `html`.
  */
 export interface TableOfContentsItem {
   id: string;
@@ -130,22 +137,26 @@ export interface AdjacentNavigationPointer {
   title: string;
   permalink: string;
   slug: string;
-  date: string | number;
+  collection: CollectionType;
+  date: string;
   dateDisplay: string;
+  image: ThemedAsset | null;
 }
 
 /**
- * Content graph related item recommendation
+ * Content graph related item recommendation.
+ * `reason` distinguishes a shared-skill match from a same-collection fallback.
  */
 export interface RelatedItem {
   collection: CollectionType;
   title: string;
   slug: string;
   permalink: string;
-  date: string | number;
-  image?: ThemedAsset | null;
-  description?: string;
+  date: string;
+  image: ThemedAsset | null;
+  description: string;
   sharedSkills: string[];
+  reason: 'skills' | 'collection';
 }
 
 /**
@@ -160,6 +171,7 @@ export interface SeoMetadata {
   ogType: 'article' | 'website';
   publishedTime: string | null;
   modifiedTime: string | null;
+  publishedIso: string | null;
 }
 
 /**
@@ -170,7 +182,6 @@ export interface BaseCollectionItem {
   title: string;
   collection: CollectionType;
   permalink: string;
-  url: string;
   skills: string[];
   hasMarkdown: boolean;
   isMarkdown: boolean;
@@ -180,70 +191,53 @@ export interface BaseCollectionItem {
   wordCount: number;
   readingTime: number;
   toc: TableOfContentsItem[];
+  dateDisplay: string;
+  dateIso: string;
   newer: AdjacentNavigationPointer | null;
   older: AdjacentNavigationPointer | null;
   related: RelatedItem[];
   seo: SeoMetadata;
   filePath: string | null;
   baseDir: string;
+  /** External link declared by the author, distinct from the internal `permalink`. */
+  url?: string;
+  description?: string;
+  image?: ThemedAsset;
 }
 
-/**
- * Blog item
- */
 export interface BlogItem extends BaseCollectionItem {
   collection: 'blog';
-  date: string | number;
-  description?: string;
-  image?: ThemedAsset;
+  date: DateValue;
 }
 
-/**
- * Project item
- */
 export interface ProjectItem extends BaseCollectionItem {
   collection: 'project';
-  start: string | number;
-  end?: string | number | 'present' | 'Present';
-  description?: string;
-  image?: ThemedAsset;
+  start: DateValue;
+  end?: DateOrPresent;
+  startDisplay: string;
+  endDisplay?: string;
   repository?: string;
 }
 
-/**
- * Publication item
- */
 export interface PublicationItem extends BaseCollectionItem {
   collection: 'publication';
   publisher: string;
-  date: string | number;
+  date: DateValue;
   authors?: string[];
-  description?: string;
-  image?: ThemedAsset;
 }
 
-/**
- * Certificate item
- */
 export interface CertificateItem extends BaseCollectionItem {
   collection: 'certificate';
   issuer: string;
-  date: string | number;
-  expires?: string | number;
+  date: DateValue;
+  expires?: DateValue;
   credential_id?: string;
-  description?: string;
-  image?: ThemedAsset;
 }
 
-/**
- * Award item
- */
 export interface AwardItem extends BaseCollectionItem {
   collection: 'award';
   issuer: string;
-  date: string | number;
-  description?: string;
-  image?: ThemedAsset;
+  date: DateValue;
 }
 
 export type CollectionItem =
@@ -261,23 +255,41 @@ export interface CollectionsData {
   award: AwardItem[];
 }
 
+/** A pinned item is a collection item tagged with the reference that selected it. */
+export type PinnedItem = CollectionItem & { _ref: ContentRef };
+
 /**
  * Skills inverted taxonomy index
  */
+export interface TaxonomyReference {
+  type: CollectionType | 'experience' | 'education';
+  title: string;
+  /** Internal link: a collection permalink, or an on-page anchor for profile entries. */
+  permalink: string;
+  /** External link declared by the author, empty when none. */
+  url: string;
+  slug: string;
+  organization?: string;
+  date?: string;
+}
+
 export interface SkillTaxonomyEntry {
+  /** Display name, using the casing first encountered in content. */
   name: string;
+  /** Canonical lookup key: the lowercased name. */
+  key: string;
+  /** URL-safe, collision-free slug for routing. */
+  slug: string;
   count: number;
-  items: Array<{
-    type: string;
-    title: string;
-    permalink: string;
-    slug: string;
-  }>;
+  items: TaxonomyReference[];
 }
 
 export interface TaxonomyData {
+  /** Entries keyed by canonical key (lowercased skill name). */
   skills: Record<string, SkillTaxonomyEntry>;
-  allSkills: string[];
+  /** All entries, ordered by frequency then name. */
+  allSkills: SkillTaxonomyEntry[];
+  skillNames: string[];
   totalUniqueSkills: number;
 }
 
@@ -293,13 +305,13 @@ export interface SearchRecord {
   subtitle: string;
   url: string;
   permalink: string;
-  date?: string | number;
+  date?: DateValue;
   dateDisplay: string;
   skills: string[];
   description: string;
   content: string;
   hasMarkdown?: boolean;
-  meta?: Record<string, any>;
+  meta?: Record<string, unknown>;
 }
 
 export interface SearchIndex {
@@ -310,39 +322,80 @@ export interface SearchIndex {
 }
 
 /**
+ * Aggregated content statistics
+ */
+export interface CollectionStats {
+  total: number;
+  markdown: number;
+  inline: number;
+  words: number;
+}
+
+export interface ContentStats {
+  collections: Record<CollectionType, CollectionStats>;
+  totalItems: number;
+  totalWords: number;
+  totalSkills: number;
+}
+
+/**
+ * Metadata describing the current compilation
+ */
+export interface BuildInfo {
+  version: string;
+  generatedAt: string;
+  generatedYear: number;
+  locale: string;
+  contentDir: string;
+}
+
+/**
  * UI presentation mappings dictionary
  */
 export interface UiMappings {
   modality: {
-    experience: Record<string, string>;
-    education: Record<string, string>;
-    default: Record<string, string>;
+    experience: Record<Modality, string>;
+    education: Record<Modality, string>;
+    default: Record<Modality, string>;
   };
-  employmentType: Record<string, string>;
-  degreeType: Record<string, string>;
-  collections: Record<string, { singular: string; plural: string }>;
+  employmentType: Record<EmploymentType, string>;
+  degreeType: Record<DegreeType, string>;
+  collections: {
+    singular: Record<CollectionType, string>;
+    plural: Record<CollectionType, string>;
+  };
 }
 
 /**
- * Complete Global Data Surface exposed to Eleventy Templates
+ * Parsed content.yaml, exposed as `content_data` because Eleventy reserves `content`.
+ */
+export interface ContentDeclarations {
+  pinned_content?: ContentRef[];
+  blog?: Array<{ slug: string; [key: string]: unknown }>;
+  project?: Array<{ slug: string; [key: string]: unknown }>;
+  publication?: Array<{ slug: string; [key: string]: unknown }>;
+  certificate?: Array<{ slug: string; [key: string]: unknown }>;
+  award?: Array<{ slug: string; [key: string]: unknown }>;
+}
+
+/**
+ * Complete Global Data Surface exposed to Eleventy Templates.
+ *
+ * Eleventy reserves `content` and `collections`, so the engine publishes the parsed
+ * content.yaml as `content_data` and the synthesized map as `collections_data`.
+ * The five collections are additionally registered as native Eleventy collections,
+ * alongside `all_content` and `pinned`.
  */
 export interface EngineData {
   site: SiteData;
   profile: ProfileData;
-  content: {
-    pinned_content?: ContentRef[];
-    blog?: Array<{ slug: string; [key: string]: any }>;
-    project?: Array<{ slug: string; [key: string]: any }>;
-    publication?: Array<{ slug: string; [key: string]: any }>;
-    certificate?: Array<{ slug: string; [key: string]: any }>;
-    award?: Array<{ slug: string; [key: string]: any }>;
-  };
-  content_data: EngineData['content'];
-  site_content: EngineData['content'];
+  content_data: ContentDeclarations;
   collections_data: CollectionsData;
-  pinned_items: CollectionItem[];
+  pinned_items: PinnedItem[];
   taxonomy: TaxonomyData;
+  stats: ContentStats;
   mappings: UiMappings;
   search_index: SearchIndex;
+  build: BuildInfo;
   contentDir: string;
 }

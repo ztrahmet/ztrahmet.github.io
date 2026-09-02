@@ -1,12 +1,19 @@
 import { COLLECTION_TYPES } from '../config/enums.js';
+import { slugify } from '../config/format.js';
 
 /**
  * Builds a global inverted taxonomy index for skills spanning profile entries and all collections.
  *
+ * Skills are canonicalized case-insensitively, so "Node.js" and "node.js" resolve to a single
+ * entry, matching how the content graph scores skill overlap. Each entry carries a URL-safe,
+ * collision-free slug for routing, and every reference exposes an internal permalink separately
+ * from any external URL.
+ *
  * @param {object} engineData - Dataset containing profile and collections
  * @returns {{
- *   skills: Record<string, { name: string, count: number, items: Array<{ type: string, title: string, permalink: string, slug: string }> }>,
- *   allSkills: Array<string>,
+ *   skills: Record<string, { name: string, key: string, slug: string, count: number, items: Array<object> }>,
+ *   allSkills: Array<object>,
+ *   skillNames: Array<string>,
  *   totalUniqueSkills: number
  * }} Compiled inverted taxonomy index
  */
@@ -15,84 +22,104 @@ export function buildTaxonomy(engineData = {}) {
   const skillMap = new Map();
 
   /**
-   * Records a skill reference for an item.
-   * @param {string} skill - Skill name
+   * Records a skill reference for an item under its canonical key.
+   * @param {string} skill - Skill name as authored
    * @param {object} itemRef - Referenced entity metadata
    */
   function addSkillRef(skill, itemRef) {
     if (!skill || typeof skill !== 'string' || !skill.trim()) return;
-    const cleanSkill = skill.trim();
 
-    if (!skillMap.has(cleanSkill)) {
-      skillMap.set(cleanSkill, {
-        name: cleanSkill,
-        count: 0,
-        items: []
-      });
+    const name = skill.trim();
+    const key = name.toLowerCase();
+
+    if (!skillMap.has(key)) {
+      skillMap.set(key, { name, key, slug: '', count: 0, items: [] });
     }
 
-    const entry = skillMap.get(cleanSkill);
+    const entry = skillMap.get(key);
     entry.count++;
     entry.items.push(itemRef);
   }
 
-  // 1. Ingest Profile: Experience Skills
-  if (Array.isArray(profile.experience)) {
-    profile.experience.forEach((exp, idx) => {
-      const skills = Array.isArray(exp.skills) ? exp.skills : [];
+  /**
+   * Ingests the skills of a profile section (experience or education).
+   * @param {Array<object>} entries - Profile entries
+   * @param {string} type - Reference type label
+   * @param {string} anchor - Internal anchor permalink
+   */
+  function ingestProfileSection(entries, type, anchor) {
+    if (!Array.isArray(entries)) return;
+
+    entries.forEach((entry, idx) => {
       const itemRef = {
-        type: 'experience',
-        title: exp.title || 'Experience',
-        permalink: exp.url || '/#experience',
-        slug: `experience:${idx}`
+        type,
+        title: entry.title || '',
+        organization: entry.organization || '',
+        permalink: anchor,
+        url: entry.url || '',
+        slug: `${type}:${idx}`
       };
+      const skills = Array.isArray(entry.skills) ? entry.skills : [];
       skills.forEach((s) => addSkillRef(s, itemRef));
     });
   }
 
-  // 2. Ingest Profile: Education Skills
-  if (Array.isArray(profile.education)) {
-    profile.education.forEach((edu, idx) => {
-      const skills = Array.isArray(edu.skills) ? edu.skills : [];
-      const itemRef = {
-        type: 'education',
-        title: edu.title || 'Education',
-        permalink: edu.url || '/#education',
-        slug: `education:${idx}`
-      };
-      skills.forEach((s) => addSkillRef(s, itemRef));
-    });
-  }
+  ingestProfileSection(profile.experience, 'experience', '/#experience');
+  ingestProfileSection(profile.education, 'education', '/#education');
 
-  // 3. Ingest All Collections
   for (const type of COLLECTION_TYPES) {
     const items = collections[type] || [];
     for (const item of items) {
-      const skills = Array.isArray(item.skills) ? item.skills : [];
       const itemRef = {
         type,
         title: item.title || item.slug,
         permalink: item.permalink || `/${type}/${item.slug}/`,
-        slug: item.slug
+        url: item.url || '',
+        slug: item.slug,
+        date: item.date || item.start || ''
       };
+      const skills = Array.isArray(item.skills) ? item.skills : [];
       skills.forEach((s) => addSkillRef(s, itemRef));
     }
   }
 
-  // Convert Map to sorted object and array
-  const skillsObj = {};
-  const sortedSkillNames = Array.from(skillMap.keys()).sort((a, b) => {
-    const countDiff = skillMap.get(b).count - skillMap.get(a).count;
-    return countDiff !== 0 ? countDiff : a.localeCompare(b);
+  // Sort by frequency, then alphabetically, so slug disambiguation stays deterministic
+  const sorted = Array.from(skillMap.values()).sort((a, b) => {
+    const countDiff = b.count - a.count;
+    return countDiff !== 0 ? countDiff : a.name.localeCompare(b.name);
   });
 
-  for (const name of sortedSkillNames) {
-    skillsObj[name] = skillMap.get(name);
+  const usedSlugs = new Map();
+  const skills = {};
+
+  for (const entry of sorted) {
+    const baseSlug = slugify(entry.name) || 'skill';
+    const taken = usedSlugs.get(baseSlug) || 0;
+    entry.slug = taken > 0 ? `${baseSlug}-${taken}` : baseSlug;
+    usedSlugs.set(baseSlug, taken + 1);
+    skills[entry.key] = entry;
   }
 
   return {
-    skills: skillsObj,
-    allSkills: sortedSkillNames,
-    totalUniqueSkills: sortedSkillNames.length
+    skills,
+    allSkills: sorted,
+    skillNames: sorted.map((entry) => entry.name),
+    totalUniqueSkills: sorted.length
   };
+}
+
+/**
+ * Resolves a taxonomy entry by skill name, canonical key, or slug.
+ *
+ * @param {object} taxonomy - Compiled taxonomy index
+ * @param {string} value - Skill name, key, or slug
+ * @returns {object|null} Matching taxonomy entry, or null
+ */
+export function findSkill(taxonomy, value) {
+  if (!taxonomy?.skills || !value || typeof value !== 'string') return null;
+
+  const key = value.trim().toLowerCase();
+  if (taxonomy.skills[key]) return taxonomy.skills[key];
+
+  return taxonomy.allSkills?.find((entry) => entry.slug === key) || null;
 }

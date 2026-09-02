@@ -66,3 +66,21 @@ export function resolveContentDir(customPath, options = { mustExist: true }) {
 
   return resolved;
 }
+
+/**
+ * Reads the project version from package.json.
+ * @param {string} [fallback='0.0.0'] - Version returned when package.json is unreadable
+ * @returns {string} Version string
+ */
+export function readProjectVersion(fallback = '0.0.0') {
+  try {
+    const pkgPath = path.join(PROJECT_ROOT, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+      if (pkg.version) return pkg.version;
+    }
+  } catch {
+    // Fall through to the default
+  }
+  return fallback;
+}

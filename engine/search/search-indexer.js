@@ -7,26 +7,9 @@ import {
   getDegreeTypeLabel,
   getCollectionLabel
 } from '../config/mappings.js';
-import { formatDate } from '../eleventy/filters.js';
+import { formatDate } from '../config/format.js';
 import { COLLECTION_TYPES } from '../config/enums.js';
-import { PROJECT_ROOT } from '../config/paths.js';
-
-/**
- * Reads the project version dynamically from package.json with a fallback.
- * @returns {string} Version string
- */
-function getProjectVersion() {
-  try {
-    const pkgPath = path.join(PROJECT_ROOT, 'package.json');
-    if (fs.existsSync(pkgPath)) {
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-      if (pkg.version) return pkg.version;
-    }
-  } catch {
-    // Fallback to default
-  }
-  return '1.0.0';
-}
+import { readProjectVersion } from '../config/paths.js';
 
 /**
  * Builds a search subtitle for a collection item based on its entity type.
@@ -65,12 +48,13 @@ function getCollectionSubtitle(type, item) {
  * }} Compiled search index payload
  */
 export function buildSearchIndex(engineData) {
-  const version = getProjectVersion();
+  const version = engineData?.build?.version || readProjectVersion('1.0.0');
+  const generatedAt = engineData?.build?.generatedAt || new Date().toISOString();
 
   if (!engineData) {
     return {
       version,
-      generatedAt: new Date().toISOString(),
+      generatedAt,
       totalRecords: 0,
       records: []
     };
@@ -92,8 +76,8 @@ export function buildSearchIndex(engineData) {
         typeLabel: 'Experience',
         title: exp.title,
         subtitle: exp.organization,
-        url: exp.url || '/#experience',
-        permalink: exp.url || '/#experience',
+        url: exp.url || '',
+        permalink: '/#experience',
         date: exp.start || '',
         dateDisplay,
         skills: Array.isArray(exp.skills) ? exp.skills : [],
@@ -121,8 +105,8 @@ export function buildSearchIndex(engineData) {
         typeLabel: 'Education',
         title: edu.title,
         subtitle: edu.organization,
-        url: edu.url || '/#education',
-        permalink: edu.url || '/#education',
+        url: edu.url || '',
+        permalink: '/#education',
         date: edu.start || '',
         dateDisplay,
         skills: Array.isArray(edu.skills) ? edu.skills : [],
@@ -169,7 +153,7 @@ export function buildSearchIndex(engineData) {
         slug: item.slug,
         title: item.title,
         subtitle,
-        url: item.url || item.permalink,
+        url: item.url || '',
         permalink: item.permalink,
         date: item.date || item.start || '',
         dateDisplay,
@@ -184,7 +168,7 @@ export function buildSearchIndex(engineData) {
 
   return {
     version,
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     totalRecords: records.length,
     records
   };
@@ -198,7 +182,7 @@ export function buildSearchIndex(engineData) {
  * @returns {object} The written search index object
  */
 export function writeSearchIndexFile(engineData, outputFilePath) {
-  const index = buildSearchIndex(engineData);
+  const index = engineData?.search_index || buildSearchIndex(engineData);
   const targetDir = path.dirname(outputFilePath);
 
   if (!fs.existsSync(targetDir)) {

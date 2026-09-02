@@ -1,6 +1,7 @@
-// Config, Mappings & Paths
+// Config, Mappings, Formatting & Paths
 export * from './config/enums.js';
 export * from './config/mappings.js';
+export * from './config/format.js';
 export * from './config/paths.js';
 
 // Validation

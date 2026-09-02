@@ -13,9 +13,10 @@ import {
 import {
   extractTableOfContents,
   slugifyHeading,
-  renderMarkdown
+  renderMarkdown,
+  renderMarkdownDocument
 } from '../pipeline/markdown-renderer.js';
-import { buildTaxonomy } from '../pipeline/taxonomy.js';
+import { buildTaxonomy, findSkill } from '../pipeline/taxonomy.js';
 import {
   computeRelatedItems,
   attachRelatedItemsToCollections
@@ -183,12 +184,15 @@ Final content.
       expect(taxonomy.totalUniqueSkills).toBe(taxonomy.allSkills.length);
       expect(taxonomy.totalUniqueSkills).toBeGreaterThan(0);
 
-      // Verify Git skill index
-      expect(taxonomy.skills.Git).toBeDefined();
-      expect(taxonomy.skills.Git.count).toBeGreaterThan(0);
-      expect(Array.isArray(taxonomy.skills.Git.items)).toBe(true);
+      // Skills are keyed by canonical lowercase key, with a URL-safe slug for routing
+      const git = taxonomy.skills.git;
+      expect(git).toBeDefined();
+      expect(git.name).toBe('Git');
+      expect(git.slug).toBe('git');
+      expect(git.count).toBeGreaterThan(0);
+      expect(Array.isArray(git.items)).toBe(true);
 
-      const referringSlugs = taxonomy.skills.Git.items.map((i) => i.slug);
+      const referringSlugs = git.items.map((i) => i.slug);
       expect(referringSlugs).toContain('how-to-sign-commits');
     });
   });
@@ -227,14 +231,27 @@ Final content.
 
     it('computes related items based on shared skill overlap', () => {
       const related = computeRelatedItems(allItems[0], allItems, 3);
-      expect(related).toHaveLength(2);
+      const bySkills = related.filter((r) => r.reason === 'skills');
 
       // proj-1 shares 2 skills ('JavaScript', 'Node.js')
       // post-2 shares 1 skill ('JavaScript') + same collection bonus
-      const slugs = related.map((r) => r.slug);
-      expect(slugs).toContain('proj-1');
-      expect(slugs).toContain('post-2');
-      expect(slugs).not.toContain('post-3'); // Shares 0 skills
+      expect(bySkills.map((r) => r.slug)).toEqual(['proj-1', 'post-2']);
+      expect(bySkills.map((r) => r.slug)).not.toContain('post-3');
+    });
+
+    it('matches skills case-insensitively, consistently with the taxonomy index', () => {
+      const current = { collection: 'blog', slug: 'x', skills: ['javascript'] };
+      const related = computeRelatedItems(current, allItems, 3);
+      expect(related.some((r) => r.reason === 'skills' && r.sharedSkills.includes('JavaScript'))).toBe(true);
+    });
+
+    it('falls back to same-collection siblings when no skills overlap', () => {
+      const current = { collection: 'blog', slug: 'lonely', skills: [] };
+      const related = computeRelatedItems(current, allItems, 2);
+
+      expect(related).toHaveLength(2);
+      expect(related.every((r) => r.reason === 'collection')).toBe(true);
+      expect(related.every((r) => r.collection === 'blog')).toBe(true);
     });
 
     it('excludes self from related recommendations', () => {
@@ -320,5 +337,128 @@ Final content.
       // Ensure strict validation succeeds
       expect(() => validateCollectionItem('blog', sanitizedPayload)).not.toThrow();
     });
+  });
+});
+
+describe('Table of Contents & Heading Anchor Integrity', () => {
+  const anchorIds = (html) => new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+
+  it('never emits a TOC entry without a matching heading anchor', () => {
+    const markdown = [
+      '# Intro',
+      '',
+      '## Intro',
+      '',
+      '~~~',
+      '## Fenced Heading',
+      '~~~',
+      '',
+      '    ## Indented Heading',
+      '',
+      '## Setup',
+      '',
+      '### Setup'
+    ].join('\n');
+
+    const { html, toc } = renderMarkdownDocument(markdown);
+    const ids = anchorIds(html);
+
+    for (const entry of toc) {
+      expect(ids.has(entry.slug)).toBe(true);
+    }
+
+    // Headings inside fenced or indented code are never collected
+    expect(toc.map((t) => t.text)).toEqual(['Intro', 'Setup', 'Setup']);
+  });
+
+  it('disambiguates anchors across every heading level, not just h2 and h3', () => {
+    const { toc } = renderMarkdownDocument('# Intro\n\n## Intro');
+
+    // The h1 claims "intro", so the h2 must resolve to "intro-1"
+    expect(toc).toHaveLength(1);
+    expect(toc[0].slug).toBe('intro-1');
+  });
+
+  it('strips closing hashes and collects setext headings', () => {
+    const { toc } = renderMarkdownDocument('## Closed Heading ##\n\nSetext Style\n------------\n');
+
+    expect(toc.map((t) => t.text)).toEqual(['Closed Heading', 'Setext Style']);
+    expect(toc.map((t) => t.slug)).toEqual(['closed-heading', 'setext-style']);
+  });
+
+  it('keeps non-ASCII headings readable in anchors', () => {
+    const { html, toc } = renderMarkdownDocument('## Ağ Güvenliği ve Şifreleme');
+
+    expect(toc[0].text).toBe('Ağ Güvenliği ve Şifreleme');
+    expect(toc[0].slug).toBe('ag-guvenligi-ve-sifreleme');
+    expect(anchorIds(html).has('ag-guvenligi-ve-sifreleme')).toBe(true);
+  });
+
+  it('reads heading text through inline markup', () => {
+    const { toc } = renderMarkdownDocument('## A `code` and [link](http://x.com) and **bold**');
+    expect(toc[0].text).toBe('A code and link and bold');
+  });
+});
+
+describe('SEO Normalization Hardening', () => {
+  it('preserves published dates authored as bare integer years', () => {
+    const seo = buildItemSeo({ title: 'T', date: 2023, collection: 'blog' }, { url: 'https://x.example.com' });
+
+    expect(seo.publishedTime).toBe('2023');
+    expect(seo.publishedIso).toBe('2023-01-01');
+  });
+
+  it('exposes a machine-readable ISO date alongside the authored value', () => {
+    const seo = buildItemSeo({ title: 'T', date: '2023-05', collection: 'blog' }, { url: 'https://x.example.com' });
+
+    expect(seo.publishedTime).toBe('2023-05');
+    expect(seo.publishedIso).toBe('2023-05-01');
+  });
+});
+
+describe('Taxonomy Canonicalization', () => {
+  it('merges case variants of the same skill into one entry', () => {
+    const taxonomy = buildTaxonomy({
+      profile: { experience: [{ title: 'E', skills: ['Node.js', 'node.js', ' NODE.JS '] }] },
+      collections: {}
+    });
+
+    expect(taxonomy.totalUniqueSkills).toBe(1);
+    expect(taxonomy.skills['node.js'].count).toBe(3);
+    expect(taxonomy.skills['node.js'].name).toBe('Node.js');
+    expect(taxonomy.skills['node.js'].slug).toBe('nodejs');
+  });
+
+  it('keeps skills that differ only by symbol distinct', () => {
+    const taxonomy = buildTaxonomy({
+      profile: { experience: [{ title: 'E', skills: ['C', 'C++', 'C#'] }] },
+      collections: {}
+    });
+
+    expect(taxonomy.totalUniqueSkills).toBe(3);
+    expect(taxonomy.allSkills.map((s) => s.slug).sort()).toEqual(['c', 'c-plus-plus', 'c-sharp']);
+  });
+
+  it('separates the internal permalink from any external URL', () => {
+    const taxonomy = buildTaxonomy({
+      profile: { experience: [{ title: 'Eng', organization: 'Corp', url: 'https://corp.example.com', skills: ['Go'] }] },
+      collections: {}
+    });
+
+    const ref = taxonomy.skills.go.items[0];
+    expect(ref.permalink).toBe('/#experience');
+    expect(ref.url).toBe('https://corp.example.com');
+  });
+
+  it('resolves entries by name, canonical key, or slug', () => {
+    const taxonomy = buildTaxonomy({
+      profile: { experience: [{ title: 'E', skills: ['Node.js'] }] },
+      collections: {}
+    });
+
+    expect(findSkill(taxonomy, 'Node.js').slug).toBe('nodejs');
+    expect(findSkill(taxonomy, 'node.js').slug).toBe('nodejs');
+    expect(findSkill(taxonomy, 'nodejs').slug).toBe('nodejs');
+    expect(findSkill(taxonomy, 'missing')).toBeNull();
   });
 });

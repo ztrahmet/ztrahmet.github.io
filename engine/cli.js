@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
-import path from 'node:path';
 import Eleventy from '@11ty/eleventy';
 import { loadEngineData } from './pipeline/data-loader.js';
-import { extractArgValue, resolveContentDir, PROJECT_ROOT } from './config/paths.js';
-import { writeSearchIndexFile } from './search/search-indexer.js';
+import { extractArgValue, resolveContentDir } from './config/paths.js';
+
+const KNOWN_COMMANDS = ['build', 'dev', 'serve', 'validate'];
+const VALUE_FLAGS = ['-c', '--content', '--content-dir', '-o', '--output', '-p', '--port'];
 
 /**
  * Displays CLI usage and available commands.
@@ -36,27 +37,19 @@ Examples:
 }
 
 /**
- * Main CLI entry point.
+ * Parses the command and positional content path out of raw CLI arguments.
+ * @param {Array<string>} args - Raw CLI arguments
+ * @returns {{ command: string, positionalPath: string|null }}
  */
-async function main() {
-  const rawArgs = process.argv.slice(2);
-
-  if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
-    printHelp();
-    process.exit(0);
-  }
-
-  const KNOWN_COMMANDS = ['build', 'dev', 'serve', 'validate'];
+function parseArgs(args) {
   let command = null;
   let positionalPath = null;
 
-  for (let i = 0; i < rawArgs.length; i++) {
-    const arg = rawArgs[i];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
     if (arg.startsWith('-')) {
-      const isValueFlag = ['-c', '--content', '--content-dir', '-o', '--output', '-p', '--port'].includes(arg);
-      if (isValueFlag && i + 1 < rawArgs.length) {
-        i++;
-      }
+      if (VALUE_FLAGS.includes(arg) && i + 1 < args.length) i++;
       continue;
     }
 
@@ -67,68 +60,82 @@ async function main() {
     }
   }
 
-  if (!command) {
-    command = 'build';
+  return { command: command || 'build', positionalPath };
+}
+
+/**
+ * Prints a human-readable summary of a compiled dataset.
+ * @param {object} data - Engine dataset
+ */
+function printSummary(data) {
+  console.log('✅ Validation passed successfully!\n');
+  console.log('📊 Summary:');
+  console.log(`  • Content Dir: ${data.contentDir}`);
+  console.log(`  • Site: "${data.site.title}" (${data.site.url})`);
+  console.log(`  • Profile: ${data.profile.name} (@${data.profile.handle})`);
+  console.log(`  • Experience entries: ${data.profile.experience?.length || 0}`);
+  console.log(`  • Education entries: ${data.profile.education?.length || 0}`);
+  console.log('  • Collections:');
+
+  for (const [name, counts] of Object.entries(data.stats.collections)) {
+    console.log(`    - ${name}: ${counts.total} items (${counts.markdown} markdown-driven, ${counts.inline} inline-driven)`);
   }
 
+  console.log(`  • Pinned items: ${data.pinned_items.length} resolved`);
+  console.log(`  • Skills indexed: ${data.stats.totalSkills} unique`);
+  console.log(`  • Search index: ${data.search_index.totalRecords} records indexed`);
+}
+
+/**
+ * Creates a configured Eleventy instance for the resolved output directory.
+ * @param {string} outputDir - Output directory
+ * @returns {Eleventy} Eleventy instance
+ */
+function createEleventy(outputDir) {
+  return new Eleventy('theme', outputDir, { configPath: 'eleventy.config.js' });
+}
+
+/**
+ * Main CLI entry point.
+ */
+async function main() {
+  const rawArgs = process.argv.slice(2);
+
+  if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+    printHelp();
+    process.exit(0);
+  }
+
+  const { command, positionalPath } = parseArgs(rawArgs);
   const explicitContentDir = positionalPath || extractArgValue(rawArgs);
 
   try {
     const targetDir = resolveContentDir(explicitContentDir);
     process.env.CONTENT_DIR = targetDir;
 
+    const outputDir = extractArgValue(rawArgs, ['--output', '-o']) || '_site';
+
     if (command === 'validate') {
       console.log(`🔍 Validating content data in: ${targetDir}`);
-      const data = loadEngineData(targetDir);
-
-      console.log('✅ Validation passed successfully!\n');
-      console.log('📊 Summary:');
-      console.log(`  • Content Dir: ${data.contentDir}`);
-      console.log(`  • Site: "${data.site.title}" (${data.site.url})`);
-      console.log(`  • Profile: ${data.profile.name} (@${data.profile.handle})`);
-      console.log(`  • Experience entries: ${data.profile.experience?.length || 0}`);
-      console.log(`  • Education entries: ${data.profile.education?.length || 0}`);
-      console.log(`  • Collections:`);
-      for (const [col, items] of Object.entries(data.collections)) {
-        const mdCount = items.filter((i) => i.hasMarkdown).length;
-        const inlineCount = items.length - mdCount;
-        console.log(`    - ${col}: ${items.length} items (${mdCount} markdown-driven, ${inlineCount} inline-driven)`);
-      }
-      console.log(`  • Pinned items: ${data.pinned_items.length} resolved`);
-      console.log(`  • Search index: ${data.search_index.totalRecords} records indexed`);
+      printSummary(loadEngineData(targetDir));
       process.exit(0);
     }
 
     if (command === 'build') {
       console.log(`🔨 Building static site with content from: ${targetDir}`);
-      const data = loadEngineData(targetDir);
-
-      const outputDirName = extractArgValue(rawArgs, ['--output', '-o']) || '_site';
-      const elev = new Eleventy('theme', outputDirName, {
-        configPath: 'eleventy.config.js'
-      });
+      const elev = createEleventy(outputDir);
 
       await elev.init();
       await elev.write();
 
-      // Ensure search-index.json is written
-      const absOutputDir = path.resolve(PROJECT_ROOT, outputDirName);
-      writeSearchIndexFile(data, path.join(absOutputDir, 'search-index.json'));
-
-      console.log(`\n✅ Build complete! Static site and search-index.json generated in '${outputDirName}'.`);
+      console.log(`\n✅ Build complete! Static site and search-index.json generated in '${outputDir}'.`);
       process.exit(0);
     }
 
     if (command === 'dev') {
       console.log(`🚀 Starting local development server with content from: ${targetDir}`);
-      loadEngineData(targetDir);
-
-      const outputDir = extractArgValue(rawArgs, ['--output', '-o']) || '_site';
       const port = parseInt(extractArgValue(rawArgs, ['--port', '-p']) || '8080', 10);
-
-      const elev = new Eleventy('theme', outputDir, {
-        configPath: 'eleventy.config.js'
-      });
+      const elev = createEleventy(outputDir);
 
       await elev.init();
       await elev.watch();

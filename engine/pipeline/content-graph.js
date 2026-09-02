@@ -1,87 +1,114 @@
+import { toDateString } from '../config/format.js';
+
 /**
- * Calculates related items for a collection entry based on shared skills and contextual overlap.
+ * Normalizes a skill list into canonical lookup keys.
+ * Matches the canonicalization used by the taxonomy index.
+ *
+ * @param {Array<string>} skills - Raw skill names
+ * @returns {Set<string>} Canonical skill keys
+ */
+function toSkillKeys(skills) {
+  const list = Array.isArray(skills) ? skills : [];
+  return new Set(list.filter((s) => typeof s === 'string' && s.trim()).map((s) => s.trim().toLowerCase()));
+}
+
+/**
+ * Projects a collection item into the lightweight shape used for recommendations.
+ *
+ * @param {object} item - Source collection item
+ * @param {Array<string>} sharedSkills - Skills shared with the current item
+ * @param {'skills' | 'collection'} reason - Why the item was recommended
+ * @returns {object} Related item projection
+ */
+function toRelatedItem(item, sharedSkills, reason) {
+  return {
+    collection: item.collection,
+    title: item.title,
+    slug: item.slug,
+    permalink: item.permalink,
+    date: toDateString(item.date || item.start),
+    image: item.image || null,
+    description: item.description || '',
+    sharedSkills,
+    reason
+  };
+}
+
+/**
+ * Calculates related items for a collection entry based on shared skills.
+ * When an item has too few skill matches, the remaining slots are filled with the
+ * chronologically nearest items from the same collection, so every item can offer
+ * the theme something to render.
  *
  * @param {object} currentItem - The target collection item
  * @param {Array<object>} allItems - Flat array of all collection items across the site
  * @param {number} [limit=3] - Maximum number of related items to return
- * @returns {Array<{ collection: string, title: string, slug: string, permalink: string, date: string, image: any, sharedSkills: Array<string> }>}
+ * @returns {Array<object>} Related item projections, strongest match first
  */
 export function computeRelatedItems(currentItem, allItems = [], limit = 3) {
-  if (!currentItem || !Array.isArray(allItems) || allItems.length === 0) {
+  if (!currentItem || !Array.isArray(allItems) || allItems.length === 0 || limit <= 0) {
     return [];
   }
 
-  const currentSkills = new Set(
-    (Array.isArray(currentItem.skills) ? currentItem.skills : []).map((s) => s.toLowerCase().trim())
-  );
-
-  if (currentSkills.size === 0) {
-    return [];
-  }
-
+  const isSelf = (other) => other.slug === currentItem.slug && other.collection === currentItem.collection;
+  const currentSkills = toSkillKeys(currentItem.skills);
   const scored = [];
 
-  for (const other of allItems) {
-    // Exclude self
-    if (other.slug === currentItem.slug && other.collection === currentItem.collection) {
-      continue;
-    }
+  if (currentSkills.size > 0) {
+    for (const other of allItems) {
+      if (isSelf(other)) continue;
 
-    const otherSkills = Array.isArray(other.skills) ? other.skills : [];
-    const shared = [];
+      const shared = (Array.isArray(other.skills) ? other.skills : []).filter((skill) =>
+        currentSkills.has(String(skill).trim().toLowerCase())
+      );
 
-    for (const skill of otherSkills) {
-      if (currentSkills.has(skill.toLowerCase().trim())) {
-        shared.push(skill);
+      if (shared.length > 0) {
+        const score = shared.length * 10 + (other.collection === currentItem.collection ? 2 : 0);
+        scored.push({ score, item: toRelatedItem(other, shared, 'skills') });
       }
     }
 
-    if (shared.length > 0) {
-      // Score = shared skills count * 10 + same collection bonus
-      const score = shared.length * 10 + (other.collection === currentItem.collection ? 2 : 0);
-      scored.push({
-        score,
-        item: {
-          collection: other.collection,
-          title: other.title,
-          slug: other.slug,
-          permalink: other.permalink,
-          date: other.date || other.start || '',
-          image: other.image || null,
-          description: other.description || '',
-          sharedSkills: shared
-        }
-      });
-    }
+    scored.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return String(b.item.date).localeCompare(String(a.item.date));
+    });
   }
 
-  // Sort descending by score, then by date descending
-  scored.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    const dateA = a.item.date || '';
-    const dateB = b.item.date || '';
-    return dateB.localeCompare(dateA);
-  });
+  const related = scored.slice(0, limit).map((entry) => entry.item);
+  if (related.length >= limit) return related;
 
-  return scored.slice(0, limit).map((s) => s.item);
+  // Fill remaining slots with the most recent siblings from the same collection
+  const taken = new Set(related.map((item) => `${item.collection}:${item.slug}`));
+  const siblings = allItems
+    .filter((other) => !isSelf(other) && other.collection === currentItem.collection)
+    .filter((other) => !taken.has(`${other.collection}:${other.slug}`))
+    .sort((a, b) => String(toDateString(b.date || b.start)).localeCompare(String(toDateString(a.date || a.start))));
+
+  for (const sibling of siblings) {
+    if (related.length >= limit) break;
+    related.push(toRelatedItem(sibling, [], 'collection'));
+  }
+
+  return related;
 }
 
 /**
  * Attaches related items recommendations to every collection item in all collections.
  *
  * @param {Record<string, Array<object>>} collections - Synthesized collections map
+ * @param {number} [limit=3] - Maximum number of related items per entry
  * @returns {Record<string, Array<object>>} Collections with attached related recommendations
  */
-export function attachRelatedItemsToCollections(collections = {}) {
+export function attachRelatedItemsToCollections(collections = {}, limit = 3) {
   const allItems = Object.values(collections).flat();
-  const enrichedCollections = {};
+  const enriched = {};
 
-  for (const [colName, items] of Object.entries(collections)) {
-    enrichedCollections[colName] = items.map((item) => ({
+  for (const [name, items] of Object.entries(collections)) {
+    enriched[name] = items.map((item) => ({
       ...item,
-      related: computeRelatedItems(item, allItems, 3)
+      related: computeRelatedItems(item, allItems, limit)
     }));
   }
 
-  return enrichedCollections;
+  return enriched;
 }

@@ -75,8 +75,11 @@ describe('End-to-End Data Engine Pipeline & Eleventy Integration', () => {
       const passthroughs = [];
       const watchTargets = [];
 
+      const events = {};
       const mockEleventyConfig = {
-        setFreezeReservedData: () => {},
+        on: (name, handler) => {
+          events[name] = handler;
+        },
         addGlobalData: (key, getter) => {
           globalData[key] = getter;
         },
@@ -97,7 +100,7 @@ describe('End-to-End Data Engine Pipeline & Eleventy Integration', () => {
       const result = configureEleventy(mockEleventyConfig, { contentDir: FIXTURES_VALID_DIR });
 
       expect(result.dir.input).toBe('theme');
-      expect(result.dir.output).toBe('_site');
+      expect(result.dir.output).toBeUndefined();
 
       // Verify global data keys
       expect(globalData.site).toBeDefined();
@@ -165,5 +168,107 @@ describe('End-to-End Data Engine Pipeline & Eleventy Integration', () => {
       expect(formatDate('')).toBe('');
       expect(formatDate(null)).toBe('');
     });
+  });
+});
+
+describe('Build Metadata & Content Statistics', () => {
+  it('describes the current compilation for the theme layer', () => {
+    const data = loadEngineData(FIXTURES_VALID_DIR);
+
+    expect(data.build.version).toMatch(/^\d+\.\d+\.\d+/);
+    expect(data.build.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(data.build.generatedYear).toBeGreaterThan(2000);
+    expect(data.build.locale).toBe('en-US');
+    expect(data.build.contentDir).toBe(FIXTURES_VALID_DIR);
+  });
+
+  it('stamps the search index with the same build identity', () => {
+    const data = loadEngineData(FIXTURES_VALID_DIR);
+
+    expect(data.search_index.generatedAt).toBe(data.build.generatedAt);
+    expect(data.search_index.version).toBe(data.build.version);
+  });
+
+  it('aggregates per-collection and site-wide counts', () => {
+    const data = loadEngineData(FIXTURES_VALID_DIR);
+    const { stats } = data;
+
+    expect(stats.collections.blog.total).toBe(data.collections.blog.length);
+    expect(stats.collections.blog.markdown + stats.collections.blog.inline).toBe(stats.collections.blog.total);
+    expect(stats.totalItems).toBe(Object.values(data.collections).flat().length);
+    expect(stats.totalSkills).toBe(data.taxonomy.totalUniqueSkills);
+    expect(stats.totalWords).toBeGreaterThan(0);
+  });
+});
+
+describe('Eleventy Reserved Data & Build Caching', () => {
+  const createMockConfig = () => {
+    const state = { globalData: {}, collections: {}, filters: {}, events: {}, passthroughs: [], watchTargets: [] };
+    const config = {
+      on: (name, handler) => {
+        state.events[name] = handler;
+      },
+      addGlobalData: (key, getter) => {
+        state.globalData[key] = getter;
+      },
+      addCollection: (key, getter) => {
+        state.collections[key] = getter;
+      },
+      addFilter: (key, fn) => {
+        state.filters[key] = fn;
+      },
+      addPassthroughCopy: (entry) => state.passthroughs.push(entry),
+      addWatchTarget: (target) => state.watchTargets.push(target)
+    };
+    return { config, state };
+  };
+
+  it('never publishes a global named "content", which Eleventy reserves for layout output', () => {
+    const { config, state } = createMockConfig();
+    configureEleventy(config, { contentDir: FIXTURES_VALID_DIR });
+
+    expect(state.globalData.content).toBeUndefined();
+    expect(state.globalData.content_data).toBeDefined();
+    expect(state.globalData.collections_data).toBeDefined();
+  });
+
+  it('omits dir.output so the caller controls the output directory', () => {
+    const { config } = createMockConfig();
+    const result = configureEleventy(config, { contentDir: FIXTURES_VALID_DIR });
+
+    expect(result.dir.input).toBe('theme');
+    expect(result.dir.output).toBeUndefined();
+  });
+
+  it('compiles the dataset once per build and refreshes it between builds', () => {
+    const { config, state } = createMockConfig();
+    configureEleventy(config, { contentDir: FIXTURES_VALID_DIR });
+
+    const first = state.globalData.site();
+    const second = state.globalData.profile();
+    const firstBuildStamp = state.globalData.build().generatedAt;
+
+    // Same build: every consumer sees one compilation
+    expect(state.globalData.build().generatedAt).toBe(firstBuildStamp);
+    expect(first).toBe(state.globalData.site());
+    expect(second).toBe(state.globalData.profile());
+
+    // Next build: the cache is cleared so watch rebuilds pick up content changes
+    state.events['eleventy.before']();
+    expect(state.globalData.site()).not.toBe(first);
+  });
+
+  it('exposes the full theme data surface', () => {
+    const { config, state } = createMockConfig();
+    configureEleventy(config, { contentDir: FIXTURES_VALID_DIR });
+
+    for (const key of ['site', 'profile', 'content_data', 'collections_data', 'pinned_items',
+      'taxonomy', 'stats', 'mappings', 'search_index', 'build', 'contentDir']) {
+      expect(state.globalData[key], `missing global: ${key}`).toBeDefined();
+    }
+
+    for (const key of ['blog', 'project', 'publication', 'certificate', 'award', 'all_content', 'pinned']) {
+      expect(state.collections[key], `missing collection: ${key}`).toBeDefined();
+    }
   });
 });

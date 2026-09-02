@@ -4,53 +4,33 @@ import {
   getDegreeTypeLabel,
   getCollectionLabel
 } from '../config/mappings.js';
-import { renderMarkdown } from '../pipeline/markdown-renderer.js';
+import { formatDate, formatDateRange, toIsoDate, slugify } from '../config/format.js';
+import { renderMarkdown, renderMarkdownInline } from '../pipeline/markdown-renderer.js';
+import { resolveAbsoluteUrl } from '../pipeline/seo-normalizer.js';
 
-/**
- * Formats a date string ('YYYY-MM-DD', 'YYYY-MM', 'YYYY', or 'present')
- * into a human-readable localized display string.
- *
- * @param {string|number} dateVal - Date string or integer year
- * @param {string} [locale='en-US'] - BCP 47 language tag
- * @returns {string} Formatted display date (e.g. "Aug 15, 2023", "Jan 2022", "Present")
- */
-export function formatDate(dateVal, locale = 'en-US') {
-  if (!dateVal) return '';
-  if (dateVal === 'present' || dateVal === 'Present') return 'Present';
-
-  const str = String(dateVal).trim();
-
-  // Year only (YYYY)
-  if (/^\d{4}$/.test(str)) {
-    return str;
-  }
-
-  // Year and Month (YYYY-MM)
-  if (/^\d{4}-\d{2}$/.test(str)) {
-    const [year, month] = str.split('-');
-    const date = new Date(Number(year), Number(month) - 1, 1);
-    return date.toLocaleDateString(locale, { year: 'numeric', month: 'short' });
-  }
-
-  // Full Date (YYYY-MM-DD)
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-    const [year, month, day] = str.split('-');
-    const date = new Date(Number(year), Number(month) - 1, Number(day));
-    return date.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
-  }
-
-  return str;
-}
+export { formatDate, formatDateRange, toIsoDate, slugify };
 
 /**
  * Registers all engine filters on an Eleventy configuration instance.
  * @param {object} eleventyConfig - Eleventy configuration object
  */
 export function registerFilters(eleventyConfig) {
+  // Presentation mappings
   eleventyConfig.addFilter('modalityLabel', (val, context) => getModalityLabel(val, context));
   eleventyConfig.addFilter('employmentTypeLabel', (val) => getEmploymentTypeLabel(val));
   eleventyConfig.addFilter('degreeTypeLabel', (val) => getDegreeTypeLabel(val));
   eleventyConfig.addFilter('collectionLabel', (val, plural) => getCollectionLabel(val, plural));
+
+  // Dates
   eleventyConfig.addFilter('formatDate', (val, locale) => formatDate(val, locale));
+  eleventyConfig.addFilter('dateRange', (start, end, locale) => formatDateRange(start, end, locale));
+  eleventyConfig.addFilter('isoDate', (val) => toIsoDate(val));
+
+  // Markdown
   eleventyConfig.addFilter('markdown', (content) => renderMarkdown(content));
+  eleventyConfig.addFilter('markdownInline', (content) => renderMarkdownInline(content));
+
+  // URLs and identifiers
+  eleventyConfig.addFilter('absoluteUrl', (urlPath, siteUrl) => resolveAbsoluteUrl(urlPath, siteUrl));
+  eleventyConfig.addFilter('slugify', (val) => slugify(val));
 }

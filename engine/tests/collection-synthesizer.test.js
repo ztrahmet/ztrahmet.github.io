@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
@@ -143,5 +145,60 @@ describe('Collection Synthesizer & Dual-Mode Resolution', () => {
       expect(result.certificate).toHaveLength(0);
       expect(result.award).toHaveLength(0);
     });
+  });
+});
+
+describe('Slug Uniqueness Enforcement', () => {
+  const SITE = { url: 'https://x.example.com', title: 'T', description: 'D' };
+
+  it('rejects a slug declared more than once in content.yaml', () => {
+    const declared = [
+      { slug: 'post-a', title: 'First Declaration', date: '2024-01-01' },
+      { slug: 'post-a', title: 'Second Declaration', date: '2023-01-01' }
+    ];
+
+    expect(() => synthesizeCollection(VALID_CONTENT_DIR, 'blog', declared, SITE)).toThrow(ValidationError);
+    expect(() => synthesizeCollection(VALID_CONTENT_DIR, 'blog', declared, SITE)).toThrow(
+      /Duplicate slug 'post-a' declared more than once/
+    );
+  });
+
+  it('rejects two Markdown files that resolve to the same slug', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'engine-slug-'));
+    fs.mkdirSync(path.join(dir, 'blog/collide'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'blog/collide/index.md'), '---\ntitle: Dir Form\ndate: 2024-05-01\n---\n\nbody\n');
+    fs.writeFileSync(path.join(dir, 'blog/collide.md'), '---\ntitle: Flat Form\ndate: 2024-06-01\n---\n\nbody\n');
+
+    expect(() => discoverMarkdownItems(dir, 'blog')).toThrow(/Duplicate slug 'collide'/);
+
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe('Synthesized Item Presentation Fields', () => {
+  it('attaches display and ISO dates to every item', () => {
+    const collections = synthesizeAllCollections(VALID_CONTENT_DIR, {
+      blog: [{ slug: 'inline-blog', title: 'Inline', date: '2024-01-15', description: 'D' }]
+    }, { url: 'https://x.example.com', title: 'T', description: 'D', locale: 'en_US' });
+
+    const item = collections.blog.find((i) => i.slug === 'inline-blog');
+    expect(item.dateDisplay).toBe('Jan 15, 2024');
+    expect(item.dateIso).toBe('2024-01-15');
+  });
+
+  it('derives excerpts as clean plain text even when the body contains a horizontal rule', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'engine-excerpt-'));
+    fs.mkdirSync(path.join(dir, 'blog/post'), { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, 'blog/post/index.md'),
+      '---\ntitle: Post\ndate: 2024-01-01\n---\n\nIntro **bold** and [a link](http://x.com).\n\n---\n\n## More\n\nBody.\n'
+    );
+
+    const [item] = synthesizeCollection(dir, 'blog', [{ slug: 'post' }], { url: 'https://x.example.com' });
+
+    expect(item.excerpt).not.toMatch(/\*\*|\[.*\]\(/);
+    expect(item.excerpt).toContain('Intro bold');
+
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 });

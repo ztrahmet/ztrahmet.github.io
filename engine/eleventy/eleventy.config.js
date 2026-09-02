@@ -10,7 +10,7 @@ import { writeSearchIndexFile } from '../search/search-indexer.js';
 /**
  * Registers passthrough copy rules for top-level asset folders and co-located collection media.
  * Guarantees that any image, video, audio, or document placed anywhere in content/ is copied
- * to _site/ with an exact matching relative URL path.
+ * to the output directory with an exact matching relative URL path.
  *
  * @param {object} eleventyConfig - Eleventy configuration object
  * @param {string} contentDir - Absolute path to content directory
@@ -36,8 +36,7 @@ export function registerAssetPassthroughs(eleventyConfig, contentDir) {
 
   for (const assetPath of nestedAssets) {
     const relToContent = path.relative(contentDir, assetPath).replace(/\\/g, '/');
-    const topSegment = relToContent.split('/')[0];
-    if (topDirs.includes(topSegment)) {
+    if (topDirs.includes(relToContent.split('/')[0])) {
       continue;
     }
     const relToProject = path.relative(PROJECT_ROOT, assetPath).replace(/\\/g, '/');
@@ -47,7 +46,8 @@ export function registerAssetPassthroughs(eleventyConfig, contentDir) {
 
 /**
  * Configures the Eleventy engine for the static site generator.
- * Exposes dynamic reactive global data, collections, filters, asset passthroughs, search artifact emission, and watch targets.
+ * Exposes the engine data surface as global data, collections, filters, asset passthroughs,
+ * search artifact emission, and watch targets.
  *
  * @param {object} eleventyConfig - Eleventy configuration object
  * @param {object} [options={}] - Custom engine options
@@ -55,69 +55,60 @@ export function registerAssetPassthroughs(eleventyConfig, contentDir) {
  * @returns {object} Eleventy directory and template engine configuration
  */
 export default function configureEleventy(eleventyConfig, options = {}) {
-  // 1. Opt-out of freezing reserved Eleventy properties to allow content data aliases
-  if (typeof eleventyConfig.setFreezeReservedData === 'function') {
-    eleventyConfig.setFreezeReservedData(false);
-  }
-
-  // 2. Resolve content directory dynamically (options.contentDir -> CLI args -> CONTENT_DIR env -> default content/)
+  // 1. Resolve content directory (options.contentDir -> CLI args -> CONTENT_DIR env -> default content/)
   const contentDir = resolveContentDir(options.contentDir);
 
-  // 3. Reactive Data Ingestion Provider
-  // Evaluates fresh content on every rebuild/watch cycle during dev server execution
-  const getFreshData = () => loadEngineData(contentDir);
+  // 2. Compile the dataset once per build and reuse it across every data callback.
+  //    The cache is cleared before each run so watch rebuilds always see fresh content.
+  let cache = null;
+  const getData = () => (cache ??= loadEngineData(contentDir));
 
-  // 4. Expose Global Data Objects to Eleventy Templates
-  eleventyConfig.addGlobalData('site', () => getFreshData().site);
-  eleventyConfig.addGlobalData('profile', () => getFreshData().profile);
-  eleventyConfig.addGlobalData('content', () => getFreshData().content);
-  eleventyConfig.addGlobalData('content_data', () => getFreshData().content);
-  eleventyConfig.addGlobalData('site_content', () => getFreshData().content);
-  eleventyConfig.addGlobalData('collections_data', () => getFreshData().collections);
-  eleventyConfig.addGlobalData('pinned_items', () => getFreshData().pinned_items);
-  eleventyConfig.addGlobalData('taxonomy', () => getFreshData().taxonomy);
-  eleventyConfig.addGlobalData('mappings', () => getFreshData().mappings);
-  eleventyConfig.addGlobalData('search_index', () => getFreshData().search_index);
-  eleventyConfig.addGlobalData('contentDir', () => getFreshData().contentDir);
+  eleventyConfig.on('eleventy.before', () => {
+    cache = null;
+  });
 
-  // 5. Register Custom Eleventy Collections (reactive on reload)
+  // 3. Expose the engine data surface to templates.
+  //    `content` and `collections` are reserved by Eleventy, so the parsed content.yaml is
+  //    published as `content_data` and the synthesized map as `collections_data`.
+  eleventyConfig.addGlobalData('site', () => getData().site);
+  eleventyConfig.addGlobalData('profile', () => getData().profile);
+  eleventyConfig.addGlobalData('content_data', () => getData().content);
+  eleventyConfig.addGlobalData('collections_data', () => getData().collections);
+  eleventyConfig.addGlobalData('pinned_items', () => getData().pinned_items);
+  eleventyConfig.addGlobalData('taxonomy', () => getData().taxonomy);
+  eleventyConfig.addGlobalData('stats', () => getData().stats);
+  eleventyConfig.addGlobalData('mappings', () => getData().mappings);
+  eleventyConfig.addGlobalData('search_index', () => getData().search_index);
+  eleventyConfig.addGlobalData('build', () => getData().build);
+  eleventyConfig.addGlobalData('contentDir', () => getData().contentDir);
+
+  // 4. Register engine collections
   for (const name of COLLECTION_TYPES) {
-    eleventyConfig.addCollection(name, () => {
-      return getFreshData().collections[name] || [];
-    });
+    eleventyConfig.addCollection(name, () => getData().collections[name] || []);
   }
 
-  eleventyConfig.addCollection('all_content', () => {
-    return Object.values(getFreshData().collections).flat();
-  });
+  eleventyConfig.addCollection('all_content', () => Object.values(getData().collections).flat());
+  eleventyConfig.addCollection('pinned', () => getData().pinned_items);
 
-  eleventyConfig.addCollection('pinned', () => {
-    return getFreshData().pinned_items;
-  });
-
-  // 6. Register Template Filters (mappings, dates, markdown)
+  // 5. Register template filters (mappings, dates, markdown, urls)
   registerFilters(eleventyConfig);
 
-  // 7. Register Dynamic Asset Passthrough Copies
+  // 6. Register dynamic asset passthrough copies
   registerAssetPassthroughs(eleventyConfig, contentDir);
 
-  // 8. Search Artifact Emission on Build / Rebuild
-  if (typeof eleventyConfig.on === 'function') {
-    eleventyConfig.on('eleventy.after', async ({ dir }) => {
-      const outputDir = dir?.output ? path.resolve(PROJECT_ROOT, dir.output) : path.resolve(PROJECT_ROOT, '_site');
-      const searchIndexPath = path.join(outputDir, 'search-index.json');
-      writeSearchIndexFile(getFreshData(), searchIndexPath);
-    });
-  }
+  // 7. Emit the search artifact into the resolved output directory on every build
+  eleventyConfig.on('eleventy.after', ({ directories, dir }) => {
+    const outputDir = directories?.output || dir?.output || '_site';
+    writeSearchIndexFile(getData(), path.resolve(PROJECT_ROOT, outputDir, 'search-index.json'));
+  });
 
-  // 9. Watch Targets for Live Reload Reactivity
+  // 8. Watch targets for live reload reactivity
   eleventyConfig.addWatchTarget(contentDir);
   eleventyConfig.addWatchTarget(SCHEMAS_DIR);
 
   return {
     dir: {
       input: 'theme',
-      output: '_site',
       includes: '_includes',
       layouts: '_layouts',
       data: '_data'
