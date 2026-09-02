@@ -53,7 +53,8 @@ export interface SiteData {
   url: string;
   title: string;
   description: string;
-  lang?: string;
+  /** Always present; defaults to "en" when not authored. */
+  lang: string;
   locale?: string;
   favicon?: ThemedAsset;
   share_image?: ThemedAsset;
@@ -104,6 +105,31 @@ export interface EducationItem {
 }
 
 /**
+ * Elapsed span of a profile entry, with 'present' measured to the build date.
+ */
+export interface Duration {
+  months: number;
+  years: number;
+  remainingMonths: number;
+  /** Human readable span, e.g. "3 yrs 2 mos". */
+  text: string;
+}
+
+/**
+ * Presentation fields the engine adds to every experience and education record,
+ * mirroring what collection items carry.
+ */
+export interface ProfileEntryPresentation {
+  startDisplay: string;
+  endDisplay: string;
+  dateDisplay: string;
+  startIso: string;
+  endIso: string;
+  isOngoing: boolean;
+  duration: Duration | null;
+}
+
+/**
  * Profile entity (data.yaml -> profile)
  */
 export interface ProfileData {
@@ -115,8 +141,8 @@ export interface ProfileData {
   summary?: string;
   resume?: Asset;
   social?: SocialLink[];
-  experience?: ExperienceItem[];
-  education?: EducationItem[];
+  experience?: Array<ExperienceItem & ProfileEntryPresentation>;
+  education?: Array<EducationItem & ProfileEntryPresentation>;
 }
 
 /**
@@ -193,8 +219,12 @@ export interface BaseCollectionItem {
   wordCount: number;
   readingTime: number;
   toc: TableOfContentsItem[];
+  /** The date the item is ranked and displayed by: `date` for most types, `start` for projects. */
+  primaryDate: string;
   dateDisplay: string;
   dateIso: string;
+  /** Four-digit year of the primary date, for grouping archives by year. */
+  year: number | null;
   /** True when the entry is still running (`end: present`). Ongoing entries rank first. */
   isOngoing: boolean;
   newer: AdjacentNavigationPointer | null;
@@ -329,6 +359,20 @@ export interface SearchIndex {
 }
 
 /**
+ * Registry describing every collection type, so a theme can build navigation and
+ * section listings generically instead of hard-coding collection names.
+ */
+export interface CollectionTypeInfo {
+  name: CollectionType;
+  label: string;
+  labelPlural: string;
+  /** Index route for the collection, e.g. "/blog/". */
+  permalink: string;
+  count: number;
+  hasItems: boolean;
+}
+
+/**
  * Aggregated content statistics
  */
 export interface CollectionStats {
@@ -398,6 +442,9 @@ export interface EngineData {
   profile: ProfileData;
   content_data: ContentDeclarations;
   collections_data: CollectionsData;
+  collection_types: CollectionTypeInfo[];
+  /** Every collection item in one recency-ordered list, for combined feeds. */
+  all_content: CollectionItem[];
   pinned_items: PinnedItem[];
   taxonomy: TaxonomyData;
   stats: ContentStats;

@@ -19,6 +19,8 @@ export * from './pipeline/seo-normalizer.js';
 export * from './pipeline/taxonomy.js';
 export * from './pipeline/ordering.js';
 export * from './pipeline/content-graph.js';
+export * from './pipeline/collection-views.js';
+export * from './pipeline/profile-normalizer.js';
 export * from './pipeline/collection-synthesizer.js';
 export * from './pipeline/data-loader.js';
 

@@ -6,7 +6,6 @@ import { loadEngineData } from '../pipeline/data-loader.js';
 import { registerFilters } from './filters.js';
 import { resolveContentDir, PROJECT_ROOT, SCHEMAS_DIR } from '../config/paths.js';
 import { writeSearchIndexFile } from '../search/search-indexer.js';
-import { sortByRecency } from '../pipeline/ordering.js';
 
 /**
  * Registers passthrough copy rules for top-level asset folders and co-located collection media.
@@ -75,6 +74,8 @@ export default function configureEleventy(eleventyConfig, options = {}) {
   eleventyConfig.addGlobalData('profile', () => getData().profile);
   eleventyConfig.addGlobalData('content_data', () => getData().content);
   eleventyConfig.addGlobalData('collections_data', () => getData().collections);
+  eleventyConfig.addGlobalData('collection_types', () => getData().collection_types);
+  eleventyConfig.addGlobalData('all_content', () => getData().all_content);
   eleventyConfig.addGlobalData('pinned_items', () => getData().pinned_items);
   eleventyConfig.addGlobalData('taxonomy', () => getData().taxonomy);
   eleventyConfig.addGlobalData('stats', () => getData().stats);
@@ -89,7 +90,7 @@ export default function configureEleventy(eleventyConfig, options = {}) {
   }
 
   // A combined feed is ordered across collections, not grouped by type
-  eleventyConfig.addCollection('all_content', () => sortByRecency(Object.values(getData().collections).flat()));
+  eleventyConfig.addCollection('all_content', () => getData().all_content);
 
   // Pinned content keeps the order declared in content.yaml, which is a curation choice
   eleventyConfig.addCollection('pinned', () => getData().pinned_items);

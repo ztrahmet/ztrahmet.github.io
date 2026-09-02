@@ -11,6 +11,8 @@ import { COLLECTION_TYPES } from '../config/enums.js';
 import { buildSearchIndex } from '../search/search-indexer.js';
 import { buildTaxonomy } from './taxonomy.js';
 import { sortByRecency } from './ordering.js';
+import { buildCollectionTypes } from './collection-views.js';
+import { enrichProfile } from './profile-normalizer.js';
 
 /**
  * Normalizes an optional asset field, leaving the property absent when unset.
@@ -39,6 +41,8 @@ export function normalizeDataAssets(data, contentDir) {
   const options = { contentDir, warnMissing: true };
 
   if (cloned.site) {
+    // Guarantee a language so templates never emit an empty lang attribute
+    cloned.site.lang = cloned.site.lang || 'en';
     normalizeOptionalAsset(cloned.site, 'favicon', options);
     normalizeOptionalAsset(cloned.site, 'share_image', options);
   }
@@ -142,21 +146,29 @@ export function loadEngineData(customContentDir) {
     collections
   });
 
-  // 7. Describe this compilation for the theme layer
+  // 7. Derive the presentation views the theme layer consumes
+  const locale = resolveLocale(normalizedData.site);
+  const profile = enrichProfile(normalizedData.profile, locale);
+  const allContent = sortByRecency(Object.values(collections).flat());
+  const collectionTypes = buildCollectionTypes(collections);
+
+  // 8. Describe this compilation for the theme layer
   const generatedAt = new Date();
   const build = {
     version: readProjectVersion('1.0.0'),
     generatedAt: generatedAt.toISOString(),
     generatedYear: generatedAt.getUTCFullYear(),
-    locale: resolveLocale(normalizedData.site),
+    locale,
     contentDir
   };
 
   const baseData = {
     site: normalizedData.site,
-    profile: normalizedData.profile,
+    profile,
     content: rawContent,
     collections,
+    collection_types: collectionTypes,
+    all_content: allContent,
     pinned_items: pinnedItems,
     taxonomy,
     stats: buildStats(collections, taxonomy),
@@ -165,7 +177,7 @@ export function loadEngineData(customContentDir) {
     contentDir
   };
 
-  // 8. Build the unified search index from the fully assembled dataset
+  // 9. Build the unified search index from the fully assembled dataset
   return {
     ...baseData,
     search_index: buildSearchIndex(baseData)

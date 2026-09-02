@@ -122,3 +122,47 @@ export function resolveLocale(site = {}) {
   if (!raw || typeof raw !== 'string') return 'en-US';
   return raw.replace('_', '-');
 }
+
+/**
+ * Converts a date into an RFC-822 string, the format RSS requires for pubDate.
+ *
+ * @param {string|number} dateVal - Date string or integer year
+ * @returns {string} RFC-822 date, or empty string when not a date
+ */
+export function toRfc822Date(dateVal) {
+  const iso = toIsoDate(dateVal);
+  if (!iso) return '';
+  return new Date(`${iso}T00:00:00Z`).toUTCString();
+}
+
+/**
+ * Calculates the elapsed span between two dates, treating 'present' as today.
+ * Months are inclusive of the start month, matching how a CV counts tenure.
+ *
+ * @param {string|number} start - Range start
+ * @param {string|number} [end] - Range end, or 'present'
+ * @returns {{ months: number, years: number, remainingMonths: number, text: string }|null}
+ */
+export function computeDuration(start, end) {
+  const startIso = toIsoDate(start);
+  if (!startIso) return null;
+
+  const endStr = toDateString(end);
+  const endIso = endStr.toLowerCase() === 'present' || !endStr
+    ? new Date().toISOString().slice(0, 10)
+    : toIsoDate(endStr);
+  if (!endIso) return null;
+
+  const [sy, sm] = startIso.split('-').map(Number);
+  const [ey, em] = endIso.split('-').map(Number);
+
+  const months = Math.max(0, (ey - sy) * 12 + (em - sm)) + 1;
+  const years = Math.floor(months / 12);
+  const remainingMonths = months % 12;
+
+  const parts = [];
+  if (years > 0) parts.push(`${years} yr${years === 1 ? '' : 's'}`);
+  if (remainingMonths > 0) parts.push(`${remainingMonths} mo${remainingMonths === 1 ? '' : 's'}`);
+
+  return { months, years, remainingMonths, text: parts.join(' ') || '1 mo' };
+}

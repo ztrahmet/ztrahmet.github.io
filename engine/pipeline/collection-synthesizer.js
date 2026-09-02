@@ -20,7 +20,7 @@ import { sortByRecency, isOngoing } from './ordering.js';
 const SYNTHETIC_KEYS = Object.freeze([
   'content', 'html', 'excerpt', 'hasMarkdown', 'isMarkdown', 'filePath', 'baseDir',
   'permalink', 'collection', 'newer', 'older', 'wordCount', 'readingTime', 'toc',
-  'related', 'seo', 'dateDisplay', 'dateIso', 'startDisplay', 'endDisplay',
+  'related', 'seo', 'primaryDate', 'dateDisplay', 'dateIso', 'year', 'startDisplay', 'endDisplay',
   'isOngoing', 'isExpired'
 ]);
 
@@ -82,9 +82,13 @@ export function extractSchemaPayload(item) {
 function buildDateFields(item, locale) {
   const primary = toDateString(item.date ?? item.start);
 
+  const iso = toIsoDate(primary);
+
   const fields = {
+    primaryDate: primary,
     dateDisplay: formatDate(primary, locale),
-    dateIso: toIsoDate(primary),
+    dateIso: iso,
+    year: iso ? Number(iso.slice(0, 4)) : null,
     isOngoing: isOngoing(item)
   };
 
