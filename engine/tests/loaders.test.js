@@ -83,8 +83,8 @@ Second paragraph content.
     });
 
     it('returns empty structure for empty string or non-string input', () => {
-      expect(parseMarkdownString('')).toEqual({ data: {}, content: '', excerpt: '' });
-      expect(parseMarkdownString(null)).toEqual({ data: {}, content: '', excerpt: '' });
+      expect(parseMarkdownString('')).toEqual({ data: {}, content: '' });
+      expect(parseMarkdownString(null)).toEqual({ data: {}, content: '' });
     });
 
     it('throws error when markdown file does not exist on disk', () => {

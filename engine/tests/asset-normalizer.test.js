@@ -191,3 +191,24 @@ describe('Asset Path Normalization & Resolvers', () => {
     });
   });
 });
+
+describe('Asset Path Confinement', () => {
+  it('resolves traversal segments and clamps root-relative paths to the content root', () => {
+    expect(normalizeAssetPath('/../../etc/passwd')).toBe('/etc/passwd');
+    expect(normalizeAssetPath('/images/../../secret.txt')).toBe('/secret.txt');
+    expect(normalizeAssetPath('../outside.png')).toBe('/outside.png');
+  });
+
+  it('never resolves a filesystem path outside the content directory', () => {
+    for (const candidate of ['/../../etc/passwd', '/images/../../secret.txt', '../outside.png']) {
+      const resolved = resolveAssetFsPath(normalizeAssetPath(candidate), FIXTURES_VALID_DIR);
+      expect(resolved === null || resolved.startsWith(FIXTURES_VALID_DIR + path.sep)).toBe(true);
+    }
+  });
+
+  it('still resolves legitimate co-located relative paths', () => {
+    expect(normalizeAssetPath('./cover.png', 'blog/post')).toBe('/blog/post/cover.png');
+    expect(normalizeAssetPath('cover.png', 'blog/post')).toBe('/blog/post/cover.png');
+    expect(normalizeAssetPath('../shared.png', 'blog/post')).toBe('/blog/shared.png');
+  });
+});

@@ -1,6 +1,6 @@
 import MarkdownIt from 'markdown-it';
 import katex from 'katex';
-import { stripMarkdownAndHtml } from '../search/text-sanitizer.js';
+import { slugify } from '../config/format.js';
 
 /**
  * Generates a URL-safe anchor slug from heading text.
@@ -8,64 +8,7 @@ import { stripMarkdownAndHtml } from '../search/text-sanitizer.js';
  * @returns {string} Anchor slug
  */
 export function slugifyHeading(text) {
-  if (!text || typeof text !== 'string') return '';
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-/**
- * Extracts a structured Table of Contents (TOC) tree from Markdown content for h2 and h3 levels.
- *
- * @param {string} markdown - Raw Markdown text
- * @returns {Array<{ id: string, slug: string, text: string, level: number }>} TOC items
- */
-export function extractTableOfContents(markdown) {
-  if (typeof markdown !== 'string' || !markdown.trim()) {
-    return [];
-  }
-
-  const lines = markdown.split('\n');
-  const toc = [];
-  const slugCounts = new Map();
-  let inCodeBlock = false;
-
-  for (const line of lines) {
-    // Track fenced code blocks to prevent false positive heading matches inside code
-    if (/^\s*```/.test(line)) {
-      inCodeBlock = !inCodeBlock;
-      continue;
-    }
-    if (inCodeBlock) continue;
-
-    const match = line.match(/^\s*(#{2,3})\s+(.+)$/);
-    if (match) {
-      const level = match[1].length; // 2 for ##, 3 for ###
-      const rawText = match[2].trim();
-      const text = stripMarkdownAndHtml(rawText);
-      let baseSlug = slugifyHeading(text);
-      if (!baseSlug) baseSlug = `section-${toc.length + 1}`;
-
-      let slug = baseSlug;
-      const count = slugCounts.get(baseSlug) || 0;
-      if (count > 0) {
-        slug = `${baseSlug}-${count}`;
-      }
-      slugCounts.set(baseSlug, count + 1);
-
-      toc.push({
-        id: slug,
-        slug,
-        text,
-        level
-      });
-    }
-  }
-
-  return toc;
+  return slugify(text);
 }
 
 /**
@@ -249,7 +192,7 @@ export function markdownItMath(md) {
 }
 
 /**
- * Creates and configures a MarkdownIt instance with KaTeX math, anchor IDs on headings, and extensions.
+ * Creates and configures a MarkdownIt instance with KaTeX math support.
  * @returns {MarkdownIt} Configured MarkdownIt instance
  */
 export function createMarkdownRenderer() {
@@ -261,37 +204,72 @@ export function createMarkdownRenderer() {
 
   md.use(markdownItMath);
 
-  // Add auto-generated anchor IDs to heading tags
-  const slugCounts = new Map();
-  md.core.ruler.push('heading_slug_reset', () => {
-    slugCounts.clear();
-  });
-
-  md.renderer.rules.heading_open = (tokens, idx, options, env, self) => {
-    const token = tokens[idx];
-    const nextToken = tokens[idx + 1];
-    if (nextToken && nextToken.children) {
-      const text = nextToken.children.reduce((acc, t) => acc + (t.content || ''), '');
-      const cleanText = stripMarkdownAndHtml(text);
-      let baseSlug = slugifyHeading(cleanText);
-      if (!baseSlug) baseSlug = 'heading';
-
-      let slug = baseSlug;
-      const count = slugCounts.get(baseSlug) || 0;
-      if (count > 0) {
-        slug = `${baseSlug}-${count}`;
-      }
-      slugCounts.set(baseSlug, count + 1);
-
-      token.attrSet('id', slug);
-    }
-    return self.renderToken(tokens, idx, options);
-  };
-
   return md;
 }
 
 const defaultRenderer = createMarkdownRenderer();
+
+/**
+ * Reads the plain-text content of a heading from its inline token children.
+ * @param {object} inlineToken - The inline token following a heading_open token
+ * @returns {string} Heading text without inline markup
+ */
+function readHeadingText(inlineToken) {
+  if (!inlineToken || !Array.isArray(inlineToken.children)) return '';
+  return inlineToken.children
+    .reduce((acc, child) => acc + (child.content || ''), '')
+    .trim();
+}
+
+/**
+ * Parses Markdown once and derives both the rendered HTML and the Table of Contents
+ * from the same token stream, so every TOC entry is guaranteed to match a real
+ * heading anchor in the output.
+ *
+ * Anchor slugs are disambiguated across all heading levels, and headings inside
+ * fenced or indented code blocks are never treated as headings.
+ *
+ * @param {string} markdown - Raw Markdown string
+ * @param {object} [options]
+ * @param {Array<number>} [options.tocLevels=[2, 3]] - Heading levels collected into the TOC
+ * @returns {{ html: string, toc: Array<{ id: string, slug: string, text: string, level: number }> }}
+ */
+export function renderMarkdownDocument(markdown, options = {}) {
+  const { tocLevels = [2, 3] } = options;
+
+  if (typeof markdown !== 'string' || !markdown.trim()) {
+    return { html: '', toc: [] };
+  }
+
+  const env = {};
+  const tokens = defaultRenderer.parse(markdown, env);
+  const slugCounts = new Map();
+  const toc = [];
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token.type !== 'heading_open') continue;
+
+    const level = Number(token.tag.slice(1));
+    const text = readHeadingText(tokens[i + 1]);
+
+    let baseSlug = slugify(text);
+    if (!baseSlug) baseSlug = `section-${toc.length + 1}`;
+
+    const count = slugCounts.get(baseSlug) || 0;
+    const slug = count > 0 ? `${baseSlug}-${count}` : baseSlug;
+    slugCounts.set(baseSlug, count + 1);
+
+    token.attrSet('id', slug);
+
+    if (tocLevels.includes(level)) {
+      toc.push({ id: slug, slug, text, level });
+    }
+  }
+
+  const html = defaultRenderer.renderer.render(tokens, defaultRenderer.options, env).trim();
+  return { html, toc };
+}
 
 /**
  * Renders Markdown text to static HTML with pre-rendered KaTeX math and heading anchor IDs.
@@ -299,8 +277,30 @@ const defaultRenderer = createMarkdownRenderer();
  * @returns {string} Rendered HTML string
  */
 export function renderMarkdown(markdown) {
+  return renderMarkdownDocument(markdown).html;
+}
+
+/**
+ * Renders Markdown to inline HTML without a wrapping block element.
+ * Suited to short strings such as taglines, labels, and headings.
+ *
+ * @param {string} markdown - Raw Markdown string
+ * @returns {string} Rendered inline HTML
+ */
+export function renderMarkdownInline(markdown) {
   if (typeof markdown !== 'string' || !markdown.trim()) {
     return '';
   }
-  return defaultRenderer.render(markdown).trim();
+  return defaultRenderer.renderInline(markdown).trim();
+}
+
+/**
+ * Extracts a structured Table of Contents from Markdown content.
+ * Derived from the same parse as the rendered HTML, so slugs always resolve.
+ *
+ * @param {string} markdown - Raw Markdown text
+ * @returns {Array<{ id: string, slug: string, text: string, level: number }>} TOC items
+ */
+export function extractTableOfContents(markdown) {
+  return renderMarkdownDocument(markdown).toc;
 }

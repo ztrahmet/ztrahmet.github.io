@@ -31,6 +31,7 @@ export function isIconSlug(val) {
  * Normalizes an asset path into a standardized root-relative web path.
  * - Root-relative paths (/images/...) remain root-relative.
  * - Co-located relative paths (./cover.png or cover.png) resolve relative to baseDir.
+ * - Traversal segments are resolved and clamped to the content root, which is the web root.
  * - Preserves external URIs unchanged.
  *
  * @param {string} assetPath - Raw asset path string
@@ -41,14 +42,13 @@ export function normalizeAssetPath(assetPath, baseDir = '') {
   if (typeof assetPath !== 'string' || !assetPath.trim()) return assetPath;
   if (isUri(assetPath)) return assetPath;
 
-  let clean = assetPath.trim().replace(/\\/g, '/');
+  const clean = assetPath.trim().replace(/\\/g, '/').replace(/^\.\//, '');
 
   if (clean.startsWith('/')) {
-    return clean;
+    return path.posix.join('/', clean);
   }
 
-  clean = clean.replace(/^\.\//, '');
-  return baseDir ? path.posix.join('/', baseDir, clean) : `/${clean}`;
+  return path.posix.join('/', baseDir || '', clean);
 }
 
 /**
@@ -59,8 +59,17 @@ export function normalizeAssetPath(assetPath, baseDir = '') {
  */
 export function resolveAssetFsPath(assetPath, contentDir) {
   if (typeof assetPath !== 'string' || isUri(assetPath)) return null;
-  const rel = assetPath.replace(/^\/+/, '');
-  return path.resolve(contentDir, rel);
+
+  const rel = normalizeAssetPath(assetPath).replace(/^\/+/, '');
+  const resolved = path.resolve(contentDir, rel);
+
+  // Never resolve outside the content root, even if the caller passed a raw path
+  const root = path.resolve(contentDir);
+  if (resolved !== root && !resolved.startsWith(root + path.sep)) {
+    return null;
+  }
+
+  return resolved;
 }
 
 /**

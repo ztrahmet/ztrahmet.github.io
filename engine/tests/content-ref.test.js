@@ -70,9 +70,15 @@ describe('ContentRef Parsing & Integrity Validation', () => {
       expect(resolved).toHaveLength(3);
       expect(resolved[0].slug).toBe('post-1');
       expect(resolved[0]._ref).toBe('blog:post-1');
-      expect(resolved[0]._collection).toBe('blog');
+      expect(resolved[0].collection).toBe('blog');
       expect(resolved[1].slug).toBe('proj-1');
       expect(resolved[2].slug).toBe('award-1');
+    });
+
+    it('throws ValidationError when the same item is pinned twice', () => {
+      expect(() => validateAndResolvePinnedContent(['blog:post-1', 'blog:post-1'], mockCollections)).toThrow(
+        /Duplicate ContentRef in pinned_content/
+      );
     });
 
     it('throws ValidationError when a pinned reference points to a non-existent item', () => {

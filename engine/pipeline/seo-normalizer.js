@@ -1,4 +1,5 @@
 import { generateExcerpt } from './content-metrics.js';
+import { toDateString, toIsoDate } from '../config/format.js';
 
 /**
  * Resolves an absolute URL given a path and a base site URL.
@@ -54,7 +55,8 @@ export function buildItemSeo(item = {}, site = {}) {
   const isArticle = item?.collection === 'blog' || item?.collection === 'publication';
   const ogType = isArticle ? 'article' : 'website';
 
-  const publishedTime = item?.date || item?.start || null;
+  const publishedTime = toDateString(item?.date ?? item?.start) || null;
+  const publishedIso = toIsoDate(publishedTime) || null;
 
   return {
     canonicalUrl,
@@ -63,7 +65,8 @@ export function buildItemSeo(item = {}, site = {}) {
     description: rawDescription,
     image,
     ogType,
-    publishedTime: typeof publishedTime === 'string' ? publishedTime : null,
-    modifiedTime: typeof publishedTime === 'string' ? publishedTime : null
+    publishedTime,
+    modifiedTime: publishedTime,
+    publishedIso
   };
 }
