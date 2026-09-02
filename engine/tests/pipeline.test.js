@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
@@ -130,17 +132,48 @@ describe('End-to-End Data Engine Pipeline & Eleventy Integration', () => {
       expect(watchTargets).toContain(FIXTURES_VALID_DIR);
     });
 
-    it('registers co-located media and top-level asset folders in registerAssetPassthroughs', () => {
-      const passthroughs = [];
-      const mockEleventyConfig = {
-        addPassthroughCopy: (entry) => {
-          passthroughs.push(entry);
-        }
-      };
+    it('publishes any folder name, with no privileged asset directories', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'passthrough-'));
+      fs.mkdirSync(path.join(dir, 'pictures/avatars'), { recursive: true });
+      fs.mkdirSync(path.join(dir, 'static/css'), { recursive: true });
+      fs.mkdirSync(path.join(dir, 'blog/a-post'), { recursive: true });
+      fs.writeFileSync(path.join(dir, 'pictures/avatars/me.svg'), 'x');
+      fs.writeFileSync(path.join(dir, 'static/css/site.css'), 'x');
+      fs.writeFileSync(path.join(dir, 'blog/a-post/cover.png'), 'x');
+      fs.writeFileSync(path.join(dir, 'blog/a-post/index.md'), '---\ntitle: T\n---\n');
+      fs.writeFileSync(path.join(dir, 'CNAME'), 'example.com');
+      fs.writeFileSync(path.join(dir, 'data.yaml'), 'site: {}\n');
 
-      registerAssetPassthroughs(mockEleventyConfig, ROOT_CONTENT_DIR);
-      // Ensure it executes without errors
-      expect(Array.isArray(passthroughs)).toBe(true);
+      const mapped = {};
+      registerAssetPassthroughs({ addPassthroughCopy: (e) => Object.assign(mapped, e) }, dir);
+      const outputs = Object.values(mapped);
+
+      // Arbitrary directories are published under their own name
+      expect(outputs).toContain('pictures');
+      expect(outputs).toContain('static');
+
+      // Collection media is published per file, alongside its slug
+      expect(outputs).toContain('blog/a-post/cover.png');
+
+      // Extensionless top-level files are published, engine source is not
+      expect(outputs).toContain('CNAME');
+      expect(outputs.some((o) => o.endsWith('.md'))).toBe(false);
+      expect(outputs.some((o) => o.endsWith('.yaml'))).toBe(false);
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('does not require any particular asset folder to exist', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'passthrough-bare-'));
+      fs.writeFileSync(path.join(dir, 'data.yaml'), 'site: {}\n');
+
+      const mapped = {};
+      expect(() =>
+        registerAssetPassthroughs({ addPassthroughCopy: (e) => Object.assign(mapped, e) }, dir)
+      ).not.toThrow();
+      expect(Object.keys(mapped)).toHaveLength(0);
+
+      fs.rmSync(dir, { recursive: true, force: true });
     });
   });
 

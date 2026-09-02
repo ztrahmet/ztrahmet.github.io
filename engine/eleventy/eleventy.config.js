@@ -7,40 +7,59 @@ import { registerFilters } from './filters.js';
 import { resolveContentDir, PROJECT_ROOT, SCHEMAS_DIR } from '../config/paths.js';
 import { writeSearchIndexFile } from '../search/search-indexer.js';
 
+/** Files the engine reads as source, so they are never published as-is. */
+const SOURCE_EXTENSIONS = new Set(['.md', '.yaml', '.yml', '.json']);
+
 /**
- * Registers passthrough copy rules for top-level asset folders and co-located collection media.
- * Guarantees that any image, video, audio, or document placed anywhere in content/ is copied
- * to the output directory with an exact matching relative URL path.
+ * Checks whether a filename is engine source rather than a publishable asset.
+ * @param {string} name - File name
+ * @returns {boolean} True for markdown, YAML and JSON
+ */
+function isSourceFile(name) {
+  return SOURCE_EXTENSIONS.has(path.extname(name).toLowerCase());
+}
+
+/**
+ * Registers passthrough copy rules so anything in content/ is published at a URL
+ * matching where it sits on disk.
+ *
+ * Asset folders are not named or fixed. Any directory that is not a collection is
+ * published under its own name, so `content/images/` and `content/whatever/` behave
+ * the same. Collection directories are handled per file, because their media sits
+ * next to the markdown the engine reads rather than publishes.
  *
  * @param {object} eleventyConfig - Eleventy configuration object
  * @param {string} contentDir - Absolute path to content directory
  */
 export function registerAssetPassthroughs(eleventyConfig, contentDir) {
-  const topDirs = ['images', 'documents', 'assets', 'media', 'files'];
+  const toProjectPath = (absolute) => path.relative(PROJECT_ROOT, absolute).replace(/\\/g, '/');
 
-  for (const dir of topDirs) {
-    const fullDir = path.join(contentDir, dir);
-    if (fs.existsSync(fullDir)) {
-      const relDir = path.relative(PROJECT_ROOT, fullDir).replace(/\\/g, '/');
-      eleventyConfig.addPassthroughCopy({ [relDir]: dir });
-    }
-  }
+  for (const entry of fs.readdirSync(contentDir, { withFileTypes: true })) {
+    if (entry.name.startsWith('.')) continue;
+    const absolute = path.join(contentDir, entry.name);
 
-  // Discover and register all co-located media in collections (e.g. content/blog/slug/cover.png)
-  const nestedAssets = fg.sync(['**/*'], {
-    cwd: contentDir,
-    absolute: true,
-    onlyFiles: true,
-    ignore: ['**/*.md', '**/*.yaml', '**/*.yml', '**/*.json']
-  });
+    if (entry.isDirectory()) {
+      if (COLLECTION_TYPES.includes(entry.name)) {
+        const media = fg.sync(['**/*'], {
+          cwd: absolute,
+          absolute: true,
+          onlyFiles: true,
+          ignore: ['**/*.md', '**/*.yaml', '**/*.yml', '**/*.json']
+        }).sort();
 
-  for (const assetPath of nestedAssets) {
-    const relToContent = path.relative(contentDir, assetPath).replace(/\\/g, '/');
-    if (topDirs.includes(relToContent.split('/')[0])) {
+        for (const file of media) {
+          const relToContent = path.relative(contentDir, file).replace(/\\/g, '/');
+          eleventyConfig.addPassthroughCopy({ [toProjectPath(file)]: relToContent });
+        }
+      } else {
+        eleventyConfig.addPassthroughCopy({ [toProjectPath(absolute)]: entry.name });
+      }
       continue;
     }
-    const relToProject = path.relative(PROJECT_ROOT, assetPath).replace(/\\/g, '/');
-    eleventyConfig.addPassthroughCopy({ [relToProject]: relToContent });
+
+    if (entry.isFile() && !isSourceFile(entry.name)) {
+      eleventyConfig.addPassthroughCopy({ [toProjectPath(absolute)]: entry.name });
+    }
   }
 }
 
