@@ -66,24 +66,35 @@ export function stripMarkdownAndHtml(text) {
   // 7. Convert Markdown links [text](url) -> keep link text
   clean = clean.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
 
-  // 8. Remove HTML tags
+  // 8. Convert reference links to their text, and drop the definitions
+  clean = clean.replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1');
+  clean = clean.replace(/^\s*\[[^\]]+\]:\s*\S+.*$/gm, ' ');
+
+  // 9. Keep autolinked URLs before tags are stripped
+  clean = clean.replace(/<((?:https?|mailto):[^>\s]+)>/g, '$1');
+
+  // 10. Remove HTML tags
   clean = clean.replace(/<[^>]*>/g, ' ');
 
-  // 9. Remove Markdown headers (# Header), blockquotes (> quote), and list bullets (*, -, 1.)
+  // 11. Flatten tables: drop alignment rows, then treat pipes as separators
+  clean = clean.replace(/^\s*\|?[\s:|-]*-[\s:|-]*\|?\s*$/gm, ' ');
+  clean = clean.replace(/\|/g, ' ');
+
+  // 12. Remove Markdown headers (# Header), blockquotes (> quote), and list bullets (*, -, 1.)
   clean = clean.replace(/^\s*#{1,6}\s+/gm, ' ');
   clean = clean.replace(/^\s*>\s+/gm, ' ');
   clean = clean.replace(/^\s*[-*+]\s+/gm, ' ');
   clean = clean.replace(/^\s*\d+\.\s+/gm, ' ');
 
-  // 10. Remove Markdown horizontal rules
+  // 13. Remove Markdown horizontal rules
   clean = clean.replace(/^[-*_]{3,}\s*$/gm, ' ');
 
-  // 11. Remove emphasis and formatting markers (bold, italic, strikethrough)
+  // 14. Remove emphasis and formatting markers (bold, italic, strikethrough)
   clean = clean.replace(/(\*\*|__)(.*?)\1/g, '$2');
   clean = clean.replace(/(\*|_)(.*?)\1/g, '$2');
   clean = clean.replace(/~~(.*?)~~/g, '$1');
 
-  // 12. Decode common HTML entities
+  // 15. Decode common HTML entities
   clean = clean
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
@@ -92,7 +103,7 @@ export function stripMarkdownAndHtml(text) {
     .replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, ' ');
 
-  // 13. Collapse multiple whitespaces and newlines into single spaces
+  // 16. Collapse multiple whitespaces and newlines into single spaces
   return clean.replace(/\s+/g, ' ').trim();
 }
 

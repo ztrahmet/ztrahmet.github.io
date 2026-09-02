@@ -210,3 +210,22 @@ Here is \`inline code\` snippet.
     });
   });
 });
+
+describe('Search Text Extraction Quality', () => {
+  it('flattens tables into readable text', () => {
+    expect(stripMarkdownAndHtml('| a | b |\n|---|---|\n| 1 | 2 |')).toBe('a b 1 2');
+  });
+
+  it('keeps reference link text and drops the definitions', () => {
+    expect(stripMarkdownAndHtml('[text][ref]\n\n[ref]: http://x.com')).toBe('text');
+  });
+
+  it('preserves autolinked URLs instead of stripping them as tags', () => {
+    expect(stripMarkdownAndHtml('see <https://example.com> now')).toBe('see https://example.com now');
+  });
+
+  it('still protects currency and sanitizes math', () => {
+    expect(stripMarkdownAndHtml('costs $50 - $100 total')).toBe('costs $50 - $100 total');
+    expect(stripMarkdownAndHtml('$E = mc^2$ energy')).toContain('energy');
+  });
+});

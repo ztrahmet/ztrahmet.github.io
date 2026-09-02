@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
@@ -9,6 +10,7 @@ import {
   validateCollectionItem
 } from '../validation/validator.js';
 import { ValidationError } from '../validation/errors.js';
+import { COLLECTION_TYPES } from '../config/enums.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -307,5 +309,27 @@ describe('JSON Schemas & Ajv Validation Pipeline', () => {
         })
       ).toThrow(ValidationError);
     });
+  });
+});
+
+describe('Schema Registry Consistency', () => {
+  it('has a compiled validator for every collection type', () => {
+    const { validateCollectionItem } = createValidator();
+
+    for (const type of COLLECTION_TYPES) {
+      expect(() => validateCollectionItem(type, {})).toThrow(/Schema Validation Failed/);
+    }
+  });
+
+  it('rejects a collection type that does not exist', () => {
+    const { validateCollectionItem } = createValidator();
+    expect(() => validateCollectionItem('nonexistent', {})).toThrow(/Unknown collection type/);
+  });
+
+  it('ships a schema file for every collection type', () => {
+    for (const type of COLLECTION_TYPES) {
+      const file = path.resolve(__dirname, `../schemas/collections/${type}.item.json`);
+      expect(fs.existsSync(file), `missing schema for ${type}`).toBe(true);
+    }
   });
 });

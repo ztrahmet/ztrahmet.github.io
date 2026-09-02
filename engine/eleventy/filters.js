@@ -29,7 +29,8 @@ export { formatDate, formatDateRange, toIsoDate, toRfc822Date, slugify };
 export function absolutizeUrls(html, siteUrl) {
   if (typeof html !== 'string' || !html || !siteUrl) return html || '';
   const base = String(siteUrl).replace(/\/+$/, '');
-  return html.replace(/\b(src|href)="\/(?!\/)/g, `$1="${base}/`);
+  // Markdown renders double quotes, but authors may hand-write single quoted HTML
+  return html.replace(/\b(src|href|poster)=(["'])\/(?!\/)/g, `$1=$2${base}/`);
 }
 
 /**

@@ -21,7 +21,7 @@ const SYNTHETIC_KEYS = Object.freeze([
   'content', 'html', 'excerpt', 'hasMarkdown', 'isMarkdown', 'filePath', 'baseDir',
   'permalink', 'collection', 'newer', 'older', 'wordCount', 'readingTime', 'toc',
   'related', 'seo', 'primaryDate', 'dateDisplay', 'dateIso', 'year', 'startDisplay', 'endDisplay',
-  'isOngoing', 'isExpired'
+  'isOngoing', 'isExpired', 'expiresDisplay'
 ]);
 
 /**
@@ -97,6 +97,7 @@ function buildDateFields(item, locale) {
 
   if (item.expires !== undefined) {
     const expiresIso = toIsoDate(item.expires);
+    fields.expiresDisplay = formatDate(item.expires, locale);
     fields.isExpired = Boolean(expiresIso) && expiresIso < new Date().toISOString().slice(0, 10);
   }
 

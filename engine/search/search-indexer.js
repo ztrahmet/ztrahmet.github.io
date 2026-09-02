@@ -7,7 +7,7 @@ import {
   getDegreeTypeLabel,
   getCollectionLabel
 } from '../config/mappings.js';
-import { formatDate } from '../config/format.js';
+import { formatDate, formatDateRange } from '../config/format.js';
 import { COLLECTION_TYPES } from '../config/enums.js';
 import { readProjectVersion } from '../config/paths.js';
 
@@ -17,22 +17,21 @@ import { readProjectVersion } from '../config/paths.js';
  * @param {object} item - Item record
  * @returns {string} Contextual subtitle
  */
-function getCollectionSubtitle(type, item) {
+function getCollectionSubtitle(type, item, locale) {
   switch (type) {
     case 'publication':
       return item.publisher || '';
     case 'certificate':
-      return item.issuer || '';
     case 'award':
       return item.issuer || '';
-    case 'project':
-      if (item.start && item.end) {
-        return `${formatDate(item.start)} – ${formatDate(item.end)}`;
-      }
-      return item.start ? formatDate(item.start) : '';
+    case 'project': {
+      const start = item.startDisplay ?? formatDate(item.start, locale);
+      const end = item.endDisplay ?? formatDate(item.end, locale);
+      return start && end ? `${start} – ${end}` : start;
+    }
     case 'blog':
     default:
-      return item.date ? formatDate(item.date) : '';
+      return item.dateDisplay ?? formatDate(item.date, locale);
   }
 }
 
@@ -61,14 +60,13 @@ export function buildSearchIndex(engineData) {
   }
 
   const { profile = {}, collections = {} } = engineData;
+  const locale = engineData?.build?.locale || 'en-US';
   const records = [];
 
   // 1. Index Profile: Experience Records
   if (Array.isArray(profile.experience)) {
     profile.experience.forEach((exp, idx) => {
-      const dateDisplay = exp.start && exp.end
-        ? `${formatDate(exp.start)} – ${formatDate(exp.end)}`
-        : formatDate(exp.start || '');
+      const dateDisplay = exp.dateDisplay ?? formatDateRange(exp.start, exp.end, locale);
 
       records.push({
         id: `experience:${idx}`,
@@ -95,9 +93,7 @@ export function buildSearchIndex(engineData) {
   // 2. Index Profile: Education Records
   if (Array.isArray(profile.education)) {
     profile.education.forEach((edu, idx) => {
-      const dateDisplay = edu.start && edu.end
-        ? `${formatDate(edu.start)} – ${formatDate(edu.end)}`
-        : formatDate(edu.start || '');
+      const dateDisplay = edu.dateDisplay ?? formatDateRange(edu.start, edu.end, locale);
 
       records.push({
         id: `education:${idx}`,
@@ -128,8 +124,8 @@ export function buildSearchIndex(engineData) {
     const typeLabel = getCollectionLabel(type, false);
 
     for (const item of items) {
-      const subtitle = getCollectionSubtitle(type, item);
-      const dateDisplay = item.date ? formatDate(item.date) : (item.start ? formatDate(item.start) : '');
+      const subtitle = getCollectionSubtitle(type, item, locale);
+      const dateDisplay = item.dateDisplay ?? formatDate(item.date ?? item.start, locale);
       const plainContent = item.hasMarkdown && item.content ? stripMarkdownAndHtml(item.content) : '';
       const description = stripMarkdownAndHtml(item.description || '');
 
@@ -137,7 +133,7 @@ export function buildSearchIndex(engineData) {
       if (item.repository) meta.repository = item.repository;
       if (Array.isArray(item.authors) && item.authors.length > 0) meta.authors = item.authors;
       if (item.credential_id) meta.credential_id = item.credential_id;
-      if (item.expires) meta.expires = formatDate(item.expires);
+      if (item.expires) meta.expires = item.expiresDisplay ?? formatDate(item.expires, locale);
       if (item.publisher) meta.publisher = item.publisher;
       if (item.issuer) meta.issuer = item.issuer;
       if (item.readingTime) meta.readingTime = item.readingTime;
@@ -155,7 +151,7 @@ export function buildSearchIndex(engineData) {
         subtitle,
         url: item.url || '',
         permalink: item.permalink,
-        date: item.date || item.start || '',
+        date: item.primaryDate ?? (item.date || item.start || ''),
         dateDisplay,
         skills: Array.isArray(item.skills) ? item.skills : [],
         description,

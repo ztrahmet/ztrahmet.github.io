@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { ValidationError, formatAjvErrors } from './errors.js';
+import { COLLECTION_TYPES } from '../config/enums.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,35 +41,23 @@ export function createValidator() {
   const dataSchema = readJson(path.join(SCHEMAS_DIR, 'data.schema.json'));
   const contentSchema = readJson(path.join(SCHEMAS_DIR, 'content.schema.json'));
 
-  // Load collection item schemas
-  const blogItemSchema = readJson(path.join(SCHEMAS_DIR, 'collections/blog.item.json'));
-  const projectItemSchema = readJson(path.join(SCHEMAS_DIR, 'collections/project.item.json'));
-  const publicationItemSchema = readJson(path.join(SCHEMAS_DIR, 'collections/publication.item.json'));
-  const certificateItemSchema = readJson(path.join(SCHEMAS_DIR, 'collections/certificate.item.json'));
-  const awardItemSchema = readJson(path.join(SCHEMAS_DIR, 'collections/award.item.json'));
-
-  // Register schemas in Ajv
+  // Register core schemas in Ajv
   ajv.addSchema(commonDefs, 'common.defs.json');
   ajv.addSchema(dataSchema, 'data.schema.json');
   ajv.addSchema(contentSchema, 'content.schema.json');
-
-  ajv.addSchema(blogItemSchema, 'blog.item.json');
-  ajv.addSchema(projectItemSchema, 'project.item.json');
-  ajv.addSchema(publicationItemSchema, 'publication.item.json');
-  ajv.addSchema(certificateItemSchema, 'certificate.item.json');
-  ajv.addSchema(awardItemSchema, 'award.item.json');
 
   // Pre-compile validators for fast execution
   const dataValidate = ajv.compile(dataSchema);
   const contentValidate = ajv.compile(contentSchema);
 
-  const collectionItemValidators = {
-    blog: ajv.compile(blogItemSchema),
-    project: ajv.compile(projectItemSchema),
-    publication: ajv.compile(publicationItemSchema),
-    certificate: ajv.compile(certificateItemSchema),
-    award: ajv.compile(awardItemSchema)
-  };
+  // Collection item schemas are derived from the enum, so the two cannot drift apart
+  const collectionItemValidators = {};
+
+  for (const type of COLLECTION_TYPES) {
+    const schema = readJson(path.join(SCHEMAS_DIR, `collections/${type}.item.json`));
+    ajv.addSchema(schema, `${type}.item.json`);
+    collectionItemValidators[type] = ajv.compile(schema);
+  }
 
   /**
    * Validates data.yaml payload against data.schema.json.

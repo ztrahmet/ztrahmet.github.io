@@ -398,6 +398,21 @@ describe('Table of Contents & Heading Anchor Integrity', () => {
     const { toc } = renderMarkdownDocument('## A `code` and [link](http://x.com) and **bold**');
     expect(toc[0].text).toBe('A code and link and bold');
   });
+
+  it('keeps inline HTML out of TOC text while leaving the rendered heading intact', () => {
+    const { toc, html } = renderMarkdownDocument('## A <em>b</em> c');
+
+    expect(toc[0].text).toBe('A b c');
+    expect(toc[0].slug).toBe('a-b-c');
+    expect(html).toContain('<em>b</em>');
+  });
+
+  it('gives unslugabble headings unique anchors', () => {
+    const { html } = renderMarkdownDocument('#### 🎉\n\n#### ...');
+    const ids = [...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
+
+    expect(ids).toEqual(['section-1', 'section-2']);
+  });
 });
 
 describe('SEO Normalization Hardening', () => {

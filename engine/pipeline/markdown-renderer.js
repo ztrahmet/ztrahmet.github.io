@@ -217,6 +217,7 @@ const defaultRenderer = createMarkdownRenderer();
 function readHeadingText(inlineToken) {
   if (!inlineToken || !Array.isArray(inlineToken.children)) return '';
   return inlineToken.children
+    .filter((child) => child.type !== 'html_inline')
     .reduce((acc, child) => acc + (child.content || ''), '')
     .trim();
 }
@@ -245,16 +246,18 @@ export function renderMarkdownDocument(markdown, options = {}) {
   const tokens = defaultRenderer.parse(markdown, env);
   const slugCounts = new Map();
   const toc = [];
+  let headingIndex = 0;
 
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     if (token.type !== 'heading_open') continue;
 
+    headingIndex++;
     const level = Number(token.tag.slice(1));
     const text = readHeadingText(tokens[i + 1]);
 
     let baseSlug = slugify(text);
-    if (!baseSlug) baseSlug = `section-${toc.length + 1}`;
+    if (!baseSlug) baseSlug = `section-${headingIndex}`;
 
     const count = slugCounts.get(baseSlug) || 0;
     const slug = count > 0 ? `${baseSlug}-${count}` : baseSlug;

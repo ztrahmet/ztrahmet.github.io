@@ -265,7 +265,8 @@ export interface CertificateItem extends BaseCollectionItem {
   issuer: string;
   date: DateValue;
   expires?: DateValue;
-  /** Present only when `expires` is set; evaluated against the build date. */
+  /** Both present only when `expires` is set. `isExpired` is evaluated against the build date. */
+  expiresDisplay?: string;
   isExpired?: boolean;
   credential_id?: string;
 }
