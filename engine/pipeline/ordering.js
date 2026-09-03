@@ -70,6 +70,23 @@ function compareTiebreak(a, b) {
 }
 
 /**
+ * Orders two entries that both carry a date, newest first.
+ *
+ * @param {object} a - First entry
+ * @param {object} b - Second entry
+ * @returns {number} Comparator result
+ */
+function compareDated(a, b) {
+  const byPrimary = compareDates(getPrimaryDate(b), getPrimaryDate(a));
+  if (byPrimary !== 0) return byPrimary;
+
+  const byEnd = compareDates(toDateString(b?.end), toDateString(a?.end));
+  if (byEnd !== 0) return byEnd;
+
+  return compareTiebreak(a, b);
+}
+
+/**
  * Ranks entries newest first, with ongoing entries ahead of finished ones.
  *
  * Order of precedence:
@@ -95,13 +112,28 @@ export function compareByRecency(a, b) {
   const ongoingB = isOngoing(b);
   if (ongoingA !== ongoingB) return ongoingA ? -1 : 1;
 
-  const byPrimary = compareDates(dateB, dateA);
-  if (byPrimary !== 0) return byPrimary;
+  return compareDated(a, b);
+}
 
-  const byEnd = compareDates(toDateString(b?.end), toDateString(a?.end));
-  if (byEnd !== 0) return byEnd;
+/**
+ * Ranks entries by date alone, so an ongoing entry sits wherever its date puts it.
+ *
+ * This is what a list headed "Recent" or grouped into years needs. `compareByRecency`
+ * answers "what is live", which is a different question and produces a different order.
+ *
+ * @param {object} a - First entry
+ * @param {object} b - Second entry
+ * @returns {number} Comparator result
+ */
+export function compareByDate(a, b) {
+  const dateA = getPrimaryDate(a);
+  const dateB = getPrimaryDate(b);
 
-  return compareTiebreak(a, b);
+  if (!dateA && !dateB) return compareTiebreak(a, b);
+  if (!dateA) return 1;
+  if (!dateB) return -1;
+
+  return compareDated(a, b);
 }
 
 /**
@@ -112,4 +144,14 @@ export function compareByRecency(a, b) {
  */
 export function sortByRecency(entries = []) {
   return [...entries].sort(compareByRecency);
+}
+
+/**
+ * Returns a new array ordered newest first by date, ignoring ongoing state.
+ *
+ * @param {Array<object>} [entries=[]] - Entries to order
+ * @returns {Array<object>} Ordered copy
+ */
+export function sortByDate(entries = []) {
+  return [...entries].sort(compareByDate);
 }

@@ -37,7 +37,8 @@ npm run dev -- --port 3000
 2. **Validate** both against JSON Schema. Errors stop here, before anything is written.
 3. **Normalize assets.** Paths resolve to real URLs, light and dark pairs are kept, missing
    files warn. Asset folders can be named anything, since the engine publishes any
-   non-collection directory under its own name.
+   non-collection directory under its own name. The theme's own directories are published
+   the same way, so a theme can ship its fonts without putting them in `content/`.
 4. **Synthesize collections.** Markdown files and inline declarations merge into one list per
    collection. Each entry gets rendered HTML, a table of contents, reading time, an excerpt,
    display dates, SEO metadata, prev and next pointers, and related entries.
@@ -89,12 +90,20 @@ the HTML. A TOC entry always points at a heading that exists.
 
 ## Ordering
 
-One comparator handles every ordered list, in `pipeline/ordering.js`. In order: entries with a
-date rank above those without, ongoing entries rank above finished ones, then newer primary
-date, then later end date, then title, organization and slug.
+`pipeline/ordering.js` holds two comparators over one shared body of rules. In order: entries
+with a date rank above those without, then newer primary date, then later end date, then title,
+organization and slug.
 
 The last three exist so that two otherwise equal entries always come out in the same order,
 whatever the filesystem hands back.
+
+`compareByRecency` adds one step ahead of the date: ongoing entries rank above finished ones.
+It answers "what is live", and it is the order every collection is built in.
+
+`compareByDate` leaves that step out, so an entry sits wherever its date puts it. It answers
+"what is newest", which is what a list headed Recent and a year grouped archive need. Without
+it, a project started in 2021 and still running sorts above a post from this year, and year
+headings stop descending.
 
 ## Tests
 

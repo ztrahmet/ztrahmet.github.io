@@ -5,7 +5,7 @@ import {
   attachNavigationPointers,
   extractSchemaPayload
 } from '../pipeline/collection-synthesizer.js';
-import { sortByRecency, compareByRecency, isOngoing } from '../pipeline/ordering.js';
+import { sortByRecency, sortByDate, compareByRecency, isOngoing } from '../pipeline/ordering.js';
 import {
   calculateReadingMetrics,
   generateExcerpt
@@ -64,6 +64,30 @@ describe('Headless Feature Backbone Subsystem', () => {
       // Oldest item (index 3) has older: null and newer pointing to index 2
       expect(withNav[3].older).toBeNull();
       expect(withNav[3].newer.slug).toBe('p3');
+    });
+
+    it('ranks an ongoing entry by its date alone under sortByDate', () => {
+      const mixed = [
+        { slug: 'old-live', title: 'Old but running', start: '2020-01', end: 'present' },
+        { slug: 'new-done', title: 'New and finished', date: '2026-05' },
+        { slug: 'older', title: 'Older', date: '2019-03' }
+      ];
+
+      // Recency answers "what is live", so the 2020 entry leads
+      expect(sortByRecency(mixed).map((i) => i.slug)).toEqual(['old-live', 'new-done', 'older']);
+      // Date answers "what is newest", which is what a year grouped archive needs
+      expect(sortByDate(mixed).map((i) => i.slug)).toEqual(['new-done', 'old-live', 'older']);
+    });
+
+    it('leaves both orderings agreeing when nothing is ongoing', () => {
+      const finished = items.filter((i) => i.date !== 'present');
+      expect(sortByDate(finished).map((i) => i.slug)).toEqual(sortByRecency(finished).map((i) => i.slug));
+    });
+
+    it('sorts undated entries last and stays deterministic', () => {
+      const withUndated = [{ slug: 'none', title: 'No date' }, ...items];
+      expect(sortByDate(withUndated).map((i) => i.slug).at(-1)).toBe('none');
+      expect(sortByDate(withUndated)).toEqual(sortByDate([...withUndated].reverse()));
     });
 
     it('handles single item collection gracefully', () => {

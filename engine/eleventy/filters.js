@@ -14,7 +14,7 @@ import {
 } from '../config/format.js';
 import { renderMarkdown, renderMarkdownInline } from '../pipeline/markdown-renderer.js';
 import { resolveAbsoluteUrl } from '../pipeline/seo-normalizer.js';
-import { sortByRecency } from '../pipeline/ordering.js';
+import { sortByRecency, sortByDate } from '../pipeline/ordering.js';
 
 export { formatDate, formatDateRange, toIsoDate, toRfc822Date, slugify };
 
@@ -75,4 +75,5 @@ export function registerFilters(eleventyConfig) {
     return descending ? sorted.reverse() : sorted;
   });
   eleventyConfig.addFilter('byRecency', (list) => (Array.isArray(list) ? sortByRecency(list) : list));
+  eleventyConfig.addFilter('byDate', (list) => (Array.isArray(list) ? sortByDate(list) : list));
 }
