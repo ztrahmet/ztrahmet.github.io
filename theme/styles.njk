@@ -686,13 +686,30 @@ body {
 .prose > dl,
 .prose > blockquote,
 .prose > h2,
-.prose > h3 { max-width: var(--measure-text); }
+.prose > h3,
+.prose > h4,
+.prose > h5,
+.prose > h6 { max-width: var(--measure-text); }
 .prose h1, .prose h2, .prose h3 { line-height: var(--lh-tight); letter-spacing: -0.012em; text-wrap: balance; }
 /* The page already supplies the title, so an h1 inside a body is a duplicate.
    Styled to the same size as h2 so it never outshouts the real heading. */
 .prose h1 { margin-top: var(--s7); font-size: var(--t-h2); font-weight: 600; }
 .prose h2 { margin-top: var(--s7); font-size: var(--t-h2); font-weight: 600; }
 .prose h3 { margin-top: var(--s6); font-size: var(--t-h3); font-weight: 600; }
+/* Without these the browser defaults take over and h4 comes out larger than the
+   h3 above it. The ramp keeps going down instead, and h6 becomes a label. */
+.prose h4, .prose h5, .prose h6 { line-height: var(--lh-tight); letter-spacing: -0.006em; }
+.prose h4 { margin-top: var(--s6); font-size: 1.0625rem; font-weight: 600; }
+.prose h5 { margin-top: var(--s5); font-size: var(--t-small); font-weight: 600; color: var(--ink-2); }
+.prose h6 {
+  margin-top: var(--s5);
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
 .prose a {
   color: var(--ink);
   text-decoration: underline;
@@ -732,20 +749,116 @@ body {
 .prose ul { list-style: disc; }
 .prose ol { list-style: decimal; }
 .prose li + li { margin-top: var(--s2); }
+/* `> * + *` only reaches the top level, so a loose list item or a quote with an
+   attribution had its paragraphs running together. */
+.prose li > * + *,
+.prose blockquote > * + * { margin-top: var(--s3); }
+.prose li > ul,
+.prose li > ol { margin-top: var(--s2); }
 .prose li::marker { color: var(--ink-3); }
 .prose table { width: 100%; border-collapse: collapse; font-size: var(--t-small); }
 .prose th, .prose td { text-align: left; padding: var(--s2) var(--s3); border-bottom: 1px solid var(--rule); }
 .prose th { font-family: var(--mono); font-size: var(--t-mono-s); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+/* Centred, because a drawing narrower than the column reads as a mistake when it
+   is jammed against the left edge while a wide one fills the measure. */
 .prose img,
 .prose .inline-svg {
+  display: block;
   margin-block: var(--s5);
+  margin-inline: auto;
+  max-width: 100%;
+  height: auto;
   padding: 8px;
   background: var(--sunken);
   border: 1px solid var(--rule);
 }
-/* Inlined so it paints in the page's colour, which is the point of currentColor. */
-.prose .inline-svg { display: block; max-width: 100%; height: auto; }
 .prose .figure img { margin-block: 0; padding: 0; background: none; border: 0; }
+
+.prose figure { margin-block: var(--s5); }
+.prose figure > img,
+.prose figure > .inline-svg { margin-block: 0; }
+.prose figcaption {
+  margin-top: var(--s3);
+  font-size: var(--t-small);
+  line-height: var(--lh-ui);
+  text-align: center;
+  text-wrap: balance;
+  color: var(--ink-3);
+}
+
+/* A table is sized by its columns, so a wide one would push the page sideways. */
+.table-scroll { overflow-x: auto; max-width: 100%; }
+.prose .table-scroll { margin-block: var(--s5); }
+.prose .table-scroll table { margin: 0; }
+
+/* Long formulas scroll rather than widening the page. */
+.katex-display { overflow-x: auto; overflow-y: hidden; padding-block: var(--s1); }
+
+/* Elements markdown only reaches through raw HTML. Left to the browser they
+   arrive with default styling that ignores the palette, so mark came out in
+   bright yellow and a definition list read as undifferentiated paragraphs. */
+.prose dl { display: grid; grid-template-columns: auto 1fr; gap: var(--s2) var(--s4); }
+.prose dt {
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  padding-top: 0.28em;
+}
+.prose dd { margin: 0; }
+
+.prose details {
+  padding: var(--s3) var(--s4);
+  background: var(--sunken);
+  border: 1px solid var(--rule);
+}
+.prose summary {
+  cursor: pointer;
+  font-weight: 600;
+  /* The default triangle sits outside the padding and cannot be coloured. */
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+}
+.prose summary::-webkit-details-marker { display: none; }
+.prose summary::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 5px solid var(--accent);
+  border-block: 4px solid transparent;
+  transition: transform var(--fast) var(--ease);
+}
+.prose details[open] > summary::before { transform: rotate(90deg); }
+.prose details[open] > summary { margin-bottom: var(--s3); }
+
+.prose kbd {
+  font-family: var(--mono);
+  font-size: 0.8125em;
+  padding: 0.15em 0.4em;
+  background: var(--ground);
+  border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px;
+  white-space: nowrap;
+}
+.prose mark {
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+  color: inherit;
+  padding: 0.05em 0.15em;
+  /* Same reason as code: a highlight that wraps must keep its padding on both halves. */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.prose abbr[title] {
+  text-decoration: underline dotted var(--rule-strong);
+  text-underline-offset: 0.2em;
+  cursor: help;
+}
+.prose sub, .prose sup { line-height: 0; font-size: 0.75em; }
+.prose del { color: var(--ink-3); }
+.prose ins { text-decoration: underline; text-decoration-color: var(--accent); }
 .prose hr { margin-block: var(--s6); border: 0; border-top: 1px solid var(--rule); }
 
 /* --------------------------------------------------------------- footer */
@@ -1300,6 +1413,10 @@ body {
   .page { display: block; }
   .page__aside { display: none; }
   .prose, .lede { max-width: none; }
+  /* Nothing scrolls on paper, so a scroll container would silently crop instead. */
+  .table-scroll, .katex-display, .prose pre { overflow: visible; }
+  .prose pre { white-space: pre-wrap; overflow-wrap: break-word; }
+  .prose figure, .prose .table-scroll, .prose pre { break-inside: avoid; }
 
   body { font-size: 10pt; line-height: 1.4; background: #fff; }
   .pagehead__title { font-size: 20pt; }

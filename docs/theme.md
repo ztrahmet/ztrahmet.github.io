@@ -340,6 +340,18 @@ tell you what exists before you render a heading for it.
 {% endif %}
 ```
 
+## Rendered bodies
+
+`entry.html` is markdown output, so a theme has to style what markdown can produce, not only
+what the sample content happens to use: headings down to `h6`, loose lists whose items hold
+their own paragraphs, definition lists, `figure` and `figcaption`, `details`, `kbd`, `mark`,
+`abbr`, and KaTeX. Anything left unstyled falls back to browser defaults, which ignore the
+palette, and `h4` in particular comes out larger than the `h3` above it.
+
+Two of those need somewhere to scroll or they crop: `.table-scroll`, which the engine wraps
+every table in, and `.katex-display`. Give both `overflow-x: auto`, and set it back to
+`visible` in print, because paper does not scroll.
+
 ## Contract
 
 `engine/types.d.ts` is the full typed contract. It is kept in sync with what the engine
