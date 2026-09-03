@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <title>Avatar</title>
+  <g fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="1">
+    <rect x="0.5" y="0.5" width="159" height="159"/>
+    <line x1="58" y1="14" x2="58" y2="146"/>
+    <line x1="102" y1="14" x2="102" y2="146"/>
+    <line x1="14" y1="58" x2="146" y2="58"/>
+    <line x1="14" y1="102" x2="146" y2="102"/>
+  </g>
+  <rect fill="currentColor" x="22" y="22" width="28" height="28"/>
+  <rect fill="none" stroke="currentColor" stroke-width="3" x="111.5" y="23.5" width="25" height="25"/>
+  <g stroke="currentColor" stroke-width="3">
+    <line x1="22" y1="66" x2="50" y2="94"/>
+    <line x1="138" y1="66" x2="110" y2="94"/>
+  </g>
+  <circle fill="#b37700" cx="80" cy="80" r="10"/>
+  <rect fill="none" stroke="currentColor" stroke-width="3" x="23.5" y="111.5" width="25" height="25"/>
+  <rect fill="currentColor" x="110" y="110" width="28" height="28"/>
+</svg>

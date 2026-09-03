@@ -4,12 +4,16 @@ issuer: University of Example
 date: 2022-06
 url: https://example.edu/honors/2022
 image: /images/awards/rank2-medal.png
-description: Awarded 2nd rank among all graduating students in the Faculty of Computer Engineering for outstanding academic standing.
+logo: /images/organizations/university-logo.svg
+description: Awarded to the second-ranked graduating student across the Faculty of Computer Engineering, on cumulative GPA over four years.
 skills:
   - Academic Excellence
   - Algorithms
 ---
 
-# Faculty High Honors Graduate (Rank 2)
+Awarded on cumulative GPA across the four-year programme, ranked second of 214 graduating
+students in the Faculty of Computer Engineering.
 
-Graduation honor awarded for achieving the second highest cumulative GPA across the graduating engineering class.
+The final year weighting came mostly from the capstone project, which applied gradient
+boosting to triage prediction on a hospital admissions dataset and is the reason I ended up
+interested in the gap between a model that scores well and a model anyone will actually use.

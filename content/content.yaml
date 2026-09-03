@@ -2,11 +2,16 @@
 # content/content.yaml
 
 pinned_content:
-  - blog:how-to-sign-commits
+  - blog:measuring-build-performance
   - project:open-source-engine
-  - award:second-ranked-graduate
+  - publication:cache-oblivious-document-trees
+  - award:icwe-best-paper
 
 blog:
+  - slug: measuring-build-performance
+  - slug: schemas-that-fail-loudly
+  - slug: incremental-rendering-notes
+  - slug: what-i-read-in-2025
   - slug: how-to-sign-commits
   - slug: why-static-site-generators-win
     title: Why Static Site Generators Win
@@ -19,6 +24,7 @@ blog:
       - Architecture
 
 project:
+  - slug: glyphd
   - slug: first-android-app
   - slug: open-source-engine
     title: Open Source Static Site Engine
@@ -26,6 +32,7 @@ project:
     end: present
     url: https://engine.example.dev
     repository: https://github.com/username/engine
+    logo: /images/projects/engine-mark.svg
     image:
       light: /images/projects/engine-light.png
       dark: /images/projects/engine-dark.png
@@ -35,39 +42,105 @@ project:
       - TypeScript
       - Node.js
       - AST
+  - slug: lattice-grid-debugger
+    title: "Lattice: a CSS Grid Debugger"
+    start: 2022-04
+    end: 2022-11
+    url: https://lattice.example.dev
+    repository: https://github.com/username/lattice
+    logo: /images/projects/lattice-mark.svg
+    description: |-
+      A browser extension that overlays grid and flexbox geometry, with a keyboard-driven
+      inspector for track sizing.
+    skills:
+      - CSS
+      - Browser Extensions
+      - Developer Tools
 
 publication:
+  - slug: cache-oblivious-document-trees
   - slug: optimizing-static-web-generators
   - slug: icwe-2023-paper
-    title: "Optimizing Static Web Generators for Scale"
+    title: Incremental Compilation of Document Trees
     publisher: International Conference on Web Engineering (ICWE)
     date: 2023-11
     url: https://doi.org/10.1000/182
+    logo: /images/organizations/icwe.svg
     image: /images/publications/icwe-paper-preview.png
     authors:
       - Name Surname
       - Jane Doe
     description: |-
-      A comparative study on build optimizations, incremental static regeneration, and AST compilation speed.
+      A dependency-tracking scheme that reduces a warm rebuild from linear in the size of the
+      site to linear in the size of the change. Winner of the best student paper award.
     skills:
-      - Web Performance
+      - Incremental Computation
       - Compilers
+      - Web Performance
 
 certificate:
   - slug: aws-solutions-architect
-  - slug: aws-csa-2023
+  - slug: gcp-professional-architect
+    title: Professional Cloud Architect
+    issuer: Google Cloud
+    date: 2026-03
+    url: https://cloud.google.com/certification
+    credential_id: GCP-PCA-4417923
+    logo: /images/organizations/google-cloud.svg
+    skills:
+      - Cloud Architecture
+      - Google Cloud
+      - Terraform
+  - slug: cka-2025
+    title: Certified Kubernetes Administrator
+    issuer: The Linux Foundation
+    date: 2025-02
+    expires: 2028-02
+    url: https://training.linuxfoundation.org/certification/verify
+    credential_id: LF-CKA-8820314
+    image: /images/certificates/cka-badge.png
+    logo: /images/organizations/linux-foundation.svg
+    skills:
+      - Kubernetes
+      - Linux
+      - DevOps
+  - slug: aws-csa-2024
     title: AWS Certified Solutions Architect – Associate
     issuer: Amazon Web Services
-    date: 2023-04
-    expires: 2026-04
+    date: 2024-09
+    expires: 2027-09
     url: https://aws.amazon.com/verification
     credential_id: AWS-PSA-123456
     image: /images/certificates/aws-csa-badge.png
+    logo: /images/organizations/aws.svg
     skills:
       - Cloud Architecture
       - AWS
+  - slug: terraform-associate
+    title: Terraform Associate
+    issuer: HashiCorp
+    date: 2022-11
+    expires: 2024-11
+    url: https://developer.hashicorp.com/certifications
+    credential_id: HC-TA-551027
+    logo: /images/organizations/hashicorp.svg
+    skills:
+      - Terraform
+      - Infrastructure as Code
 
 award:
+  - slug: icwe-best-paper
+    title: Best Student Paper
+    issuer: International Conference on Web Engineering
+    date: 2023-11
+    url: https://example.org/icwe/awards
+    logo: /images/organizations/icwe.svg
+    description: |-
+      Awarded for the paper on incremental compilation of document trees, selected from
+      142 submissions to the research track.
+    skills:
+      - Research
+      - Compilers
   - slug: second-ranked-graduate
   - slug: honor-graduate-2022
     title: Honor Graduate
@@ -75,6 +148,7 @@ award:
     date: 2022-06
     url: https://example.edu/honors
     image: /images/awards/honor-medal.png
+    logo: /images/organizations/university-logo.svg
     description: |-
       Graduated ranked top 5% among all engineering faculty graduates for academic excellence.
     skills:

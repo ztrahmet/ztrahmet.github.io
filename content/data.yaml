@@ -15,22 +15,64 @@ profile:
   handle: username
   role: Software Engineer
   avatar: /images/avatar.svg
-  location: San Francisco, CA
+  location: Berlin, Germany
   summary: >-
-    Engineer with experience in Software Development and Open Source Contributions.
-    Passionate about building scalable applications and contributing to the tech community.
+    Engineer working on build tooling, static compilers and the unglamorous parts of
+    developer experience. I like systems that stay fast as they grow, and documentation
+    that tells you why rather than what.
   resume: /documents/resume.pdf
   social:
     - label: GitHub
       url: https://github.com/username
+      icon: github
     - label: LinkedIn
       url: https://linkedin.com/in/username
-      icon: https://thesvg.org/icons/linkedin/default.svg
+      icon: linkedin
+    - label: Mastodon
+      url: https://fosstodon.org/@username
+      icon: mastodon
     - label: Email
       url: mailto:username@example.com
-      icon: gmail
+      icon: mail
   experience:
-    - title: Software Engineer
+    - title: Staff Software Engineer
+      organization: Northwind Systems
+      logo: /images/organizations/northwind.svg
+      url: https://example.com
+      type: full-time
+      start: 2024-03
+      end: present
+      location: Berlin, Germany
+      modality: hybrid
+      description: |-
+        Lead the build platform team. Rebuilt the incremental compiler so that a
+        change to one page no longer invalidates the whole dependency graph, cutting
+        median CI time from 9 minutes to 40 seconds.
+
+        Own the release process and the internal documentation site used by around
+        200 engineers.
+      skills:
+        - Go
+        - Kubernetes
+        - Compilers
+        - Build Systems
+        - Observability
+    - title: Maintainer
+      organization: Static Web Collective
+      logo: /images/organizations/collective.svg
+      url: https://example.org
+      type: volunteer
+      start: 2021-05
+      end: present
+      modality: remote
+      description: |-
+        Maintain a set of open source static site tools. Review contributions, cut
+        releases and answer far more questions about YAML indentation than expected.
+      skills:
+        - Open Source
+        - Node.js
+        - Technical Writing
+    - title: Senior Software Engineer
       organization: Example Corp
       logo:
         light: /images/organizations/example-corp-light.svg
@@ -38,17 +80,63 @@ profile:
       url: https://example.com
       type: full-time
       start: 2022-01
-      end: present
+      end: 2024-02
       location: San Francisco, CA
       modality: in-person
       description: |-
-        Developed and maintained web applications using React and Node.js.
-        Collaborated with cross-functional teams to deliver high-quality software.
+        Built and maintained customer facing web applications in React and Node.js.
+        Introduced a design system that removed roughly 40% of the duplicated CSS
+        across four product surfaces.
       skills:
         - JavaScript
         - React
         - Node.js
+        - Design Systems
+    - title: Backend Engineer
+      organization: Meridian Labs
+      logo: /images/organizations/meridian.svg
+      type: contract
+      start: 2021-03
+      end: 2021-12
+      modality: remote
+      description: |-
+        Six month contract to build billing services and a public REST API, then
+        extended to cover the migration off a single Postgres instance.
+      skills:
+        - Python
+        - PostgreSQL
+        - API Design
+    - title: Software Engineering Intern
+      organization: Meridian Labs
+      logo: /images/organizations/meridian.svg
+      type: internship
+      start: 2020-06
+      end: 2020-09
+      modality: remote
+      description: |-
+        Wrote the internal tool that turned support tickets into reproducible test
+        cases. It is somehow still in production.
+      skills:
+        - Python
+        - Testing
   education:
+    - title: M.Sc. Computer Science
+      organization: University of Example
+      logo: /images/organizations/university-logo.svg
+      url: https://example.edu
+      type: master
+      start: 2022-09
+      end: 2024-06
+      grade: 1.3 GPA
+      location: Berlin, Germany
+      modality: hybrid
+      description: |-
+        Thesis on incremental compilation for document trees, supervised by the
+        programming languages group. Parts of it became the ICWE paper below.
+      skills:
+        - Compilers
+        - Algorithms
+        - Research
     - title: B.Sc. Computer Engineering
       organization: University of Example
       logo: /images/organizations/university-logo.svg
@@ -60,8 +148,9 @@ profile:
       location: Example City
       modality: in-person
       description: |-
-        Focused on software development and algorithms. Completed a capstone project
-        on machine learning applications in healthcare.
+        Focused on software development and algorithms. Capstone project applied
+        machine learning to triage in a hospital admissions dataset.
       skills:
         - Algorithms
         - Machine Learning
+        - C++

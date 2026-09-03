@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <title>Google Cloud</title>
+  <g fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round">
+    <path d="M48 12 82 32v32L48 84 14 64V32Z"/>
+    <path d="M48 40 65 50v20L48 80 31 70V50Z"/>
+  </g>
+</svg>

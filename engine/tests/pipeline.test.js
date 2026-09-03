@@ -39,26 +39,33 @@ describe('End-to-End Data Engine Pipeline & Eleventy Integration', () => {
     expect(data.site.title).toBe('Portfolio');
     expect(data.profile.handle).toBe('username');
 
-    // Check all collections are present
-    expect(data.collections.blog).toHaveLength(2);
-    expect(data.collections.project).toHaveLength(2);
-    expect(data.collections.publication).toHaveLength(2);
-    expect(data.collections.certificate).toHaveLength(2);
-    expect(data.collections.award).toHaveLength(2);
+    // Every collection is present and populated. Exact counts are deliberately
+    // not asserted, because this runs against the live content/ directory.
+    for (const name of ['blog', 'project', 'publication', 'certificate', 'award']) {
+      expect(Array.isArray(data.collections[name])).toBe(true);
+      expect(data.collections[name].length).toBeGreaterThan(0);
+    }
 
-    // Verify pinned items integrity
-    expect(data.pinned_items).toHaveLength(3);
+    // Every declared pinned reference resolves to exactly one item
+    expect(data.pinned_items).toHaveLength(data.content.pinned_content.length);
     const pinnedSlugs = data.pinned_items.map((i) => i.slug);
-    expect(pinnedSlugs).toContain('how-to-sign-commits');
-    expect(pinnedSlugs).toContain('open-source-engine');
-    expect(pinnedSlugs).toContain('second-ranked-graduate');
+    for (const ref of data.content.pinned_content) {
+      expect(pinnedSlugs).toContain(ref.split(':')[1]);
+    }
 
     // Verify Markdown-driven items extracted frontmatter and rendered HTML with anchor IDs
     const gpgPost = data.collections.blog.find((b) => b.slug === 'how-to-sign-commits');
     expect(gpgPost.hasMarkdown).toBe(true);
     expect(gpgPost.title).toBe('How to Sign Commits with GPG');
-    expect(gpgPost.content).toContain('Signing commits ensures that others can verify');
-    expect(gpgPost.html).toContain('How to Sign Commits with GPG</h1>');
+    // Raw markdown is carried through; the exact prose is content, not contract.
+    expect(gpgPost.content.length).toBeGreaterThan(0);
+    expect(gpgPost.wordCount).toBeGreaterThan(0);
+    // Headings render with anchor ids, and every TOC entry points at a real one.
+    expect(gpgPost.html).toMatch(/<h2 id="[^"]+">/);
+    expect(gpgPost.toc.length).toBeGreaterThan(0);
+    for (const heading of gpgPost.toc) {
+      expect(gpgPost.html).toContain(`id="${heading.id}"`);
+    }
     expect(gpgPost.permalink).toBe('/blog/how-to-sign-commits/');
 
     // Verify Inline-driven items

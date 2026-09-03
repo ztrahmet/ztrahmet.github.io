@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <title>glyphd</title>
+  <g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="square">
+    <path d="M34 22H22v52h12M62 22h12v52H62"/>
+    <path d="M48 34v28"/>
+  </g>
+</svg>

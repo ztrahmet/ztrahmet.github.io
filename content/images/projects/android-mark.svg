@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <title>First Android Mobile App</title>
+  <g fill="none" stroke="currentColor" stroke-width="6">
+    <rect x="26" y="12" width="44" height="72" rx="8"/>
+    <path d="M40 24h16"/>
+  </g>
+  <circle cx="48" cy="70" r="4.5" fill="currentColor"/>
+</svg>

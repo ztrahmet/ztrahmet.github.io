@@ -45,7 +45,7 @@ profile:
       url: https://github.com/username
     - label: Email
       url: mailto:you@example.com
-      icon: gmail
+      icon: mail
   experience:
     - title: Software Engineer         # required
       organization: Example Corp       # required
@@ -117,9 +117,7 @@ image: /images/blogs/gpg.png
 skills: [Git, Security]
 ---
 
-# How to Sign Commits with GPG
-
-Body goes here.
+Body goes here. Start at `##`, since the title already comes from frontmatter.
 ```
 
 **Inline.** Put the metadata straight in `content.yaml` and skip the markdown file. Use this
@@ -141,11 +139,16 @@ it stays in the order you wrote it, because that is a curation choice.
 
 | Collection | Required | Also accepts |
 |---|---|---|
-| `blog` | `slug` `title` `date` | `url` `image` `description` `skills` |
-| `project` | `slug` `title` `start` | `end` `url` `repository` `image` `description` `skills` |
-| `publication` | `slug` `title` `publisher` `date` | `url` `image` `authors` `description` `skills` |
-| `certificate` | `slug` `title` `issuer` `date` | `expires` `url` `credential_id` `image` `skills` |
-| `award` | `slug` `title` `issuer` `date` | `url` `image` `description` `skills` |
+| `blog` | `slug` `title` `date` | `url` `image` `logo` `description` `skills` |
+| `project` | `slug` `title` `start` | `end` `url` `repository` `image` `logo` `description` `skills` |
+| `publication` | `slug` `title` `publisher` `date` | `url` `image` `logo` `authors` `description` `skills` |
+| `certificate` | `slug` `title` `issuer` `date` | `expires` `url` `credential_id` `image` `logo` `skills` |
+| `award` | `slug` `title` `issuer` `date` | `url` `image` `logo` `description` `skills` |
+
+Every collection takes `logo`, the same field `experience` and `education` take, and like every
+asset it can be a light and dark pair. It is the mark that stands for the entry: the issuer of a
+certificate, the publisher of a paper, a project's own mark. `image` is different, it is the
+entry's own artwork, such as a cover or a badge.
 
 Required means required after synthesis. A markdown entry satisfies them through frontmatter,
 an inline entry through `content.yaml`.
@@ -179,12 +182,15 @@ fine too. There is no required folder and nothing special about the name `images
 
 ```
 content/pictures/logo.png     ->  /pictures/logo.png
-content/static/css/site.css   ->  /static/css/site.css
 content/downloads/cv.pdf      ->  /downloads/cv.pdf
+content/talks/slides.pdf      ->  /talks/slides.pdf
 ```
 
 Files sitting next to a markdown entry are published alongside it, so
 `content/blog/my-post/cover.png` is served at `/blog/my-post/cover.png`.
+
+These are your files. A theme's own assets, such as its fonts, live in `theme/` and are
+published the same way, so `content/` never has to carry presentation.
 
 Loose files at the top of `content/` are published to the site root, which is how you add a
 `CNAME` or a `favicon.ico`. The engine never publishes its own source, so `data.yaml`,
@@ -198,7 +204,9 @@ avatar:
   dark: /images/avatar-dark.svg
 ```
 
-Social icons accept a plain name (`github`, `gmail`) as well as a path or URL.
+Social icons accept a plain name (`github`, `mail`) as well as a path or URL. A plain name
+selects a glyph the theme provides, so which names work is up to the theme; a path or URL
+is used as given.
 
 A missing asset warns but does not stop the build, so you can write first and add images later.
 

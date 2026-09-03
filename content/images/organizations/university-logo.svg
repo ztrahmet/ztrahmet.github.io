@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <title>University of Example</title>
+  <path d="M48 8 84 23v29c0 20-16 32-36 37C28 84 12 72 12 52V23Z"
+        fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M27 44h42M48 44v27" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="square"/>
+</svg>

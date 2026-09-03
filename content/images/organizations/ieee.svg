@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <title>IEEE</title>
+  <g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="square">
+    <path d="M20 24h56M20 48h40M20 72h56"/>
+    <circle cx="74" cy="48" r="9"/>
+  </g>
+</svg>

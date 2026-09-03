@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <title>HashiCorp</title>
+  <g fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="miter">
+    <path d="M48 10 84 48 48 86 12 48Z"/>
+    <path d="M48 34 62 48 48 62 34 48Z"/>
+  </g>
+</svg>
