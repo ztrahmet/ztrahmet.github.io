@@ -73,7 +73,7 @@ eleventyComputed:
     {%- endif %}
 
     {%- if entry.hasMarkdown %}
-    <div class="prose">{{ entry.html | safe }}</div>
+    <div class="prose">{{ entry.html | inlineThemedSvg(entry.baseDir) | safe }}</div>
     {%- endif %}
 
   </article>

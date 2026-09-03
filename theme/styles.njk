@@ -736,12 +736,15 @@ body {
 .prose table { width: 100%; border-collapse: collapse; font-size: var(--t-small); }
 .prose th, .prose td { text-align: left; padding: var(--s2) var(--s3); border-bottom: 1px solid var(--rule); }
 .prose th { font-family: var(--mono); font-size: var(--t-mono-s); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
-.prose img {
+.prose img,
+.prose .inline-svg {
   margin-block: var(--s5);
   padding: 8px;
   background: var(--sunken);
   border: 1px solid var(--rule);
 }
+/* Inlined so it paints in the page's colour, which is the point of currentColor. */
+.prose .inline-svg { display: block; max-width: 100%; height: auto; }
 .prose .figure img { margin-block: 0; padding: 0; background: none; border: 0; }
 .prose hr { margin-block: var(--s6); border: 0; border-top: 1px solid var(--rule); }
 
