@@ -192,6 +192,20 @@ export function markdownItMath(md) {
 }
 
 /**
+ * Wraps tables so a wide one can scroll on its own.
+ *
+ * A table is sized by its columns, so one with more columns than the column is
+ * wide pushes the whole page sideways. The wrapper gives it somewhere to scroll,
+ * which the table alone cannot provide.
+ *
+ * @param {MarkdownIt} md - Markdown-it instance
+ */
+export function markdownItTableScroll(md) {
+  md.renderer.rules.table_open = () => '<div class="table-scroll"><table>';
+  md.renderer.rules.table_close = () => '</table></div>';
+}
+
+/**
  * Creates and configures a MarkdownIt instance with KaTeX math support.
  * @returns {MarkdownIt} Configured MarkdownIt instance
  */
@@ -203,6 +217,7 @@ export function createMarkdownRenderer() {
   });
 
   md.use(markdownItMath);
+  md.use(markdownItTableScroll);
 
   return md;
 }

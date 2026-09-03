@@ -30,6 +30,17 @@ describe('Collection Synthesizer & Dual-Mode Resolution', () => {
       expect(renderMarkdownToHtml(null)).toBe('');
       expect(renderMarkdownToHtml('   ')).toBe('');
     });
+
+    it('wraps a table so a wide one has somewhere to scroll', () => {
+      const html = renderMarkdownToHtml('| a | b |\n| --- | --- |\n| 1 | 2 |');
+
+      expect(html).toContain('<div class="table-scroll"><table>');
+      expect(html).toContain('</table></div>');
+      expect(html.match(/<div class="table-scroll">/g)).toHaveLength(1);
+      // A table is sized by its columns, so without the wrapper the cells are
+      // clipped by the column and cannot be reached.
+      expect(html).not.toMatch(/<p>[^<]*<table>/);
+    });
   });
 
   describe('discoverMarkdownItems', () => {

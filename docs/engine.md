@@ -88,6 +88,10 @@ so `$50 - $100` and `$HOME` render as written.
 Headings get anchor IDs, and the table of contents is derived from the same parse that produces
 the HTML. A TOC entry always points at a heading that exists.
 
+Tables come out wrapped in `<div class="table-scroll">`. A table is sized by its columns, so one
+with more columns than the column is wide would be clipped by the measure with no way to reach
+the rest. The wrapper is somewhere for it to scroll; a theme styles that class.
+
 ## Ordering
 
 `pipeline/ordering.js` holds two comparators over one shared body of rules. In order: entries
