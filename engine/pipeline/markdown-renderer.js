@@ -1,5 +1,6 @@
 import MarkdownIt from 'markdown-it';
 import katex from 'katex';
+import hljs from 'highlight.js/lib/common';
 import { slugify } from '../config/format.js';
 
 /**
@@ -192,6 +193,29 @@ export function markdownItMath(md) {
 }
 
 /**
+ * Highlights a fenced code block, falling back to plain escaped text.
+ *
+ * Highlighting happens here rather than in the browser, so a reader downloads no
+ * highlighter and a page with code costs nothing extra to render. The theme
+ * styles the emitted `hljs-` classes, which is what keeps the palette its choice.
+ *
+ * @param {string} code - Raw block contents
+ * @param {string} lang - Language declared on the fence, may be empty
+ * @returns {string} Highlighted HTML
+ */
+export function highlightCode(code, lang) {
+  const language = (lang || '').trim().toLowerCase();
+  if (language && hljs.getLanguage(language)) {
+    try {
+      return hljs.highlight(code, { language, ignoreIllegals: true }).value;
+    } catch {
+      // Fall through to plain text rather than losing the block
+    }
+  }
+  return '';
+}
+
+/**
  * Wraps tables so a wide one can scroll on its own.
  *
  * A table is sized by its columns, so one with more columns than the column is
@@ -213,7 +237,8 @@ export function createMarkdownRenderer() {
   const md = new MarkdownIt({
     html: true,
     linkify: true,
-    typographer: true
+    typographer: true,
+    highlight: (code, lang) => highlightCode(code, lang)
   });
 
   md.use(markdownItMath);

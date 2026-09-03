@@ -148,8 +148,11 @@ echo "User is $USER"
 
       expect(html).not.toContain('class="katex"');
       expect(html).toContain('<pre><code class="language-bash">');
-      expect(html).toContain('Price is $50');
-      expect(html).toContain('User is $USER');
+      // Highlighting marks up the block, so assert on the text it carries
+      // rather than on runs that now have spans inside them.
+      const text = html.replace(/<[^>]+>/g, '');
+      expect(text).toContain('Price is $50');
+      expect(text).toContain('User is $USER');
     });
   });
 

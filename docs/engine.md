@@ -92,6 +92,11 @@ Tables come out wrapped in `<div class="table-scroll">`. A table is sized by its
 with more columns than the column is wide would be clipped by the measure with no way to reach
 the rest. The wrapper is somewhere for it to scroll; a theme styles that class.
 
+Fenced code is highlighted here, at build time, using the language named on the fence. A reader
+downloads no highlighter and a page with code costs nothing extra to render. The output is
+`hljs-` class names and nothing else, so the palette belongs to the theme. An unknown or absent
+language falls back to plain escaped text rather than guessing.
+
 ## Ordering
 
 `pipeline/ordering.js` holds two comparators over one shared body of rules. In order: entries
