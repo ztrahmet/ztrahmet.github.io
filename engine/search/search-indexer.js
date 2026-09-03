@@ -8,7 +8,7 @@ import {
   getCollectionLabel
 } from '../config/mappings.js';
 import { formatDate, formatDateRange } from '../config/format.js';
-import { COLLECTION_TYPES } from '../config/enums.js';
+import { COLLECTION_TYPES, PROFILE_ANCHORS } from '../config/enums.js';
 import { readProjectVersion } from '../config/paths.js';
 
 /**
@@ -74,7 +74,7 @@ export function buildSearchIndex(engineData) {
         title: exp.title,
         subtitle: exp.organization,
         url: exp.url || '',
-        permalink: '/#experience',
+        permalink: PROFILE_ANCHORS.experience,
         date: exp.start || '',
         dateDisplay,
         skills: Array.isArray(exp.skills) ? exp.skills : [],
@@ -101,7 +101,7 @@ export function buildSearchIndex(engineData) {
         title: edu.title,
         subtitle: edu.organization,
         url: edu.url || '',
-        permalink: '/#education',
+        permalink: PROFILE_ANCHORS.education,
         date: edu.start || '',
         dateDisplay,
         skills: Array.isArray(edu.skills) ? edu.skills : [],

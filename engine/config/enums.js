@@ -26,6 +26,11 @@ export const MODALITIES = Object.freeze([
   'remote'
 ]);
 
+export const PROFILE_ANCHORS = Object.freeze({
+  experience: '/cv/#experience',
+  education: '/cv/#education'
+});
+
 export const COLLECTION_TYPES = Object.freeze([
   'blog',
   'project',

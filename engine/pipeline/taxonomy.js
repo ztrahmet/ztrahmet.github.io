@@ -1,4 +1,4 @@
-import { COLLECTION_TYPES } from '../config/enums.js';
+import { COLLECTION_TYPES, PROFILE_ANCHORS } from '../config/enums.js';
 import { slugify } from '../config/format.js';
 import { sortByRecency } from './ordering.js';
 
@@ -68,8 +68,8 @@ export function buildTaxonomy(engineData = {}) {
     });
   }
 
-  ingestProfileSection(profile.experience, 'experience', '/#experience');
-  ingestProfileSection(profile.education, 'education', '/#education');
+  ingestProfileSection(profile.experience, 'experience', PROFILE_ANCHORS.experience);
+  ingestProfileSection(profile.education, 'education', PROFILE_ANCHORS.education);
 
   for (const type of COLLECTION_TYPES) {
     const items = collections[type] || [];

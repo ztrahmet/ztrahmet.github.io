@@ -24,6 +24,7 @@ import {
 import { buildItemSeo, resolveAbsoluteUrl } from '../pipeline/seo-normalizer.js';
 import { loadEngineData } from '../pipeline/data-loader.js';
 import { validateCollectionItem } from '../validation/validator.js';
+import { PROFILE_ANCHORS } from '../config/enums.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -461,7 +462,7 @@ describe('Taxonomy Canonicalization', () => {
     });
 
     const ref = taxonomy.skills.go.items[0];
-    expect(ref.permalink).toBe('/#experience');
+    expect(ref.permalink).toBe(PROFILE_ANCHORS.experience);
     expect(ref.url).toBe('https://corp.example.com');
   });
 
