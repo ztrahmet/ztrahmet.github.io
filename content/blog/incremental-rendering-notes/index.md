@@ -49,6 +49,8 @@ The diameter stays small because links between pages are mostly *references*, no
 URL. That distinction is what keeps the graph shallow, and it is worth defending in the
 design of the tool.
 
+![One changed input fans out through parse and assets, and both paths meet again at the link stage](./dirty-set.svg)
+
 ## The stubborn part
 
 Three things need global knowledge and therefore resist incrementalisation:

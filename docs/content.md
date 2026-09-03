@@ -196,6 +196,22 @@ Loose files at the top of `content/` are published to the site root, which is ho
 `CNAME` or a `favicon.ico`. The engine never publishes its own source, so `data.yaml`,
 `content.yaml` and any `.md`, `.yml` or `.json` are left out.
 
+An SVG that paints with `currentColor` follows the page, so one file works in both light and
+dark. Write it as a normal markdown image and the theme inlines it, because an SVG loaded
+through `<img>` is a separate document and would stay black:
+
+```markdown
+![How the build stages fit together](./diagram.svg)
+```
+
+```svg
+<path d="M70 30 H200" stroke="currentColor"/>
+```
+
+Only files that actually use `currentColor` are inlined. An illustration with its own colours
+is left alone, so it keeps its palette and stays a normal image. When the drawing cannot be one
+colour, use a light and dark pair instead.
+
 Any asset can be a light and dark pair:
 
 ```yaml
