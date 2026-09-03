@@ -1,0 +1,292 @@
+---
+permalink: /assets/app.js
+eleventyExcludeFromCollections: true
+---
+{% raw %}
+/* Colour scheme control. The page already works without this: it follows the
+   system preference. This adds the override and remembers it. */
+(function () {
+  var root = document.documentElement;
+  var group = document.querySelector('.scheme');
+  if (!group) return;
+
+  function read() {
+    try { return localStorage.getItem('scheme') || 'auto'; } catch (e) { return 'auto'; }
+  }
+
+  function apply(mode) {
+    if (mode === 'auto') delete root.dataset.theme;
+    else root.dataset.theme = mode;
+    var buttons = group.querySelectorAll('[data-scheme]');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].setAttribute('aria-pressed', String(buttons[i].dataset.scheme === mode));
+    }
+  }
+
+  group.hidden = false;
+  apply(read());
+
+  group.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-scheme]');
+    if (!button) return;
+    var mode = button.dataset.scheme;
+    try {
+      if (mode === 'auto') localStorage.removeItem('scheme');
+      else localStorage.setItem('scheme', mode);
+    } catch (e) {}
+    apply(mode);
+  });
+})();
+
+/* Search palette. Progressive enhancement over the /search/ page: the trigger
+   stays a real link, and the shortcut hint is only added once the script that
+   implements it is running. Nodes are built with textContent, never innerHTML. */
+(function () {
+  var trigger = document.querySelector('[data-search-trigger]');
+  var dialog = document.getElementById('palette');
+  if (!trigger || !dialog || typeof dialog.showModal !== 'function') return;
+
+  var input = dialog.querySelector('.palette__input');
+  var list = dialog.querySelector('.palette__list');
+  var status = dialog.querySelector('.palette__status');
+  var closer = dialog.querySelector('[data-palette-close]');
+
+  var records = null;
+  var results = [];
+  var cursor = 0;
+
+  var isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
+  var hint = document.createElement('kbd');
+  hint.textContent = isMac ? '⌘K' : 'Ctrl K';
+  trigger.appendChild(hint);
+
+  function load() {
+    if (records) return Promise.resolve(records);
+    return fetch('/search-index.json')
+      .then(function (response) { return response.json(); })
+      .then(function (data) { records = data.records || []; return records; })
+      .catch(function () { records = []; return records; });
+  }
+
+  function has(value, query) {
+    return (value || '').toLowerCase().indexOf(query) > -1;
+  }
+
+  /* Title matches outrank skills, which outrank body text. */
+  function score(record, query) {
+    var title = (record.title || '').toLowerCase();
+    if (title.indexOf(query) === 0) return 6;
+    if (title.indexOf(query) > -1) return 5;
+    if (has((record.skills || []).join(' '), query)) return 4;
+    if (has(record.subtitle, query)) return 3;
+    if (has(record.description, query)) return 2;
+    if (has(record.content, query)) return 1;
+    return 0;
+  }
+
+  function option(record, index) {
+    var item = document.createElement('li');
+    item.className = 'palette__option';
+    item.id = 'palette-option-' + index;
+    item.setAttribute('role', 'option');
+    item.setAttribute('aria-selected', String(index === cursor));
+
+    var link = document.createElement('a');
+    link.className = 'palette__link';
+    link.href = record.permalink;
+
+    var title = document.createElement('span');
+    title.className = 'palette__title';
+    title.textContent = record.title;
+
+    var meta = document.createElement('span');
+    meta.className = 'palette__meta';
+    meta.textContent = record.typeLabel + (record.dateDisplay ? ' · ' + record.dateDisplay : '');
+
+    link.appendChild(title);
+    link.appendChild(meta);
+    item.appendChild(link);
+    return item;
+  }
+
+  function render() {
+    list.textContent = '';
+    for (var i = 0; i < results.length; i++) list.appendChild(option(results[i], i));
+    input.setAttribute('aria-expanded', results.length ? 'true' : 'false');
+    if (results.length) {
+      input.setAttribute('aria-activedescendant', 'palette-option-' + cursor);
+    } else {
+      input.removeAttribute('aria-activedescendant');
+    }
+  }
+
+  function search() {
+    var query = input.value.trim().toLowerCase();
+    cursor = 0;
+    if (!query) {
+      results = [];
+      render();
+      status.textContent = records ? records.length + ' entries indexed' : '';
+      return;
+    }
+    results = (records || [])
+      .map(function (record) { return { record: record, rank: score(record, query) }; })
+      .filter(function (hit) { return hit.rank > 0; })
+      .sort(function (a, b) { return b.rank - a.rank; })
+      .slice(0, 12)
+      .map(function (hit) { return hit.record; });
+    render();
+    status.textContent = results.length
+      ? results.length + ' result' + (results.length === 1 ? '' : 's')
+      : 'No matches for “' + input.value.trim() + '”';
+  }
+
+  function move(step) {
+    if (!results.length) return;
+    cursor = (cursor + step + results.length) % results.length;
+    render();
+    var active = document.getElementById('palette-option-' + cursor);
+    if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
+  }
+
+  /* Reset on open rather than on close, so the palette starts clean whatever
+     dismissed it: escape, the backdrop, the button, or a form submission. */
+  function open() {
+    input.value = '';
+    results = [];
+    cursor = 0;
+    render();
+    dialog.showModal();
+    load().then(function () {
+      search();
+      input.focus();
+    });
+  }
+
+  trigger.addEventListener('click', function (event) {
+    event.preventDefault();
+    open();
+  });
+
+  if (closer) closer.addEventListener('click', function () { dialog.close(); });
+
+  // Clicking the backdrop closes, since the dialog itself fills only part of it.
+  dialog.addEventListener('click', function (event) {
+    if (event.target === dialog) dialog.close();
+  });
+
+  input.addEventListener('input', search);
+
+  input.addEventListener('keydown', function (event) {
+    if (event.key === 'ArrowDown') { event.preventDefault(); move(1); }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); move(-1); }
+    else if (event.key === 'Enter' && results[cursor]) {
+      event.preventDefault();
+      window.location.href = results[cursor].permalink;
+    }
+  });
+
+  document.addEventListener('keydown', function (event) {
+    var target = event.target;
+    var typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+    var combo = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
+    if (combo || (event.key === '/' && !typing && !event.metaKey && !event.ctrlKey && !event.altKey)) {
+      if (dialog.open) return;
+      event.preventDefault();
+      open();
+    }
+  });
+})();
+/* Print action on the CV. Hidden without JS, since Cmd+P still works. */
+(function () {
+  var button = document.querySelector('[data-print]');
+  if (!button) return;
+  button.hidden = false;
+  button.addEventListener('click', function () { window.print(); });
+})();
+/* Reading rail. Fills the contents rule as the article is read, and marks the
+   section currently in view. Offsets are measured once and re-measured on
+   resize, so scrolling is pure arithmetic and never forces a layout. Purely
+   additive: without it the contents list is still a working set of links. */
+(function () {
+  var rail = document.querySelector('[data-reading]');
+  var article = document.querySelector('.entry');
+  if (!rail || !article) return;
+
+  var links = Array.prototype.slice.call(rail.querySelectorAll('.toc__item a'));
+  if (!links.length) return;
+
+  var offsets = [];
+  var articleTop = 0;
+  var articleHeight = 0;
+  var active = -1;
+
+  function remeasure() {
+    var box = article.getBoundingClientRect();
+    articleTop = box.top + window.scrollY;
+    articleHeight = box.height;
+    offsets = links.map(function (link) {
+      var id = decodeURIComponent(link.getAttribute('href').slice(1));
+      var target = document.getElementById(id);
+      return target ? target.getBoundingClientRect().top + window.scrollY : Infinity;
+    });
+    update();
+  }
+
+  function update() {
+    var scrollable = articleHeight - window.innerHeight;
+    var read = scrollable > 0
+      ? Math.min(Math.max((window.scrollY - articleTop) / scrollable, 0), 1)
+      : 1;
+    rail.style.setProperty('--read', read.toFixed(4));
+
+    // The current section is the last heading whose top has passed the mark.
+    var mark = window.scrollY + 120;
+    var index = 0;
+    for (var i = 0; i < offsets.length; i++) {
+      if (offsets[i] <= mark) index = i;
+    }
+    if (index !== active) {
+      if (active > -1) links[active].removeAttribute('aria-current');
+      links[index].setAttribute('aria-current', 'true');
+      active = index;
+    }
+  }
+
+  remeasure();
+  addEventListener('scroll', update, { passive: true });
+  addEventListener('resize', remeasure);
+  addEventListener('load', remeasure);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(remeasure);
+})();
+
+/* Body images become numbered figures, captioned from their alt text. The alt
+   is cleared once it has moved, so the caption is not announced twice. Without
+   this the image still renders and the alt still does its job. */
+(function () {
+  var prose = document.querySelector('.prose');
+  if (!prose) return;
+
+  var images = prose.querySelectorAll('p > img[alt]:only-child');
+  Array.prototype.forEach.call(images, function (image) {
+    if (!image.alt) return;
+
+    // Capture the paragraph before moving the image out of it.
+    var paragraph = image.parentNode;
+
+    var caption = document.createElement('figcaption');
+    var text = document.createElement('span');
+    text.className = 'figure__text';
+    text.textContent = image.alt;
+    caption.appendChild(text);
+
+    var figure = document.createElement('figure');
+    figure.className = 'figure';
+    figure.appendChild(image);
+    figure.appendChild(caption);
+    image.alt = '';
+
+    paragraph.parentNode.replaceChild(figure, paragraph);
+  });
+})();
+{% endraw %}

@@ -1,0 +1,31 @@
+---
+permalink: /feed.xml
+eleventyExcludeFromCollections: true
+---
+{#- description carries the plain text excerpt, which is what RSS defines it as.
+    The rendered body goes in content:encoded, absolutized against the entry's own
+    permalink so a body image written as ./cover.png still resolves in a reader. -#}
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>{{ site.title }}</title>
+    <link>{{ site.url }}</link>
+    <description>{{ site.description }}</description>
+    <language>{{ site.lang }}</language>
+    <lastBuildDate>{{ build.generatedAt | rfc822Date }}</lastBuildDate>
+    <atom:link href="{{ '/feed.xml' | absoluteUrl(site.url) }}" rel="self" type="application/rss+xml"/>
+    {%- for item in all_content | byDate | limit(20) %}
+    <item>
+      <title>{{ item.title }}</title>
+      <link>{{ item.permalink | absoluteUrl(site.url) }}</link>
+      <guid isPermaLink="true">{{ item.permalink | absoluteUrl(site.url) }}</guid>
+      <pubDate>{{ item.primaryDate | rfc822Date }}</pubDate>
+      <category>{{ item.collection | collectionLabel(false) }}</category>
+      <description>{{ item.description or item.excerpt }}</description>
+      {%- if item.hasMarkdown %}
+      <content:encoded><![CDATA[{{ item.html | absoluteUrls(site.url, item.permalink) | safe }}]]></content:encoded>
+      {%- endif %}
+    </item>
+    {%- endfor %}
+  </channel>
+</rss>

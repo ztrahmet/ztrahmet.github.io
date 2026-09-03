@@ -1,0 +1,24 @@
+{#- A mounted organisation mark. Renders nothing without a logo, and handles a
+    themed pair or a single asset, so callers never repeat that test.
+
+    An SVG is inlined rather than linked, so a file drawn with currentColor takes
+    the theme colour. Anything else falls back to an image. -#}
+{% macro asset(src) %}
+{%- set svg = src | inlineSvg %}
+{%- if svg %}{{ svg | safe }}
+{%- else %}<img src="{{ src }}" alt="" loading="lazy" decoding="async">
+{%- endif %}
+{% endmacro %}
+
+{% macro mark(logo) %}
+{%- if logo %}
+<span class="mark">
+  {%- if logo.light %}
+  <span class="light-only">{{ asset(logo.light) }}</span>
+  <span class="dark-only">{{ asset(logo.dark) }}</span>
+  {%- else %}
+  {{ asset(logo) }}
+  {%- endif %}
+</span>
+{%- endif %}
+{% endmacro %}

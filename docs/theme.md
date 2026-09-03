@@ -10,10 +10,27 @@ theme/
   _layouts/      layouts
   _includes/     partials
   _data/         theme-only data, optional
+  static/        fonts, icons and anything the CSS references
   index.njk      pages
 ```
 
 Nunjucks is the default for `.njk`, `.html` and `.md`. You can also use `.11ty.js`.
+
+## Theme assets
+
+A theme ships the files its stylesheets reference. Every directory in `theme/`
+is published under its own name, so `theme/static/fonts/x.woff2` is served at
+`/static/fonts/x.woff2`. Directories Eleventy reserves are prefixed with an
+underscore and are never published.
+
+This is what keeps the theme self-contained. Fonts and icons belong to the
+presentation layer, not to `content/`, and a theme that keeps them in `theme/`
+works unchanged against any content directory.
+
+Theme and content assets share the site root. If a theme directory has the same
+name as a content directory, the content one is published, the theme one is
+skipped, and the build warns. Rename the theme directory if that happens.
+
 
 ## Smallest working theme
 
@@ -146,13 +163,15 @@ site in another language, build the range yourself, which is what `isOngoing` is
 | `markdown` | render a string as a block |
 | `markdownInline` | render without the wrapping paragraph |
 | `absoluteUrl(siteUrl)` | one path to an absolute URL |
-| `absoluteUrls(siteUrl)` | rewrite root relative links inside HTML, for feeds |
+| `absoluteUrls(siteUrl, pagePath)` | rewrite links inside HTML to absolute, for feeds. Root relative paths resolve against the site, document relative ones such as `./cover.png` against `pagePath` |
 | `slugify` | URL safe slug, handles accents and `C++` |
+| `inlineSvg` | an SVG asset path to its markup, for inlining |
 | `limit(n)` | first n items |
 | `where(key, value)` | keep matching items |
 | `whereNot(key, value)` | drop matching items |
 | `sortBy(key, desc?)` | sort by a property |
 | `byRecency` | the engine's own ordering, ongoing first |
+| `byDate` | ordering by date alone, ignoring ongoing state |
 | `modalityLabel(context)` | `in-person` becomes On-site, or On-campus for education |
 | `employmentTypeLabel` `degreeTypeLabel` | `full-time` becomes Full-time |
 | `collectionLabel(plural?)` | `blog` becomes Blog or Blog Post |
@@ -214,8 +233,15 @@ permalink: "/skills/{{ skill.slug }}/"
 {% endfor %}
 ```
 
-`skill.permalink` on a reference points at the entry, or at `/#experience` for profile history.
-`skill.url` is the external link, when there is one.
+Lists arrive in `byRecency` order, which puts ongoing entries first because that answers
+"what am I working on". A list headed "Recent", or one grouped into year headings, is asking
+a different question and needs `byDate`, or an old project that is still running will sit
+above this year's posts.
+
+`skill.permalink` on a reference points at the entry, or at `/cv/#experience` and
+`/cv/#education` for profile history. A theme that moves those sections must keep the
+matching ids, or change `PROFILE_ANCHORS` in `engine/config/enums.js`.
+`skill.url` is the external link, when there is one, and `skill.logo` is the entry's mark.
 
 **Latest across everything**
 
@@ -264,6 +290,30 @@ eleventyExcludeFromCollections: true
 `/search-index.json` is written on every build. Fetch it and filter client side, or pass
 `search_index` straight into a template. Each record has `title`, `subtitle`, `description`,
 `content` as plain text, `skills`, `permalink` and `typeLabel`.
+
+## Colouring an asset
+
+An SVG referenced by `<img>` is a separate document, so `currentColor` inside it
+never sees the page and the asset keeps whatever colours it was drawn with. Pass
+the path through `inlineSvg` to put the markup in the page instead, and a file
+drawn with `currentColor` then takes the colour it inherits:
+
+```njk
+{% set svg = profile.avatar | inlineSvg %}
+{% if svg %}<span class="avatar">{{ svg | safe }}</span>
+{% else %}<img src="{{ profile.avatar }}" alt="">{% endif %}
+```
+
+```css
+.avatar { color: var(--ink-2); }
+```
+
+The filter returns an empty string for anything that is not a readable SVG, so
+the fallback covers raster images and external URLs. Scripts and event handlers
+are stripped from the markup.
+
+An asset drawn with fixed colours is unaffected by inlining, which is how a light
+and dark pair keeps working.
 
 ## Light and dark assets
 

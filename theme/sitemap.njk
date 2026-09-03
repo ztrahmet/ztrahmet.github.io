@@ -1,0 +1,26 @@
+---
+permalink: /sitemap.xml
+eleventyExcludeFromCollections: true
+---
+{#- Built from engine data rather than collections.all, which holds only one
+    item per template file and so contributes a single page for each paginated
+    route. Entries carry a lastmod; index pages have no meaningful one. -#}
+<?xml version="1.0" encoding="utf-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>{{ '/' | absoluteUrl(site.url) }}</loc></url>
+  {%- for item in nav %}
+  <url><loc>{{ item.permalink | absoluteUrl(site.url) }}</loc></url>
+  {%- endfor %}
+  <url><loc>{{ '/search/' | absoluteUrl(site.url) }}</loc></url>
+  {%- for item in all_content %}
+  <url>
+    <loc>{{ item.permalink | absoluteUrl(site.url) }}</loc>
+    {%- if item.seo.publishedIso %}
+    <lastmod>{{ item.seo.publishedIso }}</lastmod>
+    {%- endif %}
+  </url>
+  {%- endfor %}
+  {%- for skill in taxonomy.allSkills %}
+  <url><loc>{{ ('/skills/' + skill.slug + '/') | absoluteUrl(site.url) }}</loc></url>
+  {%- endfor %}
+</urlset>

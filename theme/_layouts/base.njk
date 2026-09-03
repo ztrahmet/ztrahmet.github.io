@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="{{ site.lang }}">
+  <head>
+    {%- include "head.njk" %}
+  </head>
+  <body{% if pageClass %} class="{{ pageClass }}"{% endif %}>
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="shell">
+      {%- include "rail.njk" %}
+      <main class="main" id="main">
+        <div class="page{% if pageClass %} {{ pageClass }}{% endif %}">
+          {{ content | safe }}
+        </div>
+        {%- include "foot.njk" %}
+      </main>
+    </div>
+    <dialog class="palette" id="palette" aria-label="Search">
+      <div class="palette__head">
+        <input
+          class="palette__input"
+          type="search"
+          role="combobox"
+          placeholder="Search entries, skills and credentials"
+          autocomplete="off"
+          spellcheck="false"
+          aria-expanded="false"
+          aria-controls="palette-list"
+          aria-describedby="palette-status">
+        <button class="palette__close" type="button" data-palette-close>esc</button>
+      </div>
+      <p class="palette__status" id="palette-status" role="status"></p>
+      <ul class="palette__list" id="palette-list" role="listbox" aria-label="Results"></ul>
+    </dialog>
+
+    <script src="/assets/app.js" defer></script>
+  </body>
+</html>

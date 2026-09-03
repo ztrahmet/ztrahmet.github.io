@@ -1,0 +1,64 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+{%- set metaTitle = title or site.title %}
+{%- set metaDesc = pageDescription or site.description %}
+{%- set metaUrl = canonical or (page.url | absoluteUrl(site.url)) %}
+{%- set metaImage = shareImage or site.share_image.light or site.share_image %}
+
+<title>{% if title %}{{ title }} · {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
+<meta name="description" content="{{ metaDesc }}">
+<link rel="canonical" href="{{ metaUrl }}">
+
+<meta property="og:type" content="{{ ogType or 'website' }}">
+<meta property="og:site_name" content="{{ site.title }}">
+<meta property="og:title" content="{{ metaTitle }}">
+<meta property="og:description" content="{{ metaDesc }}">
+<meta property="og:url" content="{{ metaUrl }}">
+{%- if site.locale %}
+<meta property="og:locale" content="{{ site.locale }}">
+{%- endif %}
+{%- if metaImage %}
+<meta property="og:image" content="{{ metaImage | absoluteUrl(site.url) }}">
+<meta name="twitter:card" content="summary_large_image">
+{%- endif %}
+{#- publishedIso is used rather than publishedTime, which stays at the authored
+    precision and can be "2026-03", which is not valid for this property. -#}
+{%- if publishedIso %}
+<meta property="article:published_time" content="{{ publishedIso }}">
+{%- endif %}
+
+{%- set fav = site.favicon.light or site.favicon %}
+{%- if fav %}
+<link rel="icon" href="{{ fav }}">
+{%- endif %}
+<link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="/feed.xml">
+
+{#- Mirrors --ground in each palette. Meta cannot read a custom property. -#}
+<meta name="theme-color" content="#f5f6f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1114" media="(prefers-color-scheme: dark)">
+
+{#- Preloaded so the first paint already has the real faces. font-display is
+    block, so a face that somehow fails to arrive shows nothing rather than
+    swapping, which is the flash we are avoiding. -#}
+<link rel="preload" href="/static/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/instrument-sans-italic-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+<link rel="stylesheet" href="/assets/site.css?v={{ build.generatedAt | slugify }}">
+{#- KaTeX styles only load on pages that actually contain rendered math. -#}
+{%- if hasMath %}
+<link rel="stylesheet" href="/assets/katex.css?v={{ build.generatedAt | slugify }}">
+{%- endif %}
+
+{%- include "schema.njk" %}
+
+{#- Applied before first paint so a stored choice never flashes the other theme. -#}
+<script>
+  (function () {
+    try {
+      var s = localStorage.getItem('scheme');
+      if (s === 'light' || s === 'dark') document.documentElement.dataset.theme = s;
+    } catch (e) {}
+  })();
+</script>

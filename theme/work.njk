@@ -1,0 +1,29 @@
+---
+layout: base.njk
+permalink: /work/
+title: Work
+section: work
+pageDescription: Projects.
+---
+{% import "hub.njk" as hub %}
+{% set items = all_content | where("collection", "project") %}
+
+<div class="page__body">
+  <header class="pagehead">
+    <p class="pagehead__kicker">Index</p>
+    <h1 class="pagehead__title">Work</h1>
+    <hr class="pagehead__rule">
+  </header>
+
+  {%- if items | length %}
+  <section class="block block--flush">
+    <div class="block__head">
+      <h2 class="block__title">All projects</h2>
+      <span class="block__aux">{{ items | length }}</span>
+    </div>
+    {{ hub.index(items) }}
+  </section>
+  {%- else %}
+  <p class="empty">Nothing published yet.</p>
+  {%- endif %}
+</div>

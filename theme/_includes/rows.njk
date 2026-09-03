@@ -1,0 +1,59 @@
+{#- One listing row for the whole site. Three columns: a metadata stack of date
+    and type, the content stack of title and secondary line, and an optional
+    mark. Every list uses it, so a credential, a project and a skill reference
+    all line up on the same grid. -#}
+{% import "mark.njk" as m %}
+
+{% macro line(href, title, meta="", tag="", secondary="", description="", logo=None, ongoing=false, extra="", year="") %}
+<li class="row{% if extra %} {{ extra }}{% endif %}">
+  {%- if year %}<p class="row__year" aria-hidden="true">{{ year }}</p>{% endif %}
+  <a class="row__link" href="{{ href }}">
+    <span class="row__meta">
+      {%- if meta %}<span class="row__date">{{ meta }}</span>{% endif %}
+      {%- if tag %}
+      <span class="row__tag">
+        {%- if ongoing %}<span class="dot" aria-hidden="true"></span><span class="u-hidden">Ongoing, </span>{% endif -%}
+        {{ tag }}
+      </span>
+      {%- endif %}
+    </span>
+    <span class="row__main">
+      <span class="row__title">{{ title }}</span>
+      {%- if secondary %}<span class="row__sub">{{ secondary }}</span>{% endif %}
+      {%- if description %}<span class="row__desc">{{ description }}</span>{% endif %}
+    </span>
+    {{- m.mark(logo) }}
+  </a>
+</li>
+{% endmacro %}
+
+{#- The compact form: two lines, the secondary being whatever the collection
+    offers, so no row is left with a bare title. -#}
+{% macro row(item) %}
+{{ line(
+  href=item.permalink,
+  title=item.title,
+  meta=item.primaryDate,
+  tag=item.collection | collectionLabel(false),
+  secondary=item.subtitle or item.description,
+  logo=item.logo,
+  ongoing=item.isOngoing
+) }}
+{% endmacro %}
+
+{#- The index form. Keeps the attribution on its own line and adds the
+    description below it, and marks the first row of each year. -#}
+{% macro detail(item, startsYear) %}
+{{ line(
+  href=item.permalink,
+  title=item.title,
+  meta=item.primaryDate,
+  tag=item.collection | collectionLabel(false),
+  secondary=item.subtitle,
+  description=item.description,
+  logo=item.logo,
+  ongoing=item.isOngoing,
+  extra="row--detail" + (" row--year" if startsYear else ""),
+  year=item.year if startsYear else ""
+) }}
+{% endmacro %}

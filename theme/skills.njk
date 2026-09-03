@@ -1,0 +1,47 @@
+---
+layout: base.njk
+permalink: /skills/
+title: Skills
+section: skills
+pageDescription: Everything indexed by skill, weighted by how often it appears.
+---
+{%- set top = taxonomy.allSkills[0].count %}
+<div class="page__body">
+  <header class="pagehead">
+    <p class="pagehead__kicker">Index</p>
+    <h1 class="pagehead__title">Skills</h1>
+    <p class="pagehead__sub">{{ taxonomy.totalUniqueSkills }} skills across {{ stats.totalItems }} entries and {{ profile.experience | length }} roles, grouped by how often each appears.</p>
+    <hr class="pagehead__rule">
+  </header>
+
+  {%- if taxonomy.allSkills | length %}
+  <section class="block block--flush">
+    <div class="block__head">
+      <h2 class="block__title">By weight</h2>
+      <span class="block__aux">{{ taxonomy.totalUniqueSkills }}</span>
+    </div>
+
+    {#- Grouped by reference count. The long tail is 38 skills with a single
+        reference, so a row each would be 38 identical bars; a tier per weight
+        keeps the top of the index legible and the tail compact. -#}
+    <div class="tiers">
+      {%- for skill in taxonomy.allSkills %}
+        {%- set startsTier = loop.first or skill.count != taxonomy.allSkills[loop.index0 - 1].count %}
+        {%- if startsTier %}
+          {%- if not loop.first %}</div></section>{% endif %}
+      <section class="tier">
+        <p class="tier__weight">
+          <span class="tier__bar" style="--w: {{ (skill.count / top * 100) | round }}%"></span>
+          <span class="tier__count">×{{ skill.count }}</span>
+        </p>
+        <div class="tier__items">
+        {%- endif %}
+          <a class="tier__item" href="/skills/{{ skill.slug }}/">{{ skill.name }}</a>
+        {%- if loop.last %}</div></section>{% endif %}
+      {%- endfor %}
+    </div>
+  </section>
+  {%- else %}
+  <p class="empty">No skills indexed yet.</p>
+  {%- endif %}
+</div>

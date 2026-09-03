@@ -1,0 +1,35 @@
+---
+pagination:
+  data: taxonomy.allSkills
+  size: 1
+  alias: skill
+permalink: "/skills/{{ skill.slug }}/"
+layout: base.njk
+section: skills
+eleventyComputed:
+  title: "{{ skill.name }}"
+  pageDescription: "Everything tagged {{ skill.name }}."
+---
+{% import "rows.njk" as r %}
+
+<div class="page__body">
+  <header class="pagehead">
+    <p class="pagehead__kicker"><a href="/skills/">Skills</a></p>
+    <h1 class="pagehead__title">{{ skill.name }}</h1>
+    <p class="pagehead__sub">{{ skill.count }} reference{% if skill.count != 1 %}s{% endif %}</p>
+    <hr class="pagehead__rule">
+  </header>
+
+  <ol class="rows">
+    {%- for ref in skill.items %}
+    {{ r.line(
+      href=ref.permalink,
+      title=ref.title,
+      meta=ref.date or "—",
+      tag=ref.type | collectionLabel(false),
+      secondary=ref.organization,
+      logo=ref.logo
+    ) }}
+    {%- endfor %}
+  </ol>
+</div>

@@ -1,0 +1,1339 @@
+---
+permalink: /assets/site.css
+eleventyExcludeFromCollections: true
+---
+{% raw %}
+/* Console
+   Three zones on wide screens: a fixed rail, a measured content column,
+   and a margin column for metadata. Interface text is mono, prose is sans. */
+
+/* ---------------------------------------------------------------- fonts */
+/* Latin and latin-ext are separate files. The browser fetches latin-ext
+   only when a character in that range appears, which is why Turkish
+   letters cost nothing on an English page. */
+
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: block;
+  src: url('/static/fonts/instrument-sans-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: block;
+  src: url('/static/fonts/instrument-sans-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: block;
+  src: url('/static/fonts/instrument-sans-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: block;
+  src: url('/static/fonts/instrument-sans-italic-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: block;
+  src: url('/static/fonts/jetbrains-mono-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: block;
+  src: url('/static/fonts/jetbrains-mono-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* --------------------------------------------------------------- tokens */
+/* Every colour is measured against its ground. Light: ink 16.6:1,
+   ink-2 7.3:1, ink-3 5.7:1, accent-ink 5.5:1, accent 3.5:1.
+   Dark: ink 13.5:1, ink-2 7.4:1, ink-3 6.1:1, accent 10.2:1. */
+
+:root {
+  color-scheme: light;
+
+  --ground: #f5f6f7;
+  --sunken: #eceef0;
+  --ink: #14171a;
+  --ink-2: #4a5259;
+  --ink-3: #5a636b;
+  --rule: rgb(20 23 26 / 0.13);
+  --rule-strong: rgb(20 23 26 / 0.26);
+  --accent: #b37700;
+  --accent-ink: #8a5a00;
+  --on-accent: #14171a;
+
+  --sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace;
+
+  /* Sized so a full-width line in --measure lands near 74 characters. */
+  --t-display: clamp(2.5rem, 1.5rem + 3.6vw, 3.75rem);
+  --t-h1: 1.875rem;
+  --t-h2: 1.375rem;
+  --t-h3: 1.1875rem;
+  --t-body: 1.1875rem;
+  --t-small: 1rem;
+  --t-mono: 0.875rem;
+  --t-mono-s: 0.8125rem;
+  --t-label: 0.75rem;
+
+  --lh-prose: 1.65;
+  --lh-tight: 1.2;
+  --lh-ui: 1.45;
+
+  --s1: 0.25rem; --s2: 0.5rem;  --s3: 0.75rem; --s4: 1rem;
+  --s5: 1.5rem;  --s6: 2rem;    --s7: 3rem;    --s8: 4rem;  --s9: 6rem;
+
+  --rail-w: 15.5rem;
+  --measure: 44rem;
+  --aside-w: 12.5rem;
+  --gutter: 3rem;
+  --pad-x: 1.25rem;
+  /* Width of a CV organisation mark, and of the column reserved for it. */
+  --mark-w: clamp(2.5rem, 4.5vw, 3.125rem);
+  --mark-w-row: 2.375rem;
+  /* Container caps, sized so the tracks inside actually fill them rather than
+     leaving dead space at the right. Widen these two to widen the whole site. */
+  --shell: 68rem;
+  --shell-wide: 82rem;
+  /* Prose fills its column. The line length is governed by type size rather than
+     by a narrower box, so text never breaks short of the column edge. */
+  --measure-text: var(--measure);
+
+  --fast: 120ms;
+  --slow: 240ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Dark is a designed counterpart, not an inversion: the ground keeps a blue
+   cast, ink stops short of white, and the accent moves up in lightness so it
+   stays legible as text. Declared twice so the toggle wins in both directions. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --ground: #0e1114;
+    --sunken: #161a1e;
+    --ink: #d6dae0;
+    --ink-2: #9aa3ac;
+    --ink-3: #8a939c;
+    --rule: rgb(214 218 224 / 0.15);
+    --rule-strong: rgb(214 218 224 / 0.3);
+    --accent: #f0b429;
+    --accent-ink: #f0b429;
+    --on-accent: #0e1114;
+  }
+  :root:not([data-theme='light']) body { -webkit-font-smoothing: antialiased; }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --ground: #0e1114;
+  --sunken: #161a1e;
+  --ink: #d6dae0;
+  --ink-2: #9aa3ac;
+  --ink-3: #8a939c;
+  --rule: rgb(214 218 224 / 0.15);
+  --rule-strong: rgb(214 218 224 / 0.3);
+  --accent: #f0b429;
+  --accent-ink: #f0b429;
+  --on-accent: #0e1114;
+}
+:root[data-theme='dark'] body { -webkit-font-smoothing: antialiased; }
+
+@media (min-width: 60rem) { :root { --pad-x: 2.5rem; } }
+
+/* ---------------------------------------------------------------- reset */
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: var(--s6); }
+img, svg, video { display: block; max-width: 100%; height: auto; }
+button, input, select, textarea { font: inherit; color: inherit; }
+ul, ol { list-style: none; padding: 0; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  line-height: var(--lh-prose);
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+}
+
+/* One focus treatment for the whole site, on the accent so it reads as state. */
+:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+::selection { background: var(--accent); color: var(--on-accent); }
+
+/* Component display rules outrank the UA stylesheet, so [hidden] has to win
+   explicitly. The scheme control relies on it to stay absent without JS. */
+[hidden] { display: none !important; }
+
+.u-hidden {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+
+.skip {
+  position: absolute; left: var(--s4); top: -4rem; z-index: 10;
+  padding: var(--s2) var(--s4);
+  background: var(--ink); color: var(--ground);
+  font-family: var(--mono); font-size: var(--t-mono); text-decoration: none;
+  transition: top var(--fast) var(--ease);
+}
+.skip:focus { top: var(--s4); }
+
+/* --------------------------------------------------------------- layout */
+
+/* Two zones sit in a narrower shell so the composition stays centred instead of
+   hugging the left edge. Only a page with a margin column claims the full width.
+
+   The shell is at least a viewport tall and the main column fills it, so a short
+   page still puts its footer at the bottom rather than partway up the screen. */
+.shell {
+  max-width: var(--shell);
+  min-height: 100dvh;
+  margin-inline: auto;
+  padding-inline: var(--pad-x);
+  display: flex;
+  flex-direction: column;
+}
+.page--split .shell { max-width: var(--shell-wide); }
+
+@media (min-width: 60rem) {
+  .shell {
+    display: grid;
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
+    /* Stretch rather than start, so the main column reaches the full height.
+       The rail sets its own height, so stretching does not affect it. */
+    align-items: stretch;
+  }
+}
+
+.main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+  padding-block: var(--s6) var(--s8);
+}
+@media (min-width: 60rem) {
+  .main { padding: var(--s7) 0 var(--s9) var(--s6); }
+}
+
+/* Grows to absorb spare height, which is what pushes the footer down on a short
+   page. The footer keeps its own margin, so long and short pages look the same. */
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, var(--measure));
+  gap: var(--s7);
+  flex: 1 0 auto;
+  align-content: start;
+}
+.page__body { min-width: 0; }
+
+/* The third zone only exists when all three fit at their real widths. */
+@media (min-width: 72rem) {
+  .page--split {
+    grid-template-columns: minmax(0, var(--measure)) var(--aside-w);
+    column-gap: var(--gutter);
+    align-items: start;
+  }
+  .page--split .page__aside { position: sticky; top: var(--s7); }
+}
+
+/* ----------------------------------------------------------------- rail */
+
+.rail {
+  padding-block: var(--s5);
+  border-bottom: 1px solid var(--rule);
+}
+
+@media (min-width: 60rem) {
+  .rail {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s6);
+    padding: var(--s7) var(--s5) var(--s6) 0;
+    border-bottom: 0;
+    border-right: 1px solid var(--rule);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .rail__spacer { flex: 1 1 auto; min-height: var(--s6); }
+}
+
+/* The handle is the mark in the rail. Mono, because it is an identifier. */
+.identity {
+  display: block;
+  font-family: var(--mono);
+  font-size: var(--t-h3);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+  transition: color var(--fast) var(--ease);
+}
+.identity__at { color: var(--ink-3); }
+.identity:hover { color: var(--accent-ink); }
+.identity:hover .identity__at { color: var(--accent); }
+
+/* Navigation. The count column is real data, set in tabular mono so the
+   figures line up down the rail. */
+.nav { display: flex; gap: var(--s5); overflow-x: auto; }
+.nav__item {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  padding-block: var(--s2);
+  font-family: var(--mono);
+  font-size: var(--t-mono);
+  color: var(--ink-2);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--fast) var(--ease);
+}
+.nav__item:hover { color: var(--ink); }
+.nav__item[aria-current] { color: var(--ink); font-weight: 500; }
+.nav__count {
+  font-size: var(--t-mono-s);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 60rem) {
+  .nav { flex-direction: column; gap: 0; overflow: visible; }
+  .nav__item { justify-content: space-between; padding-block: 0.3rem; }
+  .nav__item[aria-current]::before {
+    content: '';
+    position: absolute;
+    left: -0.75rem;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 2px;
+    background: var(--accent);
+  }
+}
+@media (max-width: 59.99rem) {
+  .nav__item[aria-current]::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--rule-strong);
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  color: var(--ink-2);
+  text-decoration: none;
+  transition: border-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.search:hover { border-color: var(--ink-3); color: var(--ink); }
+.search kbd {
+  font-family: inherit;
+  font-size: var(--t-label);
+  padding: 0 0.3rem;
+  border: 1px solid var(--rule);
+  color: var(--ink-3);
+}
+
+.social { display: flex; flex-wrap: wrap; gap: var(--s3); }
+.social a {
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  color: var(--ink-2);
+  text-decoration: none;
+  transition: color var(--fast) var(--ease);
+}
+.social a:hover { color: var(--accent-ink); }
+/* Glyphs are filled with currentColor, so they follow the link colour and hover. */
+.social svg {
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
+  fill: currentColor;
+}
+.social__mark { display: flex; flex: none; width: 1.15em; height: 1.15em; }
+.social__mark img, .social__mark svg { width: 100%; height: 100%; object-fit: contain; }
+@media (min-width: 60rem) {
+  .social { flex-direction: column; gap: var(--s1); }
+}
+
+/* Segmented scheme control. Deliberately not on the accent: the accent is
+   reserved for content state, and a permanently lit chip would spend it. */
+.scheme { display: inline-flex; border: 1px solid var(--rule-strong); width: max-content; }
+.scheme__btn {
+  padding: 0.3rem var(--s3);
+  border: 0;
+  border-left: 1px solid var(--rule-strong);
+  background: transparent;
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.scheme__btn:first-child { border-left: 0; }
+.scheme__btn:hover { color: var(--ink); }
+.scheme__btn[aria-pressed='true'] { background: var(--sunken); color: var(--ink); }
+
+.rail__meta {
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* On narrow screens the rail is a normal block, but the nav row sticks. */
+@media (max-width: 59.99rem) {
+  .rail { display: grid; gap: var(--s4); }
+  .rail__spacer { display: none; }
+  .rail__controls { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); }
+  .search { flex: 1 1 auto; max-width: 14rem; }
+}
+
+/* ------------------------------------------------------------- masthead */
+
+/* Name and role lead, with the avatar set beside them rather than above. */
+.masthead__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s6);
+}
+.masthead__id { min-width: 0; }
+@media (max-width: 30rem) { .masthead__head { gap: var(--s4); } }
+.masthead__avatar {
+  flex: none;
+  display: block;
+  width: clamp(4.5rem, 9vw, 7rem);
+  aspect-ratio: 1;
+  border: 1px solid var(--rule);
+  background: var(--sunken);
+  color: var(--ink-2);
+}
+.masthead__avatar img,
+.masthead__avatar svg { width: 100%; height: 100%; }
+.masthead__avatar > .light-only,
+.masthead__avatar > .dark-only { width: 100%; height: 100%; }
+
+.masthead__name {
+  font-size: var(--t-display);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.masthead__role {
+  margin-top: var(--s3);
+  font-family: var(--mono);
+  font-size: var(--t-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+/* The accent appears once here, as the first segment of the rule. */
+.masthead__rule {
+  margin-block: var(--s5);
+  border: 0;
+  height: 1px;
+  background: linear-gradient(to right, var(--accent) 0 3rem, var(--rule) 3rem);
+}
+/* --------------------------------------------------------------- blocks */
+
+.block { margin-top: var(--s8); }
+.block__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s4);
+  padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--rule-strong);
+}
+.block__title {
+  font-family: var(--mono);
+  font-size: var(--t-mono);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.block__aux {
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.block__aux a { color: inherit; text-decoration: none; }
+.block__aux a:hover { color: var(--accent-ink); }
+
+/* ----------------------------------------------------------------- rows */
+/* One listing grid for every collection: a metadata stack, the content stack,
+   and an optional mark. The date is printed at the precision it was authored,
+   so 2023-01 stays 2023-01. */
+
+.rows { display: grid; }
+.row + .row { border-top: 1px solid var(--rule); }
+
+.row__link {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: var(--s4);
+  align-items: baseline;
+  padding-block: var(--s3);
+  text-decoration: none;
+  color: inherit;
+}
+/* The mark column is reserved only for lists that actually contain one, so a
+   list of blog posts does not carry an empty column. */
+.rows:has(.mark) .row__link {
+  grid-template-columns: 8rem minmax(0, 1fr) var(--mark-w-row);
+}
+.row__link > .mark { width: var(--mark-w-row); align-self: start; }
+
+.row__meta { display: grid; gap: 0.1rem; }
+.row__date {
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--fast) var(--ease);
+}
+.row__tag {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.row__main { display: grid; gap: 0.1rem; min-width: 0; }
+.row__title {
+  font-size: var(--t-small);
+  font-weight: 500;
+  line-height: 1.35;
+  text-wrap: pretty;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color var(--fast) var(--ease);
+}
+/* One line in the compact form so every row is the same height. */
+.row__sub {
+  font-size: 0.9375rem;
+  line-height: 1.35;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row__link:hover .row__title { text-decoration-color: var(--accent); }
+.row__link:hover .row__date { color: var(--ink-2); }
+
+/* Ongoing is the one piece of content state the accent marks. */
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+}
+
+@media (max-width: 40rem) {
+  .row__link { grid-template-columns: minmax(0, 1fr) var(--mark-w-row); gap: var(--s1) var(--s3); }
+  .rows:has(.mark) .row__link { grid-template-columns: minmax(0, 1fr) var(--mark-w-row); }
+  .row__main { grid-column: 1; order: 1; }
+  .row__meta { grid-column: 1; order: 2; }
+  .row__link > .mark { grid-column: 2; grid-row: 1; order: 0; }
+  /* One line cuts too much at this width, so the compact form gets two. */
+  .row__sub {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  .row--detail .row__sub { display: block; }
+}
+
+/* ----------------------------------------------------------- skills map */
+/* Weight is the subject of this page, so the bar is the one place the accent
+   is used as data rather than as state. One bar per tier keeps it to a few. */
+
+.tier { display: grid; gap: var(--s4); padding-block: var(--s4); align-items: start; }
+.tier + .tier { border-top: 1px solid var(--rule); }
+@media (min-width: 34rem) {
+  .tier { grid-template-columns: 7rem minmax(0, 1fr); }
+}
+.tier__weight { display: grid; gap: var(--s2); }
+.tier__bar {
+  display: block;
+  height: 3px;
+  width: var(--w, 2px);
+  min-width: 3px;
+  background: var(--accent);
+}
+.tier__count {
+  font-family: var(--mono);
+  font-size: var(--t-mono);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.tier__items { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); }
+.tier__item {
+  font-size: var(--t-small);
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.tier__item:hover { color: var(--accent-ink); text-decoration-color: var(--accent); }
+
+/* ----------------------------------------------------------- index rows */
+/* The hub variant. Taller, adds the description under the attribution, and the
+   first row of each year prints the year so the list reads as grouped. */
+
+.row--detail .row__link { align-items: start; padding-block: var(--s4); }
+.row--detail .row__sub { white-space: normal; overflow: visible; }
+.row__desc {
+  margin-top: 0.15rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.row__year {
+  margin-bottom: var(--s2);
+  padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--rule-strong);
+  font-family: var(--mono);
+  font-size: var(--t-mono);
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.rows .row--year { margin-top: var(--s6); border-top: 0; }
+.rows .row--year:first-child { margin-top: 0; }
+
+/* ---------------------------------------------------------------- prose */
+
+/* Prose keeps a comfortable reading measure, but tables, code and figures are
+   allowed the full width of the column, because they are scanned, not read. */
+.prose { max-width: none; }
+.prose > * + * { margin-top: var(--s4); }
+.prose > p,
+.prose > ul,
+.prose > ol,
+.prose > dl,
+.prose > blockquote,
+.prose > h2,
+.prose > h3 { max-width: var(--measure-text); }
+.prose h1, .prose h2, .prose h3 { line-height: var(--lh-tight); letter-spacing: -0.012em; text-wrap: balance; }
+/* The page already supplies the title, so an h1 inside a body is a duplicate.
+   Styled to the same size as h2 so it never outshouts the real heading. */
+.prose h1 { margin-top: var(--s7); font-size: var(--t-h2); font-weight: 600; }
+.prose h2 { margin-top: var(--s7); font-size: var(--t-h2); font-weight: 600; }
+.prose h3 { margin-top: var(--s6); font-size: var(--t-h3); font-weight: 600; }
+.prose a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: text-decoration-thickness var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.prose a:visited { color: var(--ink-2); }
+.prose a:hover { color: var(--accent-ink); text-decoration-thickness: 2px; }
+.prose code {
+  font-family: var(--mono);
+  font-size: 0.875em;
+  padding: 0.1em 0.35em;
+  background: var(--sunken);
+  border: 1px solid var(--rule);
+  /* Without this a chip that wraps loses its padding and border on one fragment,
+     which is very visible inside a narrow table cell. */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.prose pre {
+  padding: var(--s4);
+  background: var(--sunken);
+  border: 1px solid var(--rule);
+  overflow-x: auto;
+  font-size: var(--t-mono);
+  line-height: 1.6;
+}
+.prose pre code { padding: 0; background: none; border: 0; font-size: inherit; }
+.prose blockquote {
+  padding-left: var(--s4);
+  border-left: 2px solid var(--rule-strong);
+  color: var(--ink-2);
+}
+.prose ul, .prose ol { padding-left: var(--s5); }
+.prose ul { list-style: disc; }
+.prose ol { list-style: decimal; }
+.prose li + li { margin-top: var(--s2); }
+.prose li::marker { color: var(--ink-3); }
+.prose table { width: 100%; border-collapse: collapse; font-size: var(--t-small); }
+.prose th, .prose td { text-align: left; padding: var(--s2) var(--s3); border-bottom: 1px solid var(--rule); }
+.prose th { font-family: var(--mono); font-size: var(--t-mono-s); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+.prose img {
+  margin-block: var(--s5);
+  padding: 8px;
+  background: var(--sunken);
+  border: 1px solid var(--rule);
+}
+.prose .figure img { margin-block: 0; padding: 0; background: none; border: 0; }
+.prose hr { margin-block: var(--s6); border: 0; border-top: 1px solid var(--rule); }
+
+/* --------------------------------------------------------------- footer */
+
+.foot {
+  margin-top: var(--s9);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s5);
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ------------------------------------------------------------ pageheads */
+
+/* The gap below the kicker rather than above the title, so a title sharing a
+   row with a mark starts at the row top and the two line up. */
+.pagehead__kicker {
+  margin-bottom: var(--s2);
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.pagehead__kicker a { color: inherit; text-decoration: none; }
+.pagehead__kicker a:hover { color: var(--accent-ink); }
+.pagehead__title {
+  font-size: var(--t-h1);
+  font-weight: 600;
+  line-height: var(--lh-tight);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+/* Only pageheads that carry a mark use this wrapper; the rest stay plain. */
+.pagehead__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s4);
+}
+.pagehead__id { min-width: 0; }
+.pagehead__sub { margin-top: var(--s2); font-size: var(--t-small); color: var(--ink-2); }
+.pagehead__byline { margin-top: var(--s1); font-size: var(--t-small); color: var(--ink-3); }
+
+/* The entry's external destinations, set with the title rather than after the body. */
+.pagehead__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s5);
+  margin-top: var(--s3);
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+}
+.pagehead__links a {
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 0.2em;
+  word-break: break-word;
+  transition: color var(--fast) var(--ease);
+}
+.pagehead__links a:hover { color: var(--accent-ink); }
+.pagehead__links a::after { content: ' \2197'; color: var(--ink-3); }
+
+/* The kicker carries the ongoing marker, matching how rows show it. */
+.pagehead__kicker .dot { display: inline-block; margin: 0 0.5em 0 0.7em; vertical-align: 0.1em; }
+/* Plain, unlike the masthead rule. The accent segment is a signature, not a divider. */
+.pagehead__rule { margin-block: var(--s5); border: 0; height: 1px; background: var(--rule); }
+
+.block--flush { margin-top: var(--s6); }
+.empty { font-family: var(--mono); font-size: var(--t-mono); color: var(--ink-3); }
+.key {
+  padding: 0.05em 0.35em;
+  border: 1px solid var(--rule-strong);
+  font-family: var(--mono);
+  font-size: 0.85em;
+  color: var(--ink-2);
+}
+
+/* -------------------------------------------------------------- records */
+/* CV entries. Same date-left shape as a row, with room for a description. */
+
+/* Three columns: dates, text, mark. Only the heading yields to the mark; the
+   detail below spans past it, so a description keeps the full column width.
+   The mark column is a fixed width rather than auto, so a record without a logo
+   still lines up with one that has it. */
+.record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--mark-w);
+  gap: var(--s3) var(--s4);
+  align-items: start;
+  padding-block: var(--s5);
+}
+.record + .record { border-top: 1px solid var(--rule); }
+.record__when { grid-column: 1; grid-row: 1; }
+.record > .mark { grid-column: 2; grid-row: 1; }
+.record__heading { grid-column: 1 / -1; grid-row: 2; }
+.record__detail { grid-column: 1 / -1; grid-row: 3; }
+
+@media (min-width: 46rem) {
+  .record { grid-template-columns: 11rem minmax(0, 1fr) var(--mark-w); column-gap: var(--s5); }
+  .record__when { grid-column: 1; grid-row: 1; }
+  .record__heading { grid-column: 2; grid-row: 1; }
+  .record > .mark { grid-column: 3; grid-row: 1; }
+  .record__detail { grid-column: 2 / span 2; grid-row: 2; }
+}
+/* The grid row gap already separates it from the heading. */
+.record__detail > :first-child { margin-top: 0; }
+.record__when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  line-height: var(--lh-ui);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.record__span { flex-basis: 100%; color: var(--ink-3); }
+.record__title { font-size: var(--t-h3); font-weight: 600; line-height: var(--lh-tight); }
+.record__org { margin-top: var(--s1); font-size: var(--t-small); color: var(--ink-2); }
+
+/* An organisation mark, mounted the same way the avatar and the cover figures
+   are, so every image on the site reads alike. Shared by CV records and by the
+   credential entries that carry an issuer logo. */
+.mark {
+  display: grid;
+  place-items: center;
+  width: var(--mark-w);
+  aspect-ratio: 1;
+  padding: 0.45rem;
+  border: 1px solid var(--rule);
+  background: var(--sunken);
+  /* Inlined marks drawn with currentColor resolve against this. */
+  color: var(--ink-3);
+}
+.mark img,
+.mark svg { width: 100%; height: 100%; object-fit: contain; }
+/* The themed pair wrappers keep their own display, so they are sized, not collapsed. */
+.mark > .light-only,
+.mark > .dark-only { width: 100%; height: 100%; }
+.record__org a { color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.18em; }
+.record__org a:hover { color: var(--accent-ink); }
+.record__note { margin-top: var(--s3); font-size: var(--t-small); color: var(--ink-2); }
+.record__note p + p { margin-top: var(--s3); }
+
+.tags { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+.tags a {
+  display: inline-block;
+  padding: 0.1rem var(--s2);
+  border: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  color: var(--ink-3);
+  text-decoration: none;
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.tags a:hover { color: var(--ink); border-color: var(--ink-3); }
+
+/* --------------------------------------------------------------- entries */
+
+.lede {
+  margin-block: var(--s5);
+  max-width: var(--measure-text);
+  font-size: 1.3125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* A mount rather than a bare image. Cover art is usually bright, so on the dark
+   theme an unmounted image reads as a hole punched in the page. The matte gives
+   it an edge to sit against in both themes. */
+/* Figures are numbered by a CSS counter, so the cover and any figure in the
+   body share one sequence and nothing has to be numbered by hand. */
+.entry { counter-reset: figure; }
+.figure {
+  margin-block: var(--s6);
+  padding: 8px;
+  background: var(--sunken);
+  border: 1px solid var(--rule);
+  counter-increment: figure;
+}
+.figure img { width: 100%; }
+.figure figcaption {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  padding: var(--s2) 4px 2px;
+}
+.figure figcaption::before {
+  content: 'Fig. ' counter(figure, decimal-leading-zero);
+  flex: none;
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+.figure__text {
+  font-size: 0.875rem;
+  line-height: var(--lh-ui);
+  color: var(--ink-3);
+  text-wrap: pretty;
+}
+
+/* Themed asset pairs follow the toggle, not only the system preference. */
+.dark-only { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .light-only { display: none; }
+  :root:not([data-theme='light']) .dark-only { display: block; }
+}
+:root[data-theme='dark'] .light-only { display: none; }
+:root[data-theme='dark'] .dark-only { display: block; }
+:root[data-theme='light'] .light-only { display: block; }
+:root[data-theme='light'] .dark-only { display: none; }
+
+
+.adjacent {
+  margin-top: var(--s8);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--rule-strong);
+  display: grid;
+  gap: var(--s4);
+}
+@media (min-width: 40rem) { .adjacent { grid-template-columns: 1fr 1fr; gap: var(--s5); } }
+.adjacent__link { display: grid; gap: var(--s1); color: inherit; text-decoration: none; }
+.adjacent__link--next { text-align: right; grid-column: 2; }
+.adjacent__dir {
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.adjacent__title {
+  font-size: var(--t-small);
+  font-weight: 500;
+  line-height: 1.35;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color var(--fast) var(--ease);
+}
+.adjacent__link:hover .adjacent__title { text-decoration-color: var(--accent); }
+
+/* ----------------------------------------------------------------- aside */
+/* The margin column. Everything the engine precomputes lives here rather
+   than crowding the space under a title. */
+
+.aside__block + .aside__block { margin-top: var(--s5); }
+.aside__label {
+  padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.aside__list { margin-top: var(--s3); display: grid; gap: var(--s3); }
+.aside__row { display: grid; gap: 0.1rem; }
+.aside__row dt {
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.aside__row dd { font-size: var(--t-mono); line-height: var(--lh-ui); color: var(--ink-2); }
+.aside__row dd a { color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.18em; }
+.aside__row dd a:hover { color: var(--accent-ink); }
+.is-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.flag {
+  padding: 0 0.3rem;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* The reading rail. The rule doubles as a progress indicator: the accent fills
+   it as the article is read, while the labels carry position. Two signals, one
+   element, and both degrade to a plain table of contents without JS. */
+.toc { position: relative; margin-top: var(--s3); padding-left: var(--s4); }
+.toc::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.3em;
+  bottom: 0.3em;
+  width: 1px;
+  background: var(--rule-strong);
+}
+.toc__fill {
+  position: absolute;
+  left: 0;
+  /* Spans exactly the rule, then scales to the share that has been read. */
+  top: 0.3em;
+  bottom: 0.3em;
+  width: 1px;
+  background: var(--accent);
+  transform: scaleY(var(--read, 0));
+  transform-origin: top center;
+  transition: transform 100ms linear;
+}
+.toc__list { display: grid; gap: var(--s2); }
+.toc__item a[aria-current] { color: var(--ink); }
+.toc__item a {
+  display: block;
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  line-height: 1.4;
+  color: var(--ink-3);
+  text-decoration: none;
+  transition: color var(--fast) var(--ease);
+}
+.toc__item a:hover { color: var(--ink); }
+.toc__item--l3 { padding-left: var(--s3); }
+
+@media (max-width: 71.99rem) {
+  .page--split .page__aside { padding-top: var(--s5); border-top: 1px solid var(--rule-strong); }
+  .aside__list { grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
+}
+
+/* -------------------------------------------------------------- timeline */
+/* The CV's one built element rather than styled element. A continuous spine
+   with a node per record, filled when the role is still running. The rule
+   draws once on load, which is the whole of the motion here. */
+
+.timeline { position: relative; }
+.timeline .record { position: relative; padding-left: 2rem; }
+/* The nodes separate the records, so the shared rule would be noise. */
+.timeline .record + .record { border-top: 0; }
+
+/* Each record carries the segment down to the next node, so the spine spans
+   node to node and a lone record shows a node with nothing trailing off it. */
+.timeline .record::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2.6rem;
+  bottom: -1.4rem;
+  width: 1px;
+  background: var(--rule-strong);
+  transform-origin: top center;
+  animation: tl-draw 420ms var(--ease) both;
+}
+.timeline .record:last-child::after { content: none; }
+.timeline .record::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 1.6rem;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  background: var(--ground);
+  animation: tl-node 300ms var(--ease) both;
+}
+/* Ongoing is the same accent used for the ongoing dot everywhere else. */
+.timeline .record.is-current::before { border-color: var(--accent); background: var(--accent); }
+
+.timeline .record:nth-child(1)::before, .timeline .record:nth-child(1)::after { animation-delay: 120ms; }
+.timeline .record:nth-child(2)::before, .timeline .record:nth-child(2)::after { animation-delay: 260ms; }
+.timeline .record:nth-child(3)::before, .timeline .record:nth-child(3)::after { animation-delay: 380ms; }
+.timeline .record:nth-child(4)::before, .timeline .record:nth-child(4)::after { animation-delay: 480ms; }
+.timeline .record:nth-child(5)::before, .timeline .record:nth-child(5)::after { animation-delay: 560ms; }
+.timeline .record:nth-child(n + 6)::before, .timeline .record:nth-child(n + 6)::after { animation-delay: 620ms; }
+
+@keyframes tl-draw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes tl-node { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+
+/* On screen the rail carries contact details, so this only exists on paper. */
+.printonly { display: none; }
+
+.contacts {
+  margin-top: var(--s2);
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  color: var(--ink-2);
+}
+
+.cv-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  margin-top: var(--s3);
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+}
+.cv-actions a, .linkish {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease);
+}
+.cv-actions a:hover, .linkish:hover { color: var(--accent-ink); }
+
+/* --------------------------------------------------------------- palette */
+/* A dialog is display:none until open, so the layout rules are scoped to [open].
+   Setting display on .palette itself would make it visible when closed, the same
+   trap as styling a [hidden] element. */
+
+.palette {
+  width: min(42rem, calc(100vw - 2rem));
+  max-height: min(30rem, calc(100vh - 8rem));
+  margin: 12vh auto auto;
+  padding: 0;
+  border: 1px solid var(--rule-strong);
+  background: var(--ground);
+  color: var(--ink);
+  overflow: hidden;
+}
+.palette[open] { display: flex; flex-direction: column; }
+.palette::backdrop { background: rgb(8 10 12 / 0.6); }
+
+.palette__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--rule);
+}
+.palette__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: none;
+  font-size: var(--t-body);
+  color: var(--ink);
+}
+.palette__input::placeholder { color: var(--ink-3); }
+/* The input is the only text field in a modal dialog and is focused on open, so
+   a ring around it is noise. The head rule carries the focus state instead. */
+.palette__input:focus-visible { outline: none; }
+.palette__head:focus-within { border-bottom-color: var(--accent); }
+.palette__close {
+  flex: none;
+  padding: 0.15rem var(--s2);
+  border: 1px solid var(--rule-strong);
+  background: none;
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.palette__close:hover { color: var(--ink); }
+
+.palette__status {
+  padding: var(--s2) var(--s4);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.palette__list { overflow-y: auto; overscroll-behavior: contain; }
+.palette__option + .palette__option { border-top: 1px solid var(--rule); }
+.palette__link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s4);
+  align-items: baseline;
+  padding: var(--s3) var(--s4);
+  color: inherit;
+  text-decoration: none;
+}
+.palette__title { font-size: var(--t-small); font-weight: 500; }
+.palette__meta {
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.palette__option[aria-selected='true'] { background: var(--sunken); }
+.palette__option[aria-selected='true'] .palette__title { color: var(--accent-ink); }
+
+/* --------------------------------------------------------------- motion */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------- print */
+/* The CV is the page this exists for. The rail holds contact details on
+   screen, so print swaps in the .printonly line to replace them. */
+
+@page { margin: 16mm 14mm; }
+
+@media print {
+  :root {
+    --ground: #fff;
+    --sunken: #fff;
+    --ink: #000;
+    --ink-2: #222;
+    --ink-3: #444;
+    --rule: #c8c8c8;
+    --rule-strong: #8c8c8c;
+    --accent: #000;
+    --accent-ink: #000;
+  }
+
+  .rail, .foot, .skip, .search, .scheme, .cv-actions, .adjacent, .toc__fill, .palette,
+  .masthead__avatar { display: none !important; }
+  .printonly { display: block; }
+
+  /* Paper is always light, so a themed asset pair must print its light variant.
+     Otherwise a dark-theme logo prints as pale ink on white and disappears. */
+  .light-only { display: block !important; }
+  .dark-only { display: none !important; }
+
+  /* Organisation marks are a screen affordance. Reserving a column for them on
+     paper narrows every description enough to push the CV onto a third page,
+     which is a bad trade for a small logo, so print drops the column entirely. */
+  .mark { display: none !important; }
+  .record { grid-template-columns: 11rem minmax(0, 1fr); }
+  /* Without this the detail still spans into a third column that no longer
+     exists, and the grid creates an implicit one. */
+  .record__detail { grid-column: 2; }
+
+  /* min-height is a screen concern; a printed document sizes to its content. */
+  .shell, body.page--split .shell { display: block; max-width: none; padding: 0; min-height: 0; }
+  .main { padding: 0; }
+  .page { display: block; }
+  .page__aside { display: none; }
+  .prose, .lede { max-width: none; }
+
+  body { font-size: 10pt; line-height: 1.4; background: #fff; }
+  .pagehead__title { font-size: 20pt; }
+  .pagehead__rule { margin-block: 10pt; }
+  .record__title { font-size: 11pt; }
+  /* The lede is sized for reading on screen. On paper the CV summary should sit
+     near body size, or it alone costs most of a page. */
+  .lede { font-size: 10.5pt; margin-block: 0 10pt; }
+
+  /* Paper has no rail, so the issuer fits beside the title instead of under it,
+     which keeps eight credentials from costing an extra page. */
+  .row__main { display: block; }
+  .row__sub { display: inline; }
+  .row__sub::before { content: ' · '; }
+  .block { margin-top: 10pt; }
+  .block__head { padding-bottom: 4pt; }
+  .block__aux { display: none; }
+
+  /* The spine is screen furniture. On paper the dates carry the chronology. */
+  .timeline .record::before, .timeline .record::after, .record__when .dot { display: none; }
+  .timeline .record { padding-left: 0; }
+  .timeline .record + .record { border-top: 1px solid var(--rule); }
+  /* Paper runs denser than screen: tighter records and rows keep the CV to two
+     pages rather than spilling three credentials onto a near-empty third. */
+  .record { padding-block: 6pt; break-inside: avoid; }
+  .record__note { margin-top: 4pt; }
+  .record__note p + p { margin-top: 4pt; }
+  .block__head, .pagehead { break-after: avoid; }
+  .row { break-inside: avoid; }
+  .row__link { padding-block: 5pt; }
+
+  /* Boxed tags waste ink, so they set as a plain comma separated list. */
+  .tags { gap: 0 0.35em; margin-top: 5pt; }
+  .tags a { padding: 0; border: 0; }
+  .tags li:not(:last-child) a::after { content: ","; }
+
+  a { color: #000; text-decoration: none; }
+  .record__org a { text-decoration: none; }
+}
+{% endraw %}

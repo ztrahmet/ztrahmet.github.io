@@ -1,0 +1,61 @@
+{% import "icons.njk" as i %}
+{% import "mark.njk" as m %}
+<header class="rail">
+  {#- The handle is the site's mark. The full name and role lead the home page. -#}
+  <a class="identity" href="/">
+    <span class="identity__at" aria-hidden="true">@</span>{{ profile.handle }}
+  </a>
+
+  <nav class="nav" aria-label="Sections">
+    {%- for item in nav %}
+      {#- Hubs carry at most two collections, which is what the count covers. -#}
+      {%- set c0 = item.collections[0] %}
+      {%- set c1 = item.collections[1] %}
+      {%- set n = (stats.collections[c0].total if c0 else 0) + (stats.collections[c1].total if c1 else 0) %}
+      {%- if item.id == 'skills' %}{% set n = taxonomy.totalUniqueSkills %}{% endif %}
+      {%- if not c0 or n %}
+      <a class="nav__item" href="{{ item.permalink }}"{% if section == item.id %} aria-current="page"{% endif %}>
+        <span class="nav__label">{{ item.label }}</span>
+        {%- if item.id != 'cv' %}<span class="nav__count">{{ n }}</span>{% endif %}
+      </a>
+      {%- endif %}
+    {%- endfor %}
+  </nav>
+
+  <div class="rail__controls">
+    {#- A real link to the full index. The script upgrades it to the palette and
+        adds the key hint, so nothing advertises a shortcut that cannot work. -#}
+    <a class="search" href="/search/" data-search-trigger>
+      <span>Search</span>
+    </a>
+  </div>
+
+  <div class="rail__spacer"></div>
+
+  {%- if profile.social | length %}
+  <ul class="social">
+    {%- for link in profile.social %}
+    <li>
+      <a href="{{ link.url }}"{% if '://' in link.url %} rel="me noopener"{% endif %}>
+        {#- A slug picks a theme glyph; a path or URL is used as the asset it is.
+            Length, not truthiness: trim returns a SafeString, and an empty one is
+            still an object and so always truthy. -#}
+        {%- set glyph = i.icon(link.icon) | trim %}
+        {%- if glyph | length %}{{ glyph }}
+        {%- elif '/' in link.icon %}<span class="social__mark">{{ m.asset(link.icon) }}</span>
+        {%- endif %}
+        <span>{{ link.label }}</span>
+      </a>
+    </li>
+    {%- endfor %}
+  </ul>
+  {%- endif %}
+
+  <div class="rail__controls">
+    <div class="scheme" role="group" aria-label="Colour scheme" hidden>
+      <button type="button" class="scheme__btn" data-scheme="auto" aria-pressed="true">Auto</button>
+      <button type="button" class="scheme__btn" data-scheme="light" aria-pressed="false">Light</button>
+      <button type="button" class="scheme__btn" data-scheme="dark" aria-pressed="false">Dark</button>
+    </div>
+  </div>
+</header>

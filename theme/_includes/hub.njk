@@ -1,0 +1,26 @@
+{#- A hub lists every collection named by its entry in nav.json, merged into one
+    recency ordered list. The type tag on each row keeps them legible.
+
+    The merged list is built by exclusion rather than union, because Nunjucks has
+    no way to concatenate two filtered lists. The five collection names are fixed
+    by the engine's enum, so the complement is well defined. -#}
+{% import "rows.njk" as r %}
+
+{% macro list(items, collections) %}
+<ol class="rows">
+  {%- for item in items %}
+    {%- if item.collection in collections %}{{ r.row(item) }}{% endif %}
+  {%- endfor %}
+</ol>
+{% endmacro %}
+
+{#- Ordered by date, not recency: the year markers only read correctly when the
+    list descends year by year, and recency order lifts ongoing entries out of it. -#}
+{% macro index(items) %}
+{% set dated = items | byDate %}
+<ol class="rows rows--index">
+  {%- for item in dated %}
+    {{ r.detail(item, loop.first or item.year != dated[loop.index0 - 1].year) }}
+  {%- endfor %}
+</ol>
+{% endmacro %}

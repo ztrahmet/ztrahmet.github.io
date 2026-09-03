@@ -1,0 +1,29 @@
+---
+permalink: /404.html
+eleventyExcludeFromCollections: true
+title: Not Found
+layout: base.njk
+pageDescription: That page does not exist.
+---
+{% import "rows.njk" as r %}
+
+<div class="page__body">
+  <header class="pagehead">
+    <p class="pagehead__kicker">Error 404</p>
+    <h1 class="pagehead__title">That page does not exist</h1>
+    <p class="pagehead__sub">The link may be out of date, or the entry may have been renamed.</p>
+    <hr class="pagehead__rule">
+  </header>
+
+  <section class="block block--flush">
+    <div class="block__head">
+      <h2 class="block__title">Try instead</h2>
+      <span class="block__aux">{{ stats.totalItems }} entries</span>
+    </div>
+    <ol class="rows">
+      {%- for item in nav %}
+      {{ r.line(href=item.permalink, title=item.label, meta=item.permalink, tag="Index") }}
+      {%- endfor %}
+    </ol>
+  </section>
+</div>

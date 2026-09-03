@@ -1,0 +1,54 @@
+{#- Structured data. Values go through `dump` so quotes in a title cannot break
+    the JSON. Home describes the person, an entry describes the work. -#}
+{%- if page.url == "/" %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": {{ profile.name | dump | safe }},
+  "url": {{ site.url | dump | safe }},
+  "jobTitle": {{ profile.role | dump | safe }}
+  {%- if profile.handle %},
+  "alternateName": {{ profile.handle | dump | safe }}
+  {%- endif %}
+  {%- if profile.summary %},
+  "description": {{ profile.summary | dump | safe }}
+  {%- endif %}
+  {%- if profile.avatar %},
+  "image": {{ (profile.avatar.light or profile.avatar) | absoluteUrl(site.url) | dump | safe }}
+  {%- endif %}
+  {%- if profile.location %},
+  "address": { "@type": "PostalAddress", "addressLocality": {{ profile.location | dump | safe }} }
+  {%- endif %}
+  {#- Only web profiles belong in sameAs, so mailto: links are skipped. The list
+      is captured first and its trailing comma removed with a sentinel, because
+      loop.last fires on the skipped item and would leave the JSON invalid. -#}
+  {%- set profiles %}{% for link in profile.social %}{% if '://' in link.url %}{{ link.url | dump | safe }},{% endif %}{% endfor %}{% endset %}
+  {%- if profiles | trim | length %},
+  "sameAs": [{{ (profiles | trim ~ 'X') | replace(',X', '') | replace('X', '') | safe }}]
+  {%- endif %}
+}
+</script>
+{%- elif entry %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": {% if entry.seo.ogType == 'article' %}"Article"{% else %}"CreativeWork"{% endif %},
+  "headline": {{ entry.title | dump | safe }},
+  "url": {{ entry.seo.canonicalUrl | dump | safe }},
+  "description": {{ entry.seo.description | dump | safe }},
+  "image": {{ entry.seo.image | dump | safe }},
+  {%- if entry.seo.publishedIso %}
+  "datePublished": {{ entry.seo.publishedIso | dump | safe }},
+  {%- endif %}
+  {%- if entry.skills | length %}
+  "keywords": {{ entry.skills | join(", ") | dump | safe }},
+  {%- endif %}
+  "author": {
+    "@type": "Person",
+    "name": {{ profile.name | dump | safe }},
+    "url": {{ site.url | dump | safe }}
+  }
+}
+</script>
+{%- endif %}
