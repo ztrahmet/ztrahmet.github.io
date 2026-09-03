@@ -871,6 +871,9 @@ body {
 .foot {
   margin-top: var(--s9);
   padding-top: var(--s4);
+  /* Same column as the body above it. Left to fill .main it ran past every rule
+     on the page, and on a page with a margin column it reached under the aside. */
+  max-width: var(--measure);
   border-top: 1px solid var(--rule);
   display: flex;
   flex-wrap: wrap;
