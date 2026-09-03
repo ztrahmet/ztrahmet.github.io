@@ -13,7 +13,7 @@
     <line x1="22" y1="66" x2="50" y2="94"/>
     <line x1="138" y1="66" x2="110" y2="94"/>
   </g>
-  <circle fill="#b37700" cx="80" cy="80" r="10"/>
+  <circle fill="var(--accent, #0a6f68)" cx="80" cy="80" r="10"/>
   <rect fill="none" stroke="currentColor" stroke-width="3" x="23.5" y="111.5" width="25" height="25"/>
   <rect fill="currentColor" x="110" y="110" width="28" height="28"/>
 </svg>
