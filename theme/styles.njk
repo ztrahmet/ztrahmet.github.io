@@ -290,7 +290,12 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--s6);
-    padding: var(--s7) var(--s5) var(--s6) 0;
+    /* A tall rail has to scroll, but overflow-y forces overflow-x to clip with
+       it, and the items sit flush against that edge. The gutter gives the focus
+       ring and the current-page marker somewhere to be drawn; the matching
+       negative margin puts the rail back where it was. */
+    padding: var(--s7) var(--s5) var(--s6) var(--s4);
+    margin-left: calc(var(--s4) * -1);
     border-bottom: 0;
     border-right: 1px solid var(--rule);
     overflow-y: auto;
