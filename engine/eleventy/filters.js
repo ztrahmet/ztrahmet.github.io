@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import {
   getModalityLabel,
   getEmploymentTypeLabel,
@@ -101,6 +102,59 @@ export function resetInlinedSvgCache() {
   inlinedSvgCache.clear();
 }
 
+/** Ids are document scoped, so two inlined files can each define the same one. */
+function namespaceSvgIds(markup, token) {
+  const ids = [...markup.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
+  if (!ids.length) return markup;
+
+  let out = markup;
+  for (const id of new Set(ids)) {
+    const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const renamed = `${token}-${id}`;
+    out = out
+      .replace(new RegExp(`\\sid="${escaped}"`, 'g'), ` id="${renamed}"`)
+      .replace(new RegExp(`url\\(#${escaped}\\)`, 'g'), `url(#${renamed})`)
+      .replace(new RegExp(`((?:xlink:)?href)="#${escaped}"`, 'g'), `$1="#${renamed}"`);
+  }
+  return out;
+}
+
+/**
+ * Inlines the SVG images in a rendered body that are written to follow the page.
+ *
+ * Markdown produces `<img src="diagram.svg">`, and an image referenced that way is
+ * a separate document, so `currentColor` inside it renders black whatever the page
+ * is doing. Only files that actually ask for `currentColor` are inlined, so a full
+ * colour illustration keeps its own palette and stays a normal, lazily loaded image.
+ *
+ * @param {string} html - Rendered entry body
+ * @param {string} contentDir - Absolute path to content directory
+ * @param {string} [baseDir] - Entry directory, for resolving relative sources
+ * @returns {string} Body with themeable SVGs inlined
+ */
+export function inlineThemedSvg(html, contentDir, baseDir = '') {
+  if (typeof html !== 'string' || !html || !contentDir) return html || '';
+
+  let seq = 0;
+  return html.replace(/<img\b[^>]*>/gi, (tag) => {
+    const src = tag.match(/\ssrc="([^"]+)"/i)?.[1];
+    if (!src || !src.split(/[?#]/)[0].toLowerCase().endsWith('.svg')) return tag;
+
+    const assetPath = src.startsWith('/') ? src : path.posix.join('/', baseDir, src);
+    const markup = inlineSvg(assetPath, contentDir);
+    if (!markup || !markup.includes('currentColor')) return tag;
+
+    const alt = tag.match(/\salt="([^"]*)"/i)?.[1] ?? '';
+    const label = alt
+      ? ` role="img" aria-label="${alt}"`
+      : ' role="presentation" aria-hidden="true"';
+
+    seq += 1;
+    return namespaceSvgIds(markup, `svg${seq}`)
+      .replace(/^<svg\b/i, `<svg class="inline-svg"${label}`);
+  });
+}
+
 /**
  * Registers all engine filters on an Eleventy configuration instance.
  * @param {object} eleventyConfig - Eleventy configuration object
@@ -132,6 +186,7 @@ export function registerFilters(eleventyConfig, contentDir) {
 
   // Assets
   eleventyConfig.addFilter('inlineSvg', (assetPath) => inlineSvg(assetPath, contentDir));
+  eleventyConfig.addFilter('inlineThemedSvg', (html, baseDir) => inlineThemedSvg(html, contentDir, baseDir));
 
   // List helpers. Nunjucks selectattr only tests truthiness and slice chunks
   // rather than limiting, so themes cannot filter or cap a list without these.

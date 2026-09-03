@@ -166,6 +166,7 @@ site in another language, build the range yourself, which is what `isOngoing` is
 | `absoluteUrls(siteUrl, pagePath)` | rewrite links inside HTML to absolute, for feeds. Root relative paths resolve against the site, document relative ones such as `./cover.png` against `pagePath` |
 | `slugify` | URL safe slug, handles accents and `C++` |
 | `inlineSvg` | an SVG asset path to its markup, for inlining |
+| `inlineThemedSvg(baseDir)` | inline the `currentColor` SVGs in a rendered body so they follow the theme |
 | `limit(n)` | first n items |
 | `where(key, value)` | keep matching items |
 | `whereNot(key, value)` | drop matching items |

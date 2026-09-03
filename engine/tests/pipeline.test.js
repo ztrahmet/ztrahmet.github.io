@@ -9,7 +9,7 @@ import configureEleventy, {
   registerAssetPassthroughs,
   registerThemeAssetPassthroughs
 } from '../eleventy/eleventy.config.js';
-import { inlineSvg, resetInlinedSvgCache } from '../eleventy/filters.js';
+import { inlineSvg, inlineThemedSvg, resetInlinedSvgCache } from '../eleventy/filters.js';
 import { sortByRecency } from '../pipeline/ordering.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -254,6 +254,76 @@ describe('End-to-End Data Engine Pipeline & Eleventy Integration', () => {
       expect(markup).not.toContain('onload');
       expect(markup).not.toContain('<?xml');
       expect(markup).toContain('<rect/>');
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+  });
+
+  describe('inlineThemedSvg Template Filter', () => {
+    function fixture() {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'body-'));
+      fs.mkdirSync(path.join(dir, 'blog', 'post'), { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, 'blog', 'post', 'themed.svg'),
+        '<svg viewBox="0 0 2 2"><rect fill="currentColor"/></svg>'
+      );
+      fs.writeFileSync(
+        path.join(dir, 'blog', 'post', 'painted.svg'),
+        '<svg viewBox="0 0 2 2"><rect fill="#ff0000"/></svg>'
+      );
+      resetInlinedSvgCache();
+      return dir;
+    }
+
+    it('inlines only the SVGs that ask to follow the page colour', () => {
+      const dir = fixture();
+      const html = '<img src="./themed.svg" alt="Themed"><img src="./painted.svg" alt="Painted">'
+        + '<img src="./cover.png" alt="Cover">';
+
+      const out = inlineThemedSvg(html, dir, 'blog/post');
+
+      expect(out).toContain('<svg class="inline-svg" role="img" aria-label="Themed"');
+      expect(out).toContain('<img src="./painted.svg" alt="Painted">');
+      expect(out).toContain('<img src="./cover.png" alt="Cover">');
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('marks an image with no alt text as decorative', () => {
+      const dir = fixture();
+      const out = inlineThemedSvg('<img src="./themed.svg" alt="">', dir, 'blog/post');
+
+      expect(out).toContain('role="presentation"');
+      expect(out).toContain('aria-hidden="true"');
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('namespaces ids so two inlined files cannot collide', () => {
+      const dir = fixture();
+      fs.writeFileSync(
+        path.join(dir, 'blog', 'post', 'grad.svg'),
+        '<svg><linearGradient id="g"><stop stop-color="currentColor"/></linearGradient>'
+        + '<rect fill="url(#g)"/></svg>'
+      );
+      resetInlinedSvgCache();
+
+      const out = inlineThemedSvg('<img src="./grad.svg" alt="a"><img src="./grad.svg" alt="b">', dir, 'blog/post');
+      const ids = [...out.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
+      const refs = [...out.matchAll(/url\(#([^)]+)\)/g)].map((m) => m[1]);
+
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(refs.every((ref) => ids.includes(ref))).toBe(true);
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('refuses a source that resolves outside the content directory', () => {
+      const dir = fixture();
+      const html = '<img src="../../../../etc/passwd.svg" alt="x">';
+
+      expect(inlineThemedSvg(html, dir, 'blog/post')).toBe(html);
+      expect(inlineThemedSvg('', dir, 'blog/post')).toBe('');
 
       fs.rmSync(dir, { recursive: true, force: true });
     });
