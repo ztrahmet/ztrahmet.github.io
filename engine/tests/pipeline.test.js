@@ -5,7 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import { loadEngineData, normalizeDataAssets } from '../pipeline/data-loader.js';
 import { formatDate } from '../eleventy/filters.js';
-import configureEleventy, { registerAssetPassthroughs } from '../eleventy/eleventy.config.js';
+import configureEleventy, {
+  registerAssetPassthroughs,
+  registerThemeAssetPassthroughs
+} from '../eleventy/eleventy.config.js';
+import { inlineSvg, resetInlinedSvgCache } from '../eleventy/filters.js';
 import { sortByRecency } from '../pipeline/ordering.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -139,6 +143,43 @@ describe('End-to-End Data Engine Pipeline & Eleventy Integration', () => {
       expect(watchTargets).toContain(FIXTURES_VALID_DIR);
     });
 
+    it('publishes a theme\'s own asset directories so the theme stays self-contained', () => {
+      const passthroughs = [];
+      const mock = { addPassthroughCopy: (entry) => passthroughs.push(entry) };
+      const themeDir = path.resolve(__dirname, '../../theme');
+
+      registerThemeAssetPassthroughs(mock, themeDir, FIXTURES_VALID_DIR);
+
+      const mapped = Object.assign({}, ...passthroughs);
+      expect(mapped['theme/static']).toBe('static');
+
+      // Eleventy's own directories are never published
+      for (const reserved of Object.keys(mapped)) {
+        expect(reserved).not.toMatch(/\/_/);
+      }
+    });
+
+    it('skips a theme directory that collides with a content directory', () => {
+      const themeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'theme-'));
+      const contentDir = fs.mkdtempSync(path.join(os.tmpdir(), 'content-'));
+      fs.mkdirSync(path.join(themeDir, 'images'));
+      fs.mkdirSync(path.join(themeDir, 'assets'));
+      fs.mkdirSync(path.join(themeDir, '_includes'));
+      fs.mkdirSync(path.join(contentDir, 'images'));
+
+      const passthroughs = [];
+      const mock = { addPassthroughCopy: (entry) => passthroughs.push(entry) };
+      registerThemeAssetPassthroughs(mock, themeDir, contentDir);
+
+      const targets = passthroughs.map((entry) => Object.values(entry)[0]);
+      expect(targets).toContain('assets');
+      expect(targets).not.toContain('images');
+      expect(targets).not.toContain('_includes');
+
+      fs.rmSync(themeDir, { recursive: true, force: true });
+      fs.rmSync(contentDir, { recursive: true, force: true });
+    });
+
     it('publishes any folder name, with no privileged asset directories', () => {
       const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'passthrough-'));
       fs.mkdirSync(path.join(dir, 'pictures/avatars'), { recursive: true });
@@ -179,6 +220,40 @@ describe('End-to-End Data Engine Pipeline & Eleventy Integration', () => {
         registerAssetPassthroughs({ addPassthroughCopy: (e) => Object.assign(mapped, e) }, dir)
       ).not.toThrow();
       expect(Object.keys(mapped)).toHaveLength(0);
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+  });
+
+  describe('inlineSvg Template Filter', () => {
+    it('returns markup for an SVG and nothing for anything else', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'svg-'));
+      fs.writeFileSync(path.join(dir, 'mark.svg'), '<svg viewBox="0 0 1 1"><rect fill="currentColor"/></svg>');
+      fs.writeFileSync(path.join(dir, 'cover.png'), 'not an svg');
+      resetInlinedSvgCache();
+
+      expect(inlineSvg('/mark.svg', dir)).toContain('currentColor');
+      expect(inlineSvg('/cover.png', dir)).toBe('');
+      expect(inlineSvg('/missing.svg', dir)).toBe('');
+      expect(inlineSvg('https://example.com/a.svg', dir)).toBe('');
+      expect(inlineSvg('/mark.svg', undefined)).toBe('');
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('strips scripts and event handlers from inlined markup', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'svg-'));
+      fs.writeFileSync(
+        path.join(dir, 'unsafe.svg'),
+        '<?xml version="1.0"?><svg onload="alert(1)"><script>alert(2)</script><rect/></svg>'
+      );
+      resetInlinedSvgCache();
+
+      const markup = inlineSvg('/unsafe.svg', dir);
+      expect(markup).not.toContain('<script');
+      expect(markup).not.toContain('onload');
+      expect(markup).not.toContain('<?xml');
+      expect(markup).toContain('<rect/>');
 
       fs.rmSync(dir, { recursive: true, force: true });
     });

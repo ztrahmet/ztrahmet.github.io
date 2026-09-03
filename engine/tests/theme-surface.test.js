@@ -111,6 +111,24 @@ describe('Theme Surface', () => {
         '<img src="https://s.com/a.png"><a href="https://s.com/b/">x</a><a href="https://e.com/c">y</a>'
       );
     });
+
+    it('resolves document-relative URLs against the page that contains them', () => {
+      const html = '<img src="./cover.png"><a href="../other/">x</a><a href="#top">y</a>';
+      expect(absolutizeUrls(html, 'https://s.com', '/blog/post/')).toBe(
+        '<img src="https://s.com/blog/post/cover.png">'
+        + '<a href="https://s.com/blog/other/">x</a>'
+        + '<a href="https://s.com/blog/post/#top">y</a>'
+      );
+    });
+
+    it('leaves non-http schemes and protocol-relative URLs alone', () => {
+      const html = '<a href="mailto:a@b.c">m</a><a href="tel:+100">t</a><img src="//cdn.e.com/x.png">';
+      expect(absolutizeUrls(html, 'https://s.com', '/blog/post/')).toBe(html);
+    });
+
+    it('still resolves root-relative URLs when no page path is given', () => {
+      expect(absolutizeUrls('<img src="/a.png">', 'https://s.com')).toBe('<img src="https://s.com/a.png">');
+    });
   });
 
   describe('list filters Nunjucks cannot provide', () => {

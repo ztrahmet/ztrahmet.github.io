@@ -7,6 +7,8 @@ const __dirname = path.dirname(__filename);
 
 export const PROJECT_ROOT = path.resolve(__dirname, '../..');
 export const DEFAULT_CONTENT_DIR = path.resolve(PROJECT_ROOT, 'content');
+export const THEME_DIR_NAME = 'theme';
+export const THEME_DIR = path.resolve(PROJECT_ROOT, THEME_DIR_NAME);
 export const SCHEMAS_DIR = path.resolve(PROJECT_ROOT, 'engine/schemas');
 
 /**

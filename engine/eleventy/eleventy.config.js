@@ -3,8 +3,8 @@ import path from 'node:path';
 import fg from 'fast-glob';
 import { COLLECTION_TYPES } from '../config/enums.js';
 import { loadEngineData } from '../pipeline/data-loader.js';
-import { registerFilters } from './filters.js';
-import { resolveContentDir, PROJECT_ROOT, SCHEMAS_DIR } from '../config/paths.js';
+import { registerFilters, resetInlinedSvgCache } from './filters.js';
+import { resolveContentDir, PROJECT_ROOT, SCHEMAS_DIR, THEME_DIR, THEME_DIR_NAME } from '../config/paths.js';
 import { writeSearchIndexFile } from '../search/search-indexer.js';
 
 /** Files the engine reads as source, so they are never published as-is. */
@@ -64,6 +64,51 @@ export function registerAssetPassthroughs(eleventyConfig, contentDir) {
 }
 
 /**
+ * Registers passthrough copies for a theme's own static assets.
+ *
+ * A theme has to be able to ship the fonts, icons and files its stylesheets
+ * reference without putting them in content/, which holds the author's data.
+ * Every directory in the theme is published under its own name, except the ones
+ * Eleventy reserves, which are prefixed with an underscore.
+ *
+ * Theme and content assets share the site root, so a name used by both is a
+ * genuine ambiguity. Content wins, because it is the author's, and the theme
+ * directory is skipped with a warning rather than silently shadowing it.
+ *
+ * @param {object} eleventyConfig - Eleventy configuration object
+ * @param {string} themeDir - Absolute path to the theme directory
+ * @param {string} contentDir - Absolute path to the content directory
+ */
+export function registerThemeAssetPassthroughs(eleventyConfig, themeDir, contentDir) {
+  if (!fs.existsSync(themeDir)) return;
+
+  const contentNames = new Set(
+    fs.existsSync(contentDir)
+      ? fs.readdirSync(contentDir, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+      : []
+  );
+
+  for (const entry of fs.readdirSync(themeDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    if (entry.name.startsWith('.') || entry.name.startsWith('_')) continue;
+
+    if (contentNames.has(entry.name)) {
+      console.warn(
+        `⚠️  [Warning] Theme directory "${entry.name}" is also a content directory. `
+        + 'Content is published and the theme copy is skipped; rename the theme directory.'
+      );
+      continue;
+    }
+
+    const absolute = path.join(themeDir, entry.name);
+    const projectPath = path.relative(PROJECT_ROOT, absolute).replace(/\\/g, '/');
+    eleventyConfig.addPassthroughCopy({ [projectPath]: entry.name });
+  }
+}
+
+/**
  * Configures the Eleventy engine for the static site generator.
  * Exposes the engine data surface as global data, collections, filters, asset passthroughs,
  * search artifact emission, and watch targets.
@@ -84,6 +129,7 @@ export default function configureEleventy(eleventyConfig, options = {}) {
 
   eleventyConfig.on('eleventy.before', () => {
     cache = null;
+    resetInlinedSvgCache();
   });
 
   // 3. Expose the engine data surface to templates.
@@ -115,10 +161,13 @@ export default function configureEleventy(eleventyConfig, options = {}) {
   eleventyConfig.addCollection('pinned', () => getData().pinned_items);
 
   // 5. Register template filters (mappings, dates, markdown, urls)
-  registerFilters(eleventyConfig);
+  registerFilters(eleventyConfig, contentDir);
 
   // 6. Register dynamic asset passthrough copies
   registerAssetPassthroughs(eleventyConfig, contentDir);
+
+  //    A theme ships its own fonts and files, so it stays self-contained.
+  registerThemeAssetPassthroughs(eleventyConfig, THEME_DIR, contentDir);
 
   // 7. Emit the search artifact into the resolved output directory on every build
   eleventyConfig.on('eleventy.after', ({ directories, dir }) => {
@@ -132,7 +181,7 @@ export default function configureEleventy(eleventyConfig, options = {}) {
 
   return {
     dir: {
-      input: 'theme',
+      input: THEME_DIR_NAME,
       includes: '_includes',
       layouts: '_layouts',
       data: '_data'

@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import {
   getModalityLabel,
   getEmploymentTypeLabel,
@@ -15,29 +16,97 @@ import {
 import { renderMarkdown, renderMarkdownInline } from '../pipeline/markdown-renderer.js';
 import { resolveAbsoluteUrl } from '../pipeline/seo-normalizer.js';
 import { sortByRecency, sortByDate } from '../pipeline/ordering.js';
+import { resolveAssetFsPath } from '../pipeline/asset-normalizer.js';
 
 export { formatDate, formatDateRange, toIsoDate, toRfc822Date, slugify };
 
+/** Already absolute, or a scheme the resolver must not touch. */
+const RESOLVED_REFERENCE = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
+
 /**
- * Rewrites root-relative src and href attributes to absolute URLs.
+ * Rewrites src, href and poster attributes to absolute URLs.
  * Feeds and syndicated content need absolute links to resolve off-site.
+ *
+ * Root-relative paths resolve against the site, and document-relative ones such as
+ * `./cover.png` against the page that contains them, which is the only way an
+ * entry's own assets survive syndication.
  *
  * @param {string} html - Rendered HTML
  * @param {string} siteUrl - Site base URL
+ * @param {string} [pagePath='/'] - Path of the page the HTML belongs to
  * @returns {string} HTML with absolute URLs
  */
-export function absolutizeUrls(html, siteUrl) {
+export function absolutizeUrls(html, siteUrl, pagePath = '/') {
   if (typeof html !== 'string' || !html || !siteUrl) return html || '';
-  const base = String(siteUrl).replace(/\/+$/, '');
+
+  let pageBase;
+  try {
+    pageBase = new URL(String(pagePath || '/'), `${String(siteUrl).replace(/\/+$/, '')}/`);
+  } catch {
+    return html;
+  }
+
   // Markdown renders double quotes, but authors may hand-write single quoted HTML
-  return html.replace(/\b(src|href|poster)=(["'])\/(?!\/)/g, `$1=$2${base}/`);
+  return html.replace(/\b(src|href|poster)=(["'])([^"']*)\2/gi, (match, attr, quote, value) => {
+    const ref = value.trim();
+    if (!ref || RESOLVED_REFERENCE.test(ref)) return match;
+    try {
+      return `${attr}=${quote}${new URL(ref, pageBase).href}${quote}`;
+    } catch {
+      return match;
+    }
+  });
+}
+
+const inlinedSvgCache = new Map();
+
+/**
+ * Reads an SVG asset and returns its markup for inlining.
+ *
+ * An SVG referenced by `<img>` is a separate document, so `currentColor` inside
+ * it never sees the page. Inlining is what lets an asset take the theme colour.
+ * Scripts and event handlers are stripped, since the markup is injected as-is.
+ *
+ * @param {string} assetPath - Root-relative asset path
+ * @param {string} contentDir - Absolute path to content directory
+ * @returns {string} SVG markup, or an empty string when not an inlinable SVG
+ */
+export function inlineSvg(assetPath, contentDir) {
+  if (typeof assetPath !== 'string' || !assetPath.toLowerCase().endsWith('.svg')) return '';
+  if (!contentDir) return '';
+
+  const cacheKey = `${contentDir}::${assetPath}`;
+  if (inlinedSvgCache.has(cacheKey)) return inlinedSvgCache.get(cacheKey);
+
+  const fsPath = resolveAssetFsPath(assetPath, contentDir);
+  let markup = '';
+
+  if (fsPath && fs.existsSync(fsPath)) {
+    markup = fs.readFileSync(fsPath, 'utf-8')
+      .replace(/<\?xml[\s\S]*?\?>/gi, '')
+      .replace(/<!DOCTYPE[\s\S]*?>/gi, '')
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+      .trim();
+  }
+
+  inlinedSvgCache.set(cacheKey, markup);
+  return markup;
+}
+
+/**
+ * Clears the inlined SVG cache so a watch rebuild picks up edited files.
+ */
+export function resetInlinedSvgCache() {
+  inlinedSvgCache.clear();
 }
 
 /**
  * Registers all engine filters on an Eleventy configuration instance.
  * @param {object} eleventyConfig - Eleventy configuration object
+ * @param {string} [contentDir] - Absolute path to content directory, for asset reading filters
  */
-export function registerFilters(eleventyConfig) {
+export function registerFilters(eleventyConfig, contentDir) {
   // Presentation mappings
   eleventyConfig.addFilter('modalityLabel', (val, context) => getModalityLabel(val, context));
   eleventyConfig.addFilter('employmentTypeLabel', (val) => getEmploymentTypeLabel(val));
@@ -58,8 +127,11 @@ export function registerFilters(eleventyConfig) {
 
   // URLs and identifiers
   eleventyConfig.addFilter('absoluteUrl', (urlPath, siteUrl) => resolveAbsoluteUrl(urlPath, siteUrl));
-  eleventyConfig.addFilter('absoluteUrls', (html, siteUrl) => absolutizeUrls(html, siteUrl));
+  eleventyConfig.addFilter('absoluteUrls', (html, siteUrl, pagePath) => absolutizeUrls(html, siteUrl, pagePath));
   eleventyConfig.addFilter('slugify', (val) => slugify(val));
+
+  // Assets
+  eleventyConfig.addFilter('inlineSvg', (assetPath) => inlineSvg(assetPath, contentDir));
 
   // List helpers. Nunjucks selectattr only tests truthiness and slice chunks
   // rather than limiting, so themes cannot filter or cap a list without these.
