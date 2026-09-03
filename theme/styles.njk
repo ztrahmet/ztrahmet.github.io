@@ -95,12 +95,11 @@ eleventyExcludeFromCollections: true
   --sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace;
 
-  /* Sized so a full-width line in --measure lands near 74 characters. */
   --t-display: clamp(2.5rem, 1.5rem + 3.6vw, 3.75rem);
   --t-h1: 1.875rem;
   --t-h2: 1.375rem;
   --t-h3: 1.1875rem;
-  --t-body: 1.1875rem;
+  --t-body: 1.125rem;
   --t-small: 1rem;
   --t-mono: 0.875rem;
   --t-mono-s: 0.8125rem;
@@ -114,7 +113,7 @@ eleventyExcludeFromCollections: true
   --s5: 1.5rem;  --s6: 2rem;    --s7: 3rem;    --s8: 4rem;  --s9: 6rem;
 
   --rail-w: 15.5rem;
-  --measure: 44rem;
+  --measure: 46rem;
   --aside-w: 12.5rem;
   --gutter: 3rem;
   --pad-x: 1.25rem;
@@ -123,15 +122,23 @@ eleventyExcludeFromCollections: true
   --mark-w-row: 2.375rem;
   /* Container caps, sized so the tracks inside actually fill them rather than
      leaving dead space at the right. Widen these two to widen the whole site. */
-  --shell: 68rem;
-  --shell-wide: 82rem;
-  /* Prose fills its column. The line length is governed by type size rather than
-     by a narrower box, so text never breaks short of the column edge. */
-  --measure-text: var(--measure);
+  --shell: 70rem;
+  --shell-wide: 84rem;
+  /* Running text stops short of the column so the line stays readable, while
+     figures, tables, code and rows use the full width. Held at the paragraph
+     width the site already had, so nothing breaks earlier than before; the
+     column grew around it rather than the text shrinking into it. */
+  --measure-text: 44rem;
 
   --fast: 120ms;
   --slow: 240ms;
   --ease: cubic-bezier(0.2, 0, 0, 1);
+  /* Overshoots slightly, which is what makes a control feel sprung rather than
+     merely animated. Used for anything that settles into place. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* How far a control travels when pressed. One pixel reads as a press at this
+     type size; more reads as a glitch. */
+  --press: 1px;
 }
 
 /* Dark is a designed counterpart, not an inversion: the ground keeps a blue
@@ -199,8 +206,23 @@ body {
 ::selection { background: var(--accent); color: var(--on-accent); }
 
 /* Component display rules outrank the UA stylesheet, so [hidden] has to win
-   explicitly. The scheme control relies on it to stay absent without JS. */
+   explicitly. */
 [hidden] { display: none !important; }
+
+/* Controls that cannot work without a script. They ship in the markup and are
+   removed here instead, because the class is set before the first paint: doing
+   it the other way round meant the deferred script drew them in afterwards, and
+   they arrived late and pushed what was already on screen. */
+.no-js .scheme,
+.no-js .search__key,
+.no-js .totop,
+.no-js [data-print] { display: none !important; }
+
+/* Same reasoning for the shortcut itself: both labels ship and the one that
+   applies is chosen by a class the same script sets. */
+.search__key--mac { display: none; }
+.is-mac .search__key--mac { display: inline; }
+.is-mac .search__key--std { display: none; }
 
 .u-hidden {
   position: absolute; width: 1px; height: 1px;
@@ -336,6 +358,11 @@ body {
   transition: color var(--fast) var(--ease);
 }
 .nav__item:hover { color: var(--ink); }
+@media (min-width: 60rem) {
+  .nav__item { transition: color var(--fast) var(--ease), transform var(--fast) var(--ease); }
+  .nav__item:hover { transform: translateX(2px); }
+  .nav__item:active { transform: translateX(2px) translateY(var(--press)); }
+}
 .nav__item[aria-current] { color: var(--ink); font-weight: 500; }
 .nav__count {
   font-size: var(--t-mono-s);
@@ -413,9 +440,30 @@ body {
   .social { flex-direction: column; gap: var(--s1); }
 }
 
-/* Segmented scheme control. Deliberately not on the accent: the accent is
-   reserved for content state, and a permanently lit chip would spend it. */
-.scheme { display: inline-flex; border: 1px solid var(--rule-strong); width: max-content; }
+/* Segmented scheme control: three equal cells with one thumb that slides
+   between them, so the change of state is a movement rather than a repaint.
+   Deliberately not on the accent, which is reserved for content state.
+
+   --at is the index of the pressed cell, set by the script. Without JS the
+   control is hidden entirely, so the thumb never disagrees with reality. */
+.scheme {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: max-content;
+  border: 1px solid var(--rule-strong);
+  isolation: isolate;
+}
+.scheme::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  width: calc(100% / 3);
+  background: var(--sunken);
+  transform: translateX(calc(var(--at, 0) * 100%));
+  transition: transform var(--slow) var(--ease-out);
+}
 .scheme__btn {
   padding: 0.3rem var(--s3);
   border: 0;
@@ -427,25 +475,42 @@ body {
   text-transform: uppercase;
   color: var(--ink-3);
   cursor: pointer;
-  transition: color var(--fast) var(--ease), background var(--fast) var(--ease);
+  transition: color var(--fast) var(--ease), transform var(--fast) var(--ease);
 }
 .scheme__btn:first-child { border-left: 0; }
 .scheme__btn:hover { color: var(--ink); }
-.scheme__btn[aria-pressed='true'] { background: var(--sunken); color: var(--ink); }
+.scheme__btn:active { transform: translateY(var(--press)); }
+.scheme__btn[aria-pressed='true'] { color: var(--ink); }
 
-.rail__meta {
-  font-family: var(--mono);
-  font-size: var(--t-label);
-  color: var(--ink-3);
-  font-variant-numeric: tabular-nums;
-}
-
-/* On narrow screens the rail is a normal block, but the nav row sticks. */
+/* On narrow screens the rail is a header rather than a column, so it is laid out
+   to cost as little height as possible: the identity shares its row with the
+   scheme control, and everything else is one full-width row. Stacked at the
+   desktop rhythm this ran to about a third of a phone screen before the page
+   began. */
 @media (max-width: 59.99rem) {
-  .rail { display: grid; gap: var(--s4); }
+  .rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'identity scheme'
+      'nav      nav'
+      'search   search'
+      'social   social';
+    align-items: center;
+    gap: var(--s3) var(--s4);
+    padding-block: var(--s4);
+  }
+  .identity { grid-area: identity; }
+  .nav { grid-area: nav; margin-inline: calc(var(--pad-x) * -1); padding-inline: var(--pad-x); }
+  .rail__search { grid-area: search; }
+  .rail__scheme { grid-area: scheme; justify-self: end; }
+  .social { grid-area: social; }
   .rail__spacer { display: none; }
-  .rail__controls { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); }
-  .search { flex: 1 1 auto; max-width: 14rem; }
+
+  /* The nav scrolls sideways when the labels outrun the screen, so the bleed
+     above lets the first and last item sit flush with the page edge. */
+  .nav { scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
 }
 
 /* ------------------------------------------------------------- masthead */
@@ -495,6 +560,109 @@ body {
   height: 1px;
   background: linear-gradient(to right, var(--accent) 0 3rem, var(--rule) 3rem);
 }
+/* -------------------------------------------------------------- controls */
+/* One surface for everything clickable that is not running text: adjacent
+   entries, an entry's external destinations, the CV actions, scroll to top.
+   Square, like the rest of the page, and it presses in rather than lighting up,
+   so the feedback is physical instead of decorative. */
+
+.btn {
+  --btn-ink: var(--ink-2);
+  --btn-edge: var(--rule-strong);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 0.4rem var(--s3);
+  border: 1px solid var(--btn-edge);
+  background: transparent;
+  color: var(--btn-ink);
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  line-height: 1.35;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease),
+              border-color var(--fast) var(--ease),
+              background var(--fast) var(--ease),
+              transform var(--fast) var(--ease);
+}
+.btn:hover { --btn-ink: var(--ink); --btn-edge: var(--ink-3); background: var(--sunken); }
+.btn:active { transform: translateY(var(--press)); }
+
+/* The arrow is the direction, so it moves the way the link goes. */
+.ui-arrow { flex: none; width: 1em; height: 1em; transition: transform var(--slow) var(--ease-out); }
+.btn:hover .ui-arrow { transform: translateX(0.15em); }
+.btn--back:hover .ui-arrow { transform: translateX(-0.15em); }
+.btn--out:hover .ui-arrow { transform: translate(0.12em, -0.12em); }
+
+/* Accented control, for the one action a page actually wants taken. */
+.btn--key {
+  --btn-ink: var(--accent-ink);
+  --btn-edge: var(--accent);
+}
+.btn--key:hover {
+  --btn-ink: var(--on-accent);
+  --btn-edge: var(--accent);
+  background: var(--accent);
+}
+
+/* ------------------------------------------------------------------ dither */
+/* An ordered 4x4 Bayer threshold, drawn as four offset dot grids at decreasing
+   opacity. Pixels rather than a smooth ramp, which is the same instrument
+   drawing as the rest of the site and survives being scaled. */
+.dither {
+  position: relative;
+  isolation: isolate;
+}
+.dither::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  --d: 4px;
+  background-image:
+    radial-gradient(var(--accent) 0.5px, transparent 0.5px),
+    radial-gradient(var(--accent) 0.5px, transparent 0.5px),
+    radial-gradient(var(--accent) 0.5px, transparent 0.5px);
+  background-size: var(--d) var(--d), var(--d) var(--d), var(--d) var(--d);
+  background-position: 0 0, 2px 2px, 1px 3px;
+  opacity: 0.65;
+  /* Fades out along the run, so the texture reads as a gradient of density. */
+  -webkit-mask-image: linear-gradient(to right, #000, transparent 78%);
+  mask-image: linear-gradient(to right, #000, transparent 78%);
+}
+
+/* ------------------------------------------------------------ scroll top */
+/* Appears once the page has actually been scrolled, which the script decides.
+   Without JS it is never shown, and the page loses nothing. */
+.totop {
+  position: fixed;
+  right: var(--pad-x);
+  bottom: var(--pad-x);
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  background: var(--ground);
+  opacity: 0;
+  transform: translateY(0.5rem);
+  visibility: hidden;
+  transition: opacity var(--slow) var(--ease),
+              transform var(--slow) var(--ease-out),
+              visibility var(--slow),
+              color var(--fast) var(--ease),
+              border-color var(--fast) var(--ease),
+              background var(--fast) var(--ease);
+}
+.totop.is-shown { opacity: 1; transform: none; visibility: visible; }
+.totop.is-shown:active { transform: translateY(var(--press)); }
+.totop .ui-arrow { width: 1.15rem; height: 1.15rem; }
+.totop:hover .ui-arrow { transform: translateY(-0.12em); }
+
 /* --------------------------------------------------------------- blocks */
 
 .block { margin-top: var(--s8); }
@@ -621,6 +789,7 @@ body {
    is used as data rather than as state. One bar per tier keeps it to a few. */
 
 .tier { display: grid; gap: var(--s4); padding-block: var(--s4); align-items: start; }
+.tiers { display: grid; }
 .tier + .tier { border-top: 1px solid var(--rule); }
 @media (min-width: 34rem) {
   .tier { grid-template-columns: 7rem minmax(0, 1fr); }
@@ -641,14 +810,18 @@ body {
 }
 .tier__items { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); }
 .tier__item {
+  /* Inline boxes cannot be transformed, and this one is pressed. */
+  display: inline-block;
   font-size: var(--t-small);
   color: var(--ink);
   text-decoration: underline;
   text-decoration-color: transparent;
   text-underline-offset: 0.2em;
-  transition: text-decoration-color var(--fast) var(--ease), color var(--fast) var(--ease);
+  transition: text-decoration-color var(--fast) var(--ease), color var(--fast) var(--ease),
+              transform var(--fast) var(--ease);
 }
 .tier__item:hover { color: var(--accent-ink); text-decoration-color: var(--accent); }
+.tier__item:active { transform: translateY(var(--press)); }
 
 /* ----------------------------------------------------------- index rows */
 /* The hub variant. Taller, adds the description under the attribution, and the
@@ -745,6 +918,70 @@ body {
   line-height: 1.6;
 }
 .prose pre code { padding: 0; background: none; border: 0; font-size: inherit; }
+
+/* --------------------------------------------------------------- syntax */
+/* GitHub's light and dark defaults, which most readers already recognise from
+   the place they read code. Highlighting is done at build time, so a page with
+   code ships no highlighter; these classes are all that arrives.
+
+   Comment and title sit one step darker than upstream. The code ground here is
+   --sunken rather than white, and at the original values both fell under 4.5. */
+
+:root {
+  --syn-comment: #656d76;
+  --syn-keyword: #cf222e;
+  --syn-string:  #0a3069;
+  --syn-number:  #0550ae;
+  --syn-title:   #6f42c1;
+  --syn-type:    #953800;
+  --syn-name:    #116329;
+  --syn-add-ink: #116329;
+  --syn-add-bg:  rgb(17 99 41 / 0.12);
+  --syn-del-ink: #82071e;
+  --syn-del-bg:  rgb(130 7 30 / 0.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --syn-comment: #8b949e;
+    --syn-keyword: #ff7b72;
+    --syn-string:  #a5d6ff;
+    --syn-number:  #79c0ff;
+    --syn-title:   #d2a8ff;
+    --syn-type:    #ffa657;
+    --syn-name:    #7ee787;
+    --syn-add-ink: #7ee787;
+    --syn-add-bg:  rgb(126 231 135 / 0.12);
+    --syn-del-ink: #ffa198;
+    --syn-del-bg:  rgb(255 161 152 / 0.12);
+  }
+}
+:root[data-theme='dark'] {
+  --syn-comment: #8b949e;
+  --syn-keyword: #ff7b72;
+  --syn-string:  #a5d6ff;
+  --syn-number:  #79c0ff;
+  --syn-title:   #d2a8ff;
+  --syn-type:    #ffa657;
+  --syn-name:    #7ee787;
+  --syn-add-ink: #7ee787;
+  --syn-add-bg:  rgb(126 231 135 / 0.12);
+  --syn-del-ink: #ffa198;
+  --syn-del-bg:  rgb(255 161 152 / 0.12);
+}
+
+.hljs-comment, .hljs-quote { color: var(--syn-comment); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-doctag { color: var(--syn-keyword); }
+.hljs-string, .hljs-regexp, .hljs-symbol, .hljs-bullet { color: var(--syn-string); }
+.hljs-number, .hljs-attr, .hljs-attribute, .hljs-variable, .hljs-meta, .hljs-selector-pseudo,
+.hljs-template-variable { color: var(--syn-number); }
+.hljs-title, .hljs-title.function_, .hljs-section { color: var(--syn-title); }
+.hljs-type, .hljs-title.class_, .hljs-built_in, .hljs-params { color: var(--syn-type); }
+.hljs-name, .hljs-tag, .hljs-selector-class { color: var(--syn-name); }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 600; }
+/* A diff needs its own ground, since colour alone is the whole signal. */
+.hljs-addition { color: var(--syn-add-ink); background: var(--syn-add-bg); }
+.hljs-deletion { color: var(--syn-del-ink); background: var(--syn-del-bg); }
 .prose blockquote {
   padding-left: var(--s4);
   border-left: 2px solid var(--rule-strong);
@@ -777,7 +1014,9 @@ body {
   background: var(--sunken);
   border: 1px solid var(--rule);
 }
-.prose .figure img { margin-block: 0; padding: 0; background: none; border: 0; }
+.prose .figure img,
+.prose .figure .inline-svg { margin-block: 0; padding: 0; background: none; border: 0; }
+.figure .inline-svg { width: 100%; }
 
 .prose figure { margin-block: var(--s5); }
 .prose figure > img,
@@ -917,25 +1156,18 @@ body {
 .pagehead__sub { margin-top: var(--s2); font-size: var(--t-small); color: var(--ink-2); }
 .pagehead__byline { margin-top: var(--s1); font-size: var(--t-small); color: var(--ink-3); }
 
-/* The entry's external destinations, set with the title rather than after the body. */
+/* The entry's external destinations, set with the title rather than after the
+   body. They are controls: leaving the site is a decision, so it gets a target
+   to press rather than a phrase to notice. The arrow is a real glyph in the
+   button, so it inherits colour and moves on hover with everything else. */
 .pagehead__links {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s2) var(--s5);
-  margin-top: var(--s3);
-  font-family: var(--mono);
-  font-size: var(--t-mono-s);
+  gap: var(--s2);
+  margin-top: var(--s4);
 }
-.pagehead__links a {
-  color: var(--ink-2);
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-underline-offset: 0.2em;
-  word-break: break-word;
-  transition: color var(--fast) var(--ease);
-}
-.pagehead__links a:hover { color: var(--accent-ink); }
-.pagehead__links a::after { content: ' \2197'; color: var(--ink-3); }
+.pagehead__links .btn { max-width: 100%; }
+.pagehead__links .btn > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The kicker carries the ongoing marker, matching how rows show it. */
 .pagehead__kicker .dot { display: inline-block; margin: 0 0.5em 0 0.7em; vertical-align: 0.1em; }
@@ -974,7 +1206,6 @@ body {
 
 @media (min-width: 46rem) {
   .record { grid-template-columns: 11rem minmax(0, 1fr) var(--mark-w); column-gap: var(--s5); }
-  .record__when { grid-column: 1; grid-row: 1; }
   .record__heading { grid-column: 2; grid-row: 1; }
   .record > .mark { grid-column: 3; grid-row: 1; }
   .record__detail { grid-column: 2 / span 2; grid-row: 2; }
@@ -1029,9 +1260,11 @@ body {
   font-size: var(--t-label);
   color: var(--ink-3);
   text-decoration: none;
-  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease),
+              transform var(--fast) var(--ease);
 }
 .tags a:hover { color: var(--ink); border-color: var(--ink-3); }
+.tags a:active { transform: translateY(var(--press)); }
 
 /* --------------------------------------------------------------- entries */
 
@@ -1092,33 +1325,48 @@ body {
 :root[data-theme='light'] .dark-only { display: none; }
 
 
+/* Two real controls rather than two underlined phrases. Direction is carried by
+   the arrow and by which edge the button sits against, so the pair reads as
+   previous and next before either label is. */
 .adjacent {
   margin-top: var(--s8);
-  padding-top: var(--s4);
+  padding-top: var(--s5);
   border-top: 1px solid var(--rule-strong);
   display: grid;
-  gap: var(--s4);
+  gap: var(--s3);
 }
-@media (min-width: 40rem) { .adjacent { grid-template-columns: 1fr 1fr; gap: var(--s5); } }
-.adjacent__link { display: grid; gap: var(--s1); color: inherit; text-decoration: none; }
-.adjacent__link--next { text-align: right; grid-column: 2; }
+@media (min-width: 40rem) { .adjacent { grid-template-columns: 1fr 1fr; gap: var(--s4); } }
+.adjacent__link {
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  min-width: 0;
+}
+/* Sits in the second cell even when it is the only one, so next is always right. */
+.adjacent__link--next { grid-column: -2; }
+/* Fills the space between the arrow and the far edge, so text-align has the whole
+   button to work against. Sized to its content it would hug the wrong edge
+   whenever the title was short, which is most of them. */
+.adjacent__text { flex: 1 1 auto; display: grid; gap: 0.1rem; min-width: 0; }
+.adjacent__link--next .adjacent__text { text-align: right; }
 .adjacent__dir {
-  font-family: var(--mono);
   font-size: var(--t-label);
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--ink-3);
+  transition: color var(--fast) var(--ease);
 }
+.adjacent__link:hover .adjacent__dir { color: var(--accent-ink); }
 .adjacent__title {
+  font-family: var(--sans);
   font-size: var(--t-small);
   font-weight: 500;
   line-height: 1.35;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-underline-offset: 0.2em;
-  transition: text-decoration-color var(--fast) var(--ease);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.adjacent__link:hover .adjacent__title { text-decoration-color: var(--accent); }
+.adjacent__link .ui-arrow { width: 1.15rem; height: 1.15rem; }
 
 /* ----------------------------------------------------------------- aside */
 /* The margin column. Everything the engine precomputes lives here rather
@@ -1260,27 +1508,14 @@ body {
   color: var(--ink-2);
 }
 
+/* Both actions are controls now, so the row is just their spacing. */
 .cv-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s4);
-  margin-top: var(--s3);
-  font-family: var(--mono);
-  font-size: var(--t-mono-s);
+  align-items: center;
+  gap: var(--s3);
+  margin-top: var(--s4);
 }
-.cv-actions a, .linkish {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ink-2);
-  font: inherit;
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-underline-offset: 0.2em;
-  cursor: pointer;
-  transition: color var(--fast) var(--ease);
-}
-.cv-actions a:hover, .linkish:hover { color: var(--accent-ink); }
 
 /* --------------------------------------------------------------- palette */
 /* A dialog is display:none until open, so the layout rules are scoped to [open].
@@ -1297,8 +1532,12 @@ body {
   color: var(--ink);
   overflow: hidden;
 }
-.palette[open] { display: flex; flex-direction: column; }
+.palette[open] { display: flex; flex-direction: column; animation: palette-in var(--slow) var(--ease-out) both; }
 .palette::backdrop { background: rgb(8 10 12 / 0.6); }
+.palette[open]::backdrop { animation: fade-in var(--slow) var(--ease) both; }
+@keyframes palette-in {
+  from { opacity: 0; transform: translateY(-0.75rem) scale(0.99); }
+}
 
 .palette__head {
   display: flex;
@@ -1368,6 +1607,30 @@ body {
 
 /* --------------------------------------------------------------- motion */
 
+/* Cross-document transitions. The rail is the one named element, so it is the one
+   thing the browser carries across the navigation: it keeps the same element and
+   slides it, which it has reason to do because a page with a margin column uses
+   the wider shell. Everything else is the root snapshot, and it crosses over.
+
+   Nothing else is named. A named element whose box differs between pages gets
+   interpolated between the two, and that movement is visible whichever axis it
+   happens on. A cross-fade has no geometry to get wrong.
+
+   Browsers without support navigate normally and lose nothing. */
+@view-transition { navigation: auto; }
+
+.rail { view-transition-name: rail; }
+
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+
+::view-transition-group(rail) {
+  animation-duration: var(--slow);
+  animation-timing-function: var(--ease-out);
+}
+::view-transition-old(root) { animation: fade-out var(--fast) var(--ease) both; }
+::view-transition-new(root) { animation: fade-in var(--slow) var(--ease) both; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
@@ -1376,6 +1639,11 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  /* The pseudo-elements are not descendants of the root, so the rule above does
+     not reach them. The navigation still happens, as a plain cut. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
 }
 
 /* ---------------------------------------------------------------- print */
@@ -1398,7 +1666,7 @@ body {
   }
 
   .rail, .foot, .skip, .search, .scheme, .cv-actions, .adjacent, .toc__fill, .palette,
-  .masthead__avatar { display: none !important; }
+  .totop, .masthead__avatar { display: none !important; }
   .printonly { display: block; }
 
   /* Paper is always light, so a themed asset pair must print its light variant.

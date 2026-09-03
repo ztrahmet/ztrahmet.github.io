@@ -1,5 +1,6 @@
+{% import "icons.njk" as i %}
 <!doctype html>
-<html lang="{{ site.lang }}">
+<html lang="{{ site.lang }}" class="no-js">
   <head>
     {%- include "head.njk" %}
   </head>
@@ -14,6 +15,12 @@
         {%- include "foot.njk" %}
       </main>
     </div>
+    {#- Revealed by the script once the page has actually been scrolled, so it
+        never occupies a corner it has not earned. -#}
+    <button class="btn totop" type="button" data-totop aria-label="Back to top">
+      {{ i.ui("up") }}
+    </button>
+
     <dialog class="palette" id="palette" aria-label="Search">
       <div class="palette__head">
         <input

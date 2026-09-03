@@ -22,11 +22,17 @@
     {%- endfor %}
   </nav>
 
-  <div class="rail__controls">
+  <div class="rail__search">
     {#- A real link to the full index. The script upgrades it to the palette and
         adds the key hint, so nothing advertises a shortcut that cannot work. -#}
     <a class="search" href="/search/" data-search-trigger>
       <span>Search</span>
+      {#- Both labels ship and CSS picks one, so the hint is right from the first
+          paint rather than being appended once the script has loaded. -#}
+      <kbd class="search__key">
+        <span class="search__key--mac">⌘K</span>
+        <span class="search__key--std">Ctrl K</span>
+      </kbd>
     </a>
   </div>
 
@@ -51,8 +57,8 @@
   </ul>
   {%- endif %}
 
-  <div class="rail__controls">
-    <div class="scheme" role="group" aria-label="Colour scheme" hidden>
+  <div class="rail__scheme">
+    <div class="scheme" role="group" aria-label="Colour scheme">
       <button type="button" class="scheme__btn" data-scheme="auto" aria-pressed="true">Auto</button>
       <button type="button" class="scheme__btn" data-scheme="light" aria-pressed="false">Light</button>
       <button type="button" class="scheme__btn" data-scheme="dark" aria-pressed="false">Dark</button>

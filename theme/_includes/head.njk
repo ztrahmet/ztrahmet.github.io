@@ -53,12 +53,20 @@
 
 {%- include "schema.njk" %}
 
-{#- Applied before first paint so a stored choice never flashes the other theme. -#}
+{#- Runs before first paint, so everything it decides is already true when the
+    page is drawn: the stored colour scheme never flashes the other theme, and
+    the controls that need a script are present rather than being written in
+    later by the deferred one. -#}
 <script>
   (function () {
+    var root = document.documentElement;
+    root.classList.remove('no-js');
+    if (/Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent)) {
+      root.classList.add('is-mac');
+    }
     try {
       var s = localStorage.getItem('scheme');
-      if (s === 'light' || s === 'dark') document.documentElement.dataset.theme = s;
+      if (s === 'light' || s === 'dark') root.dataset.theme = s;
     } catch (e) {}
   })();
 </script>

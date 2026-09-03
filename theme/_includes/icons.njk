@@ -14,3 +14,20 @@
 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 5h19a.5.5 0 0 1 .5.5v.4l-10 6.2-10-6.2v-.4a.5.5 0 0 1 .5-.5Zm-.5 3.3 9.7 6a.6.6 0 0 0 .6 0l9.7-6V18a.5.5 0 0 1-.5.5h-19A.5.5 0 0 1 2 18Z"/></svg>
 {%- endif %}
 {% endmacro %}
+
+{#- Interface arrows, kept apart from the social marks above: these are drawn for
+    this theme rather than borrowed, and they are stroked rather than filled so
+    they sit at the same weight as the mono text they label. -#}
+{% macro ui(name) %}
+{%- set d = {
+  "left":     "M15 5 8 12l7 7",
+  "right":    "M9 5l7 7-7 7",
+  "up":       "M5 15l7-7 7 7",
+  "external": "M8 16 16 8M9 8h7v7"
+}[name] %}
+{%- if d %}
+<svg class="ui-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
+     fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="square" stroke-linejoin="miter"><path d="{{ d }}"/></svg>
+{%- endif %}
+{% endmacro %}

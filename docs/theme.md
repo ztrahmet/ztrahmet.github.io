@@ -352,6 +352,46 @@ Two of those need somewhere to scroll or they crop: `.table-scroll`, which the e
 every table in, and `.katex-display`. Give both `overflow-x: auto`, and set it back to
 `visible` in print, because paper does not scroll.
 
+Fenced code arrives already highlighted, as `hljs-` class names carrying no colour of their own.
+The theme owns that palette. This one maps the classes to `--syn-*` tokens declared per scheme,
+so code follows light and dark like everything else.
+
+## Controls
+
+Anything clickable that is not running text uses `.btn`: the adjacent entries, an entry's
+external destinations, the CV actions, back to top. It is square like the rest of the page and
+presses in by `--press` rather than lighting up, so the feedback is physical. `.btn--out` marks
+a link that leaves the site, `.btn--back` one that goes backwards, and `.btn--key` the single
+action a page actually wants taken. Each moves its arrow in the direction it travels.
+
+`.dither` lays an ordered pixel pattern behind an element and fades it out along the run. It is
+deliberately used once, on the one key action, because a texture that appears everywhere stops
+drawing attention to anything.
+
+## Controls that need a script
+
+The document ships with `class="no-js"` on `<html>`, and a small inline script in the head
+removes it before the first paint. Anything that cannot work without a script — the scheme
+switch, the shortcut hint, the print action, back to top — is written in the markup and removed
+by CSS under `.no-js`.
+
+Do it this way round. Marking those controls `hidden` and revealing them from the deferred
+script also works, but they then arrive after the page has been painted and push what is already
+on screen. The same script sets `is-mac`, which is how the shortcut hint picks between its two
+labels without either being written in later.
+
+## Motion
+
+Page changes use cross-document view transitions. `.rail` is the only element with a
+`view-transition-name`, so it is the one thing the browser carries across: it keeps the same
+element and slides it, which it has reason to do because a page with a margin column uses the
+wider shell. Everything else is the root snapshot, and it cross-fades.
+
+Name only what genuinely persists. A named element whose box differs between pages gets
+interpolated between the two, and that movement is visible: naming `.main` scaled the content
+from 760 to 984 and read as a zoom, and naming `.page__body` interpolated its height and read as
+the page scrolling itself. A cross-fade has no geometry to get wrong.
+
 ## Contract
 
 `engine/types.d.ts` is the full typed contract. It is kept in sync with what the engine

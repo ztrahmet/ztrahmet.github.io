@@ -17,6 +17,7 @@ eleventyComputed:
 ---
 {% import "rows.njk" as r %}
 {% import "mark.njk" as m %}
+{% import "icons.njk" as i %}
 
 <div class="page__body">
   <article class="entry">
@@ -42,10 +43,14 @@ eleventyComputed:
           {%- if entry.url or entry.repository %}
           <p class="pagehead__links">
             {%- if entry.url %}
-            <a href="{{ entry.url }}" rel="noopener">{{ entry.url | replace("https://", "") | replace("http://", "") }}</a>
+            <a class="btn btn--out" href="{{ entry.url }}" rel="noopener">
+              <span>{{ entry.url | replace("https://", "") | replace("http://", "") }}</span>{{ i.ui("external") }}
+            </a>
             {%- endif %}
             {%- if entry.repository %}
-            <a href="{{ entry.repository }}" rel="noopener">Repository</a>
+            <a class="btn btn--out" href="{{ entry.repository }}" rel="noopener">
+              <span>Repository</span>{{ i.ui("external") }}
+            </a>
             {%- endif %}
           </p>
           {%- endif %}
@@ -57,7 +62,7 @@ eleventyComputed:
 
     {%- if entry.image %}
     {#- The cover is above the fold, so it is never lazy loaded. -#}
-    <figure class="figure figure--cover">
+    <figure class="figure">
       {%- if entry.image.light %}
       <img class="light-only" src="{{ entry.image.light }}" alt="Cover image for {{ entry.title }}" decoding="async">
       <img class="dark-only" src="{{ entry.image.dark }}" alt="Cover image for {{ entry.title }}" decoding="async">
@@ -81,15 +86,21 @@ eleventyComputed:
   {%- if entry.newer or entry.older %}
   <nav class="adjacent" aria-label="Adjacent entries">
     {%- if entry.older %}
-    <a class="adjacent__link" href="{{ entry.older.permalink }}">
-      <span class="adjacent__dir">Older</span>
-      <span class="adjacent__title">{{ entry.older.title }}</span>
+    <a class="btn btn--back adjacent__link" href="{{ entry.older.permalink }}">
+      {{ i.ui("left") }}
+      <span class="adjacent__text">
+        <span class="adjacent__dir">Older</span>
+        <span class="adjacent__title">{{ entry.older.title }}</span>
+      </span>
     </a>
     {%- endif %}
     {%- if entry.newer %}
-    <a class="adjacent__link adjacent__link--next" href="{{ entry.newer.permalink }}">
-      <span class="adjacent__dir">Newer</span>
-      <span class="adjacent__title">{{ entry.newer.title }}</span>
+    <a class="btn adjacent__link adjacent__link--next" href="{{ entry.newer.permalink }}">
+      <span class="adjacent__text">
+        <span class="adjacent__dir">Newer</span>
+        <span class="adjacent__title">{{ entry.newer.title }}</span>
+      </span>
+      {{ i.ui("right") }}
     </a>
     {%- endif %}
   </nav>

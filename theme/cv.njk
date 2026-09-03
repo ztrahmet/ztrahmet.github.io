@@ -7,6 +7,7 @@ pageDescription: Experience, education and credentials.
 ---
 {% import "hub.njk" as hub %}
 {% import "mark.njk" as m %}
+{% import "icons.njk" as i %}
 {% set item = nav | where("id", "cv") | first %}
 
 <div class="page__body">
@@ -23,8 +24,12 @@ pageDescription: Experience, education and credentials.
     </p>
     {%- endif %}
     <p class="cv-actions">
-      {%- if profile.resume %}<a href="{{ profile.resume }}">Download PDF</a>{% endif %}
-      <button type="button" class="linkish" data-print hidden>Print</button>
+      {%- if profile.resume %}
+      <a class="btn btn--key dither" href="{{ profile.resume }}" download>
+        <span>Download PDF</span>
+      </a>
+      {%- endif %}
+      <button type="button" class="btn" data-print>Print</button>
     </p>
     <hr class="pagehead__rule">
   </header>

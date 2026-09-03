@@ -19,11 +19,13 @@ eleventyExcludeFromCollections: true
     else root.dataset.theme = mode;
     var buttons = group.querySelectorAll('[data-scheme]');
     for (var i = 0; i < buttons.length; i++) {
-      buttons[i].setAttribute('aria-pressed', String(buttons[i].dataset.scheme === mode));
+      var pressed = buttons[i].dataset.scheme === mode;
+      buttons[i].setAttribute('aria-pressed', String(pressed));
+      // The thumb is positioned by index, so the cells stay a plain grid.
+      if (pressed) group.style.setProperty('--at', String(i));
     }
   }
 
-  group.hidden = false;
   apply(read());
 
   group.addEventListener('click', function (event) {
@@ -54,11 +56,6 @@ eleventyExcludeFromCollections: true
   var records = null;
   var results = [];
   var cursor = 0;
-
-  var isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
-  var hint = document.createElement('kbd');
-  hint.textContent = isMac ? '⌘K' : 'Ctrl K';
-  trigger.appendChild(hint);
 
   function load() {
     if (records) return Promise.resolve(records);
@@ -197,11 +194,43 @@ eleventyExcludeFromCollections: true
     }
   });
 })();
+/* Back to top. Hidden without JS, since the control would do nothing; the
+   browser's own Home key already covers the no-script case. */
+(function () {
+  var button = document.querySelector('[data-totop]');
+  if (!button) return;
+
+  var shown = false;
+
+  var threshold = 0;
+
+  function measure() { threshold = Math.round(window.innerHeight * 0.75); }
+
+  function update() {
+    var should = window.scrollY > threshold;
+    if (should === shown) return;
+    shown = should;
+    button.classList.toggle('is-shown', shown);
+    // Taken out of the tab order while invisible, so focus never lands on it.
+    button.tabIndex = shown ? 0 : -1;
+  }
+
+  button.tabIndex = -1;
+  measure();
+  update();
+
+  button.addEventListener('click', function () {
+    var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+  });
+
+  addEventListener('scroll', update, { passive: true });
+  addEventListener('resize', function () { measure(); update(); });
+})();
 /* Print action on the CV. Hidden without JS, since Cmd+P still works. */
 (function () {
   var button = document.querySelector('[data-print]');
   if (!button) return;
-  button.hidden = false;
   button.addEventListener('click', function () { window.print(); });
 })();
 /* Reading rail. Fills the contents rule as the article is read, and marks the
@@ -260,31 +289,43 @@ eleventyExcludeFromCollections: true
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(remeasure);
 })();
 
-/* Body images become numbered figures, captioned from their alt text. The alt
-   is cleared once it has moved, so the caption is not announced twice. Without
-   this the image still renders and the alt still does its job. */
+/* Body graphics become numbered figures, captioned from the description they
+   already carry. Covers both forms the engine can emit: a plain image, and an
+   SVG inlined so it can follow the theme. The description is cleared once it has
+   moved into the caption, so it is not announced twice. Without this the graphic
+   still renders and still describes itself. */
 (function () {
   var prose = document.querySelector('.prose');
   if (!prose) return;
 
-  var images = prose.querySelectorAll('p > img[alt]:only-child');
-  Array.prototype.forEach.call(images, function (image) {
-    if (!image.alt) return;
+  function describe(node) {
+    return node.tagName === 'IMG' ? node.alt : node.getAttribute('aria-label');
+  }
 
-    // Capture the paragraph before moving the image out of it.
-    var paragraph = image.parentNode;
+  function clear(node) {
+    if (node.tagName === 'IMG') node.alt = '';
+    else node.removeAttribute('aria-label');
+  }
+
+  var graphics = prose.querySelectorAll('p > img:only-child, p > svg.inline-svg:only-child');
+  Array.prototype.forEach.call(graphics, function (graphic) {
+    var description = describe(graphic);
+    if (!description) return;
+
+    // Capture the paragraph before moving the graphic out of it.
+    var paragraph = graphic.parentNode;
 
     var caption = document.createElement('figcaption');
     var text = document.createElement('span');
     text.className = 'figure__text';
-    text.textContent = image.alt;
+    text.textContent = description;
     caption.appendChild(text);
 
     var figure = document.createElement('figure');
     figure.className = 'figure';
-    figure.appendChild(image);
+    figure.appendChild(graphic);
     figure.appendChild(caption);
-    image.alt = '';
+    clear(graphic);
 
     paragraph.parentNode.replaceChild(figure, paragraph);
   });

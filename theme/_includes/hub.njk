@@ -18,7 +18,7 @@
     list descends year by year, and recency order lifts ongoing entries out of it. -#}
 {% macro index(items) %}
 {% set dated = items | byDate %}
-<ol class="rows rows--index">
+<ol class="rows">
   {%- for item in dated %}
     {{ r.detail(item, loop.first or item.year != dated[loop.index0 - 1].year) }}
   {%- endfor %}
