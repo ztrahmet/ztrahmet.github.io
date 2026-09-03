@@ -11,6 +11,7 @@
     "date": { "$ref": "common.defs.json#/definitions/Date" },
     "url": { "$ref": "common.defs.json#/definitions/URI" },
     "image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+    "logo": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
     "authors": {
       "type": "array",
       "items": { "$ref": "common.defs.json#/definitions/Text" }

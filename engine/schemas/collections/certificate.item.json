@@ -13,6 +13,7 @@
     "url": { "$ref": "common.defs.json#/definitions/URI" },
     "credential_id": { "$ref": "common.defs.json#/definitions/Text" },
     "image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+    "logo": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
     "skills": {
       "type": "array",
       "items": { "$ref": "common.defs.json#/definitions/Text" }

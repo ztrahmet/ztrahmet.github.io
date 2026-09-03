@@ -31,6 +31,7 @@ function toRelatedItem(item, sharedSkills, reason) {
     end: toDateString(item.end),
     isOngoing: isOngoing(item),
     image: item.image || null,
+    logo: item.logo || null,
     description: item.description || '',
     sharedSkills,
     reason

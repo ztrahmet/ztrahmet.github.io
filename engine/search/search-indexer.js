@@ -20,10 +20,9 @@ import { readProjectVersion } from '../config/paths.js';
 function getCollectionSubtitle(type, item, locale) {
   switch (type) {
     case 'publication':
-      return item.publisher || '';
     case 'certificate':
     case 'award':
-      return item.issuer || '';
+      return item.subtitle || '';
     case 'project': {
       const start = item.startDisplay ?? formatDate(item.start, locale);
       const end = item.endDisplay ?? formatDate(item.end, locale);

@@ -182,6 +182,7 @@ export interface RelatedItem {
   end: string;
   isOngoing: boolean;
   image: ThemedAsset | null;
+  logo: ThemedAsset | null;
   description: string;
   sharedSkills: string[];
   reason: 'skills' | 'collection';
@@ -216,6 +217,8 @@ export interface BaseCollectionItem {
   content: string | null;
   html: string;
   excerpt: string;
+  /** The `publisher` of a publication or the `issuer` of a certificate or award, otherwise empty. */
+  subtitle: string;
   wordCount: number;
   readingTime: number;
   toc: TableOfContentsItem[];
@@ -237,6 +240,7 @@ export interface BaseCollectionItem {
   url?: string;
   description?: string;
   image?: ThemedAsset;
+  logo?: ThemedAsset;
 }
 
 export interface BlogItem extends BaseCollectionItem {
@@ -309,6 +313,8 @@ export interface TaxonomyReference {
   organization?: string;
   date?: string;
   end?: string;
+  /** The entry's mark, so a reference renders like any listing row. */
+  logo: ThemedAsset | null;
 }
 
 export interface SkillTaxonomyEntry {

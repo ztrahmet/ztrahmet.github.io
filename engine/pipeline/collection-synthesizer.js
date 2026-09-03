@@ -21,7 +21,7 @@ const SYNTHETIC_KEYS = Object.freeze([
   'content', 'html', 'excerpt', 'hasMarkdown', 'isMarkdown', 'filePath', 'baseDir',
   'permalink', 'collection', 'newer', 'older', 'wordCount', 'readingTime', 'toc',
   'related', 'seo', 'primaryDate', 'dateDisplay', 'dateIso', 'year', 'startDisplay', 'endDisplay',
-  'isOngoing', 'isExpired', 'expiresDisplay'
+  'isOngoing', 'isExpired', 'expiresDisplay', 'subtitle'
 ]);
 
 /**
@@ -71,6 +71,15 @@ export function extractSchemaPayload(item) {
   }
 
   return payload;
+}
+
+/**
+ * Resolves the organization a collection item is attributed to.
+ * @param {object} item - Collection item
+ * @returns {string} Publisher, issuer, or an empty string
+ */
+export function buildSubtitle(item) {
+  return item.publisher || item.issuer || '';
 }
 
 /**
@@ -218,6 +227,7 @@ function buildMarkdownItem(mdItem, { collectionType, contentDir, siteData, local
     wordCount: metrics.wordCount,
     readingTime: metrics.readingTime,
     excerpt: generateExcerpt(rawContent),
+    subtitle: buildSubtitle(normalized),
     ...buildDateFields(normalized, locale)
   };
 
@@ -259,7 +269,11 @@ function buildInlineItem(entry, { collectionType, contentDir, siteData, locale }
     `content.yaml [${collectionType} -> slug: '${entry.slug}']`
   );
 
-  const item = { ...normalized, ...buildDateFields(normalized, locale) };
+  const item = {
+    ...normalized,
+    subtitle: buildSubtitle(normalized),
+    ...buildDateFields(normalized, locale)
+  };
   return { ...item, seo: buildItemSeo(item, siteData) };
 }
 

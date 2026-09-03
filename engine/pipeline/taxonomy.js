@@ -60,7 +60,8 @@ export function buildTaxonomy(engineData = {}) {
         url: entry.url || '',
         slug: `${type}:${idx}`,
         date: entry.start || '',
-        end: entry.end || ''
+        end: entry.end || '',
+        logo: entry.logo || null
       };
       const skills = Array.isArray(entry.skills) ? entry.skills : [];
       skills.forEach((s) => addSkillRef(s, itemRef));
@@ -80,7 +81,8 @@ export function buildTaxonomy(engineData = {}) {
         url: item.url || '',
         slug: item.slug,
         date: item.date || item.start || '',
-        end: item.end || ''
+        end: item.end || '',
+        logo: item.logo || null
       };
       const skills = Array.isArray(item.skills) ? item.skills : [];
       skills.forEach((s) => addSkillRef(s, itemRef));

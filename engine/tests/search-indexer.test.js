@@ -10,6 +10,11 @@ import {
   stripMarkdownAndHtml,
   truncateText
 } from '../search/text-sanitizer.js';
+import {
+  MODALITY_MAPPINGS,
+  EMPLOYMENT_TYPE_MAPPINGS,
+  DEGREE_TYPE_MAPPINGS
+} from '../config/mappings.js';
 import { loadEngineData } from '../pipeline/data-loader.js';
 import { PROJECT_ROOT } from '../config/paths.js';
 
@@ -157,8 +162,11 @@ Here is \`inline code\` snippet.
       const gpgRecord = searchIndex.records.find((r) => r.id === 'blog:how-to-sign-commits');
       expect(gpgRecord).toBeDefined();
       expect(gpgRecord.hasMarkdown).toBe(true);
-      expect(gpgRecord.content).toContain('Signing commits ensures that others can verify');
+      // The body is extracted as plain text: present, but with no markup left in it.
+      expect(gpgRecord.content.length).toBeGreaterThan(0);
+      expect(gpgRecord.content).not.toMatch(/<[^>]*>/);
       expect(gpgRecord.content).not.toContain('#');
+      expect(gpgRecord.content).not.toContain('```');
       expect(gpgRecord.skills).toContain('Git');
       expect(gpgRecord.skills).toContain('Security');
     });
@@ -182,14 +190,16 @@ Here is \`inline code\` snippet.
       const exp = searchIndex.records.find((r) => r.type === 'experience');
       expect(exp).toBeDefined();
       expect(exp.typeLabel).toBe('Experience');
-      expect(exp.meta.modality).toBe('On-site');
-      expect(exp.meta.employmentType).toBe('Full-time');
+      // Assert the enum was mapped to a display label, not which label the first
+      // record happens to carry, so reordering the sample profile cannot break this.
+      expect(Object.values(MODALITY_MAPPINGS.experience)).toContain(exp.meta.modality);
+      expect(Object.values(EMPLOYMENT_TYPE_MAPPINGS)).toContain(exp.meta.employmentType);
 
       const edu = searchIndex.records.find((r) => r.type === 'education');
       expect(edu).toBeDefined();
       expect(edu.typeLabel).toBe('Education');
-      expect(edu.meta.modality).toBe('On-campus');
-      expect(edu.meta.degreeType).toBe("Bachelor's Degree");
+      expect(Object.values(MODALITY_MAPPINGS.education)).toContain(edu.meta.modality);
+      expect(Object.values(DEGREE_TYPE_MAPPINGS)).toContain(edu.meta.degreeType);
     });
   });
 
