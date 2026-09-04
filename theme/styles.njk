@@ -440,22 +440,23 @@ body {
   .social { flex-direction: column; gap: var(--s1); }
 }
 
-/* Segmented scheme control: equal cells with one thumb that slides between
-   them, so the change of state is a movement rather than a repaint.
-   Deliberately not on the accent, which is reserved for content state.
+/* --at is set from data-theme here, not by the script, so it's already correct
+   pre-paint and never animates on load. Order must match schemeStages in rail.njk. */
+:root { --at: 0; }
+:root[data-theme='light'] { --at: 1; }
+:root[data-theme='dark'] { --at: 2; }
 
-   --stages is the number of cells, set once from the length of the options
-   list that renders them, so adding or removing one is a one-line change in
-   the markup rather than two counts kept in sync by hand across markup and
-   CSS. --at is the index of the pressed cell, set by the script. Without JS
-   the control is hidden entirely, so the thumb never disagrees with
-   reality. */
+/* Segmented scheme control: a floating thumb over equal cells, on the same
+   inset padding it's sized against so the two can't drift apart. */
 .scheme {
   --stages: 3;
+  --inset: 3px;
   position: relative;
   display: grid;
   grid-template-columns: repeat(var(--stages), 1fr);
   width: max-content;
+  padding: var(--inset);
+  background: var(--sunken);
   border: 1px solid var(--rule-strong);
   isolation: isolate;
 }
@@ -463,26 +464,29 @@ body {
   content: '';
   position: absolute;
   z-index: -1;
-  inset: 0;
-  width: calc(100% / var(--stages));
-  background: var(--sunken);
+  top: var(--inset);
+  bottom: var(--inset);
+  left: var(--inset);
+  width: calc((100% - 2 * var(--inset)) / var(--stages));
+  background: var(--ground);
+  border: 1px solid var(--rule-strong);
   transform: translateX(calc(var(--at, 0) * 100%));
   transition: transform var(--slow) var(--ease-out);
 }
 .scheme__btn {
-  padding: 0.3rem var(--s3);
+  /* Right padding trimmed by the letter-spacing trailing gap, or centering drifts left. */
+  padding: 0.3rem calc(var(--s3) - 0.06em) 0.3rem var(--s3);
   border: 0;
-  border-left: 1px solid var(--rule-strong);
   background: transparent;
   font-family: var(--mono);
   font-size: var(--t-label);
+  line-height: 1; /* not the inherited 1.65, or the label sits high in its box */
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
   cursor: pointer;
   transition: color var(--fast) var(--ease), transform var(--fast) var(--ease);
 }
-.scheme__btn:first-child { border-left: 0; }
 .scheme__btn:hover { color: var(--ink); }
 .scheme__btn:active { transform: translateY(var(--press)); }
 .scheme__btn[aria-pressed='true'] { color: var(--ink); }

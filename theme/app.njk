@@ -17,12 +17,10 @@ eleventyExcludeFromCollections: true
   function apply(mode) {
     if (mode === 'auto') delete root.dataset.theme;
     else root.dataset.theme = mode;
+    // The thumb positions itself from data-theme in CSS now (see --at in styles.njk).
     var buttons = group.querySelectorAll('[data-scheme]');
     for (var i = 0; i < buttons.length; i++) {
-      var pressed = buttons[i].dataset.scheme === mode;
-      buttons[i].setAttribute('aria-pressed', String(pressed));
-      // The thumb is positioned by index, so the cells stay a plain grid.
-      if (pressed) group.style.setProperty('--at', String(i));
+      buttons[i].setAttribute('aria-pressed', String(buttons[i].dataset.scheme === mode));
     }
   }
 

@@ -460,6 +460,15 @@ sets `style="--stages: {{ options | length }}"` on the group, and `.scheme`'s
 `grid-template-columns` and thumb width both read `var(--stages)`. Adding or removing a stage
 is a one-line change to the list, not two counts kept in sync by hand.
 
+The thumb floats on `--inset`, real padding on `.scheme` rather than an offset on the thumb
+alone, so the two can't drift apart; there's no border between buttons since the thumb marks
+the boundary now.
+
+Which cell it floats over is set in CSS by `--at`, keyed off `data-theme` (`styles.njk`), not
+by the script — that's what stops it animating into place on every load, since `data-theme` is
+already set pre-paint. Reordering `schemeStages` in `rail.njk` means updating `--at`'s values
+to match by hand.
+
 ## Controls that need a script
 
 The document ships with `class="no-js"` on `<html>`, and a small inline script in the head

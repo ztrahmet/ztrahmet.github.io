@@ -1,8 +1,8 @@
 ---
 layout: base.njk
-permalink: /work/
-title: Work
-section: work
+permalink: /projects/
+title: Projects
+section: projects
 pageDescription: Projects.
 ---
 {% import "cards.njk" as cards %}
@@ -10,7 +10,7 @@ pageDescription: Projects.
 {% set items = all_content | where("collection", "project") %}
 
 <div class="page__body">
-  {{ pagehead.simple("Work") }}
+  {{ pagehead.simple("Projects") }}
 
   {%- if items | length %}
   <section class="block block--flush">

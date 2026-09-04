@@ -2,6 +2,6 @@
   { "id": "cv",           "label": "CV",           "permalink": "/cv/",           "collections": ["certificate", "award"] },
   { "id": "blog",         "label": "Blog",         "permalink": "/blog/",         "collections": ["blog"] },
   { "id": "publications", "label": "Publications", "permalink": "/publications/", "collections": ["publication"] },
-  { "id": "work",         "label": "Work",         "permalink": "/work/",         "collections": ["project"] },
+  { "id": "projects",     "label": "Projects",     "permalink": "/projects/",     "collections": ["project"] },
   { "id": "skills",       "label": "Skills",       "permalink": "/skills/",       "collections": [] }
 ]
