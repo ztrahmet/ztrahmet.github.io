@@ -39,6 +39,14 @@ profile:
   location: San Francisco, CA
   summary: >-
     Short paragraph about you.
+  skills:                              # declared, and lead the CV keyword line
+    - Distributed Systems
+    - Go
+  languages:
+    - name: English
+      level: native                    # a1 a2 b1 b2 c1 c2 native, any case
+    - name: German
+      level: B2
   resume: /documents/resume.pdf
   social:
     - label: GitHub
@@ -86,6 +94,11 @@ easier to catch now than to spot on a rendered page.
 
 Declares what exists in each of the five collections, and which entries are pinned.
 
+`pinned_content` is ordered, and the order is used. The home page lists all of it as its
+selected work, and the CV takes the first three publications and the first three projects from
+it, ignoring the rest. That is why the order matters: put the strongest first. Pin nothing from
+a collection and the CV simply has no section for it, which is the way to leave one out.
+
 ```yaml
 pinned_content:
   - blog:how-to-sign-commits
@@ -100,6 +113,16 @@ blog:
       One paragraph summary.
     skills: [Web Development, Architecture]
 ```
+
+`profile.skills` is a declared list, separate from the skills written on entries. Those are
+indexed into the taxonomy and get a page each; these are not, so naming a skill here never
+produces a skill page with nothing on it. The CV puts them at the front of its keyword line and
+fills the rest from the indexed ones, dropping anything already named. The comparison ignores
+case, so `Node.js` and `node.js` count once.
+
+`profile.languages` takes a CEFR band or `native`. Case is up to you: `B2`, `b2` and `Native`
+all work. The schema accepts any of them, so an editor validating the file live agrees with the
+build, and the level is lowered on the way through so a theme only ever sees one spelling.
 
 ### Two ways to declare an entry
 

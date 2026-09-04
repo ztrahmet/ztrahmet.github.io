@@ -392,6 +392,26 @@ interpolated between the two, and that movement is visible: naming `.main` scale
 from 760 to 984 and read as a zoom, and naming `.page__body` interpolated its height and read as
 the page scrolling itself. A cross-fade has no geometry to get wrong.
 
+## Print
+
+The printed CV is a different document from the screen one, because it has to survive an
+applicant tracking system: those read the PDF's text layer and nothing else. The print block
+rebuilds the page rather than restyling it.
+
+- **One column.** The screen CV puts dates in a rail beside each record. A parser that
+  reconstructs by geometry sees two columns and interleaves them, so print puts the date on the
+  title's line instead.
+- **Standard families.** The web fonts embed as Type 3, a procedural format several parsers read
+  badly. Arial and Helvetica embed as CID TrueType with a usable unicode map.
+- **Section names a parser searches for**: Summary, Skills, Experience, Education, Publications,
+  Projects, Certifications, Awards. Two of those, Summary and Skills, exist only on paper.
+- **Nothing meaningful is a graphic.** Marks and the timeline spine are dropped.
+
+Two traps to know about when adding to this block. `rem` resolves against the root, not the
+body, so anything left in `rem` keeps its screen size however small the body is set. And any
+screen rule with higher specificity wins here too: `.rows:has(.mark) .row__link` and
+`.record__org a` both had to be named explicitly before print could restyle them.
+
 ## Contract
 
 `engine/types.d.ts` is the full typed contract. It is kept in sync with what the engine

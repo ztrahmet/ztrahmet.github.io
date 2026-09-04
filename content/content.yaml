@@ -1,10 +1,16 @@
 # yaml-language-server: $schema=../engine/schemas/content.schema.json
 # content/content.yaml
 
+# Order is meaningful: the CV takes the first three of each collection from this
+# list, so the strongest work goes first.
 pinned_content:
-  - blog:measuring-build-performance
   - project:open-source-engine
+  - project:glyphd
+  - project:lattice-grid-debugger
   - publication:cache-oblivious-document-trees
+  - publication:optimizing-static-web-generators
+  - publication:icwe-2023-paper
+  - blog:measuring-build-performance
   - award:icwe-best-paper
 
 blog:

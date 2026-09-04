@@ -1105,6 +1105,23 @@ body {
 .prose ins { text-decoration: underline; text-decoration-color: var(--accent); }
 .prose hr { margin-block: var(--s6); border: 0; border-top: 1px solid var(--rule); }
 
+/* ------------------------------------------------------------- languages */
+/* Name and level per row, on the same grid the aside rows use, so a short list
+   reads as a table without being one. */
+.languages { display: grid; gap: var(--s2); margin-top: var(--s4); }
+.language {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s4);
+  align-items: baseline;
+}
+.language__name { font-size: var(--t-small); }
+.language__level {
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  color: var(--ink-3);
+}
+
 /* --------------------------------------------------------------- footer */
 
 .foot {
@@ -1647,89 +1664,184 @@ body {
 }
 
 /* ---------------------------------------------------------------- print */
-/* The CV is the page this exists for. The rail holds contact details on
-   screen, so print swaps in the .printonly line to replace them. */
+/* Paper is a different document from the screen one. The CV printed here has to
+   survive an applicant tracking system, which reads the PDF's text layer and
+   nothing else, so this block rebuilds the page rather than restyling it:
 
-@page { margin: 16mm 14mm; }
+   - One column. The screen CV puts dates in a left rail beside the record, and a
+     parser that reconstructs by geometry sees two columns and interleaves them.
+     Here the date sits on the title's line, which is what a CV normally does.
+   - Standard families. The web fonts embed as Type 3, a procedural format many
+     parsers extract badly; Arial and Helvetica embed as CID TrueType.
+   - Section names a parser looks for: Summary, Skills, Experience, Education,
+     Publications, Projects, Certifications, Awards.
+   - Nothing that carries meaning is a graphic, so marks and the timeline spine
+     are dropped rather than printed.
+
+   The browser's own header and footer are defeated by the page margin: it draws
+   them in that margin, omitting the date and URL at 8mm and the page number at a
+   12mm side. The readable margin is put back as padding on the content, which is
+   safe horizontally because only vertical padding is split across pages. */
+
+@page { margin: 8mm 12mm; }
 
 @media print {
-  :root {
+  /* The dark palette is declared on :root:not([data-theme='light']) and on
+     :root[data-theme='dark'], both of which outrank a bare :root, and paper does
+     not stop them matching. Without matching that specificity a reader who had
+     chosen dark printed the page in its own ink. color-scheme goes with it, or
+     the UA keeps painting the page canvas dark behind the content. */
+  :root,
+  :root:not([data-theme='light']),
+  :root[data-theme='dark'] {
+    color-scheme: light;
     --ground: #fff;
     --sunken: #fff;
+    /* Denser than the screen palette: paper is not backlit and the type runs a
+       size smaller, so the screen greys come out washed out in ink. */
     --ink: #000;
-    --ink-2: #222;
-    --ink-3: #444;
-    --rule: #c8c8c8;
-    --rule-strong: #8c8c8c;
+    --ink-2: #1a1a1a;
+    --ink-3: #333;
+    --rule: #bdbdbd;
+    --rule-strong: #7a7a7a;
     --accent: #000;
     --accent-ink: #000;
+    --syn-comment: #656d76;
+    --syn-keyword: #cf222e;
+    --syn-string:  #0a3069;
+    --syn-number:  #0550ae;
+    --syn-title:   #6f42c1;
+    --syn-type:    #953800;
+    --syn-name:    #116329;
+    --syn-add-ink: #116329;
+    --syn-add-bg:  transparent;
+    --syn-del-ink: #82071e;
+    --syn-del-bg:  transparent;
   }
 
-  .rail, .foot, .skip, .search, .scheme, .cv-actions, .adjacent, .toc__fill, .palette,
-  .totop, .masthead__avatar { display: none !important; }
-  .printonly { display: block; }
+  /* Chrome embeds the web fonts as Type 3, which is a procedural format rather
+     than an outline one, and several parsers read it poorly or not at all. A
+     standard family embeds as CID TrueType with a usable unicode map. Set on
+     everything, since the mono faces have the same problem. */
+  body, .pagehead__title, .pagehead__sub, .contacts, .lede,
+  .record__title, .record__org, .record__when, .record__note,
+  .block__title, .row__title, .row__sub, .row__desc, .row__date, .row__tag,
+  .tags a, .skills-line {
+    font-family: Arial, Helvetica, sans-serif;
+  }
 
-  /* Paper is always light, so a themed asset pair must print its light variant.
-     Otherwise a dark-theme logo prints as pale ink on white and disappears. */
+  /* Screen furniture. None of it carries information the page does not repeat
+     as text, so it is dropped rather than printed. */
+  .rail, .foot, .skip, .search, .scheme, .cv-actions, .adjacent, .toc__fill,
+  .palette, .totop, .masthead__avatar, .block__aux, .pagehead__kicker,
+  .mark, .record__span, .row__tag { display: none !important; }
+  .printonly { display: block; }
+  /* Paper is light, so a themed pair prints its light variant or it disappears. */
   .light-only { display: block !important; }
   .dark-only { display: none !important; }
 
-  /* Organisation marks are a screen affordance. Reserving a column for them on
-     paper narrows every description enough to push the CV onto a third page,
-     which is a bad trade for a small logo, so print drops the column entirely. */
-  .mark { display: none !important; }
-  .record { grid-template-columns: 11rem minmax(0, 1fr); }
-  /* Without this the detail still spans into a third column that no longer
-     exists, and the grid creates an implicit one. */
-  .record__detail { grid-column: 2; }
-
-  /* min-height is a screen concern; a printed document sizes to its content. */
+  /* A printed document sizes to its content, and the page margin above is only
+     as wide as it needs to be, so the readable margin is added here. */
   .shell, body.page--split .shell { display: block; max-width: none; padding: 0; min-height: 0; }
-  .main { padding: 0; }
+  .main { padding: 0 6mm; }
   .page { display: block; }
   .page__aside { display: none; }
   .prose, .lede { max-width: none; }
-  /* Nothing scrolls on paper, so a scroll container would silently crop instead. */
+
+  body { font-size: 9pt; line-height: 1.34; background: #fff; }
+
+  /* Heading block. Name, then one line of role and place, then contacts. */
+  .pagehead__title { font-size: 17pt; letter-spacing: -0.01em; }
+  .pagehead__sub { font-size: 9.5pt; margin-top: 1pt; }
+  .contacts { font-size: 8.5pt; margin-top: 2pt; }
+  .pagehead__rule { margin-block: 7pt; }
+  .lede { font-size: 9pt; margin-block: 0 8pt; }
+
+  /* Section headings, in the words a parser searches for. */
+  .block { margin-top: 9pt; }
+  .block__head { padding-bottom: 2pt; margin-bottom: 4pt; border-bottom: 0.5pt solid var(--rule-strong); }
+  .block__title { font-size: 9.5pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* One column. The title takes the line and the date sits at its right, which
+     is the shape a CV is read in and the shape a parser expects. */
+  .timeline .record::before, .timeline .record::after, .record__when .dot { display: none; }
+  .timeline .record { padding-left: 0; }
+  .record {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 6pt;
+    padding-block: 5pt;
+    break-inside: avoid;
+  }
+  .record + .record { border-top: 0.5pt solid var(--rule); }
+  .record__heading { grid-column: 1; grid-row: 1; }
+  .record__when { grid-column: 2; grid-row: 1; text-align: right; white-space: nowrap; font-size: 8.5pt; }
+  .record__detail { grid-column: 1 / -1; grid-row: 2; }
+  .record__title { font-size: 10pt; font-weight: 700; }
+  .record__org { font-size: 9pt; }
+  .record__note { margin-top: 3pt; font-size: 9pt; }
+  /* Achievements as bullets, the way a CV lists them. The marker is drawn, not
+     written into the text layer, so it adds nothing for a parser to trip on. */
+  .record__note p { display: list-item; list-style: disc; margin-left: 11pt; }
+  .record__note p + p { margin-top: 2pt; }
+
+  /* Compact rows: publications, projects, certifications, awards. */
+  .row { break-inside: avoid; }
+  .row + .row { border-top: 0.5pt solid var(--rule); }
+  /* Matches the specificity of the screen rule that reserves a mark column.
+     Left alone it wins here too, and the title wraps in what is left. */
+  .row__link,
+  .row--detail .row__link,
+  .rows:has(.mark) .row__link {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 6pt;
+    padding-block: 3pt;
+    align-items: baseline;
+  }
+  /* Both on row one explicitly. The date comes first in the markup, so sparse
+     auto-placement would push the title to a second row. */
+  .row__main { grid-column: 1; grid-row: 1; display: block; }
+  .row__meta { grid-column: 2; grid-row: 1; text-align: right; }
+  .row__title { font-size: 9.5pt; font-weight: 700; }
+  /* The attribution follows the title on its line rather than under it, which
+     keeps a list of credentials to one line each. */
+  /* A credential fits on one line, so its issuer follows the title. */
+  .row__sub { display: inline; font-size: 9pt; }
+  .row__sub::before { content: ' — '; }
+  /* A publication's authors and a project's description do not, and inline they
+     wrapped around the date sitting at the right. Both take their own line. */
+  .row--detail .row__sub { display: block; }
+  .row--detail .row__sub::before { content: none; }
+  .row__desc { font-size: 9pt; margin-top: 1pt; }
+  .row__date { font-size: 8.5pt; white-space: nowrap; }
+  .row__year { display: none; }
+
+  /* Keyword line. A parser matches against this, so it is a plain sentence of
+     comma separated terms rather than a set of boxes. */
+  .skills-line { font-size: 9pt; }
+  /* Languages run inline on paper: a column of four short rows would cost more
+     of a page than it earns. */
+  .languages { display: block; margin-top: 3pt; font-size: 9pt; }
+  .language { display: inline; }
+  .language + .language::before { content: ' · '; }
+  .language__level::before { content: ' '; }
+  /* Both halves need a point size: the name is set in rem, which resolves
+     against the root and so keeps its screen size here otherwise. */
+  .language__name, .language__level { font-family: inherit; font-size: 9pt; }
+  .tags { gap: 0 0.3em; margin-top: 3pt; }
+  .tags a { padding: 0; border: 0; font-size: 8.5pt; }
+  .tags li:not(:last-child) a::after { content: ","; }
+
+  .block__head, .pagehead { break-after: avoid; }
+
+  /* Nothing scrolls on paper, so a scroll container would silently crop. */
   .table-scroll, .katex-display, .prose pre { overflow: visible; }
   .prose pre { white-space: pre-wrap; overflow-wrap: break-word; }
   .prose figure, .prose .table-scroll, .prose pre { break-inside: avoid; }
 
-  body { font-size: 10pt; line-height: 1.4; background: #fff; }
-  .pagehead__title { font-size: 20pt; }
-  .pagehead__rule { margin-block: 10pt; }
-  .record__title { font-size: 11pt; }
-  /* The lede is sized for reading on screen. On paper the CV summary should sit
-     near body size, or it alone costs most of a page. */
-  .lede { font-size: 10.5pt; margin-block: 0 10pt; }
-
-  /* Paper has no rail, so the issuer fits beside the title instead of under it,
-     which keeps eight credentials from costing an extra page. */
-  .row__main { display: block; }
-  .row__sub { display: inline; }
-  .row__sub::before { content: ' · '; }
-  .block { margin-top: 10pt; }
-  .block__head { padding-bottom: 4pt; }
-  .block__aux { display: none; }
-
-  /* The spine is screen furniture. On paper the dates carry the chronology. */
-  .timeline .record::before, .timeline .record::after, .record__when .dot { display: none; }
-  .timeline .record { padding-left: 0; }
-  .timeline .record + .record { border-top: 1px solid var(--rule); }
-  /* Paper runs denser than screen: tighter records and rows keep the CV to two
-     pages rather than spilling three credentials onto a near-empty third. */
-  .record { padding-block: 6pt; break-inside: avoid; }
-  .record__note { margin-top: 4pt; }
-  .record__note p + p { margin-top: 4pt; }
-  .block__head, .pagehead { break-after: avoid; }
-  .row { break-inside: avoid; }
-  .row__link { padding-block: 5pt; }
-
-  /* Boxed tags waste ink, so they set as a plain comma separated list. */
-  .tags { gap: 0 0.35em; margin-top: 5pt; }
-  .tags a { padding: 0; border: 0; }
-  .tags li:not(:last-child) a::after { content: ","; }
-
-  a { color: #000; text-decoration: none; }
-  .record__org a { text-decoration: none; }
+  /* Links print as text. The URL is written out where it matters, in contacts.
+     The organisation link carries an underline on screen and outranks a bare a,
+     so it needs naming or every employer prints underlined. */
+  a, .record__org a, .aside__row dd a { color: #000; text-decoration: none; }
 }
 {% endraw %}

@@ -6,6 +6,7 @@ section: cv
 pageDescription: Experience, education and credentials.
 ---
 {% import "hub.njk" as hub %}
+{% import "rows.njk" as r %}
 {% import "mark.njk" as m %}
 {% import "icons.njk" as i %}
 {% set item = nav | where("id", "cv") | first %}
@@ -37,8 +38,12 @@ pageDescription: Experience, education and credentials.
   {#- The profile summary opens the CV, where a professional summary belongs,
       rather than the home page. -#}
   {%- if profile.summary %}
+  <div class="block__head printonly">
+    <h2 class="block__title">Summary</h2>
+  </div>
   <p class="lede">{{ profile.summary }}</p>
   {%- endif %}
+
 
   {%- if profile.experience | length %}
   <section class="block" id="experience">
@@ -49,11 +54,6 @@ pageDescription: Experience, education and credentials.
     <ol class="timeline">
       {%- for job in profile.experience %}
       <li class="record{% if job.isOngoing %} is-current{% endif %}">
-        <p class="record__when">
-          <time datetime="{{ job.startIso }}">{{ job.startDisplay }}</time> –
-          {% if job.isOngoing %}<span class="dot" aria-hidden="true"></span>Present{% else %}<time datetime="{{ job.endIso }}">{{ job.endDisplay }}</time>{% endif %}
-          {%- if job.duration %}<span class="record__span">{{ job.duration.text }}</span>{% endif %}
-        </p>
         <div class="record__heading">
           <h3 class="record__title">{{ job.title }}</h3>
           <p class="record__org">
@@ -63,6 +63,11 @@ pageDescription: Experience, education and credentials.
             {%- if job.location %} · {{ job.location }}{% endif -%}
           </p>
         </div>
+        <p class="record__when">
+          <time datetime="{{ job.startIso }}">{{ job.startDisplay }}</time> –
+          {% if job.isOngoing %}<span class="dot" aria-hidden="true"></span>Present{% else %}<time datetime="{{ job.endIso }}">{{ job.endDisplay }}</time>{% endif %}
+          {%- if job.duration %}<span class="record__span">{{ job.duration.text }}</span>{% endif %}
+        </p>
         {#- The mark sits beside the heading only. Everything below runs the full
             width, so a description is never narrowed by the logo column. -#}
         {{ m.mark(job.logo) }}
@@ -93,11 +98,6 @@ pageDescription: Experience, education and credentials.
     <ol class="timeline">
       {%- for school in profile.education %}
       <li class="record{% if school.isOngoing %} is-current{% endif %}">
-        <p class="record__when">
-          <time datetime="{{ school.startIso }}">{{ school.startDisplay }}</time> –
-          {% if school.isOngoing %}<span class="dot" aria-hidden="true"></span>Present{% else %}<time datetime="{{ school.endIso }}">{{ school.endDisplay }}</time>{% endif %}
-          {%- if school.duration %}<span class="record__span">{{ school.duration.text }}</span>{% endif %}
-        </p>
         <div class="record__heading">
           <h3 class="record__title">{{ school.title }}</h3>
           <p class="record__org">
@@ -106,6 +106,11 @@ pageDescription: Experience, education and credentials.
             {%- if school.grade %} · {{ school.grade }}{% endif -%}
           </p>
         </div>
+        <p class="record__when">
+          <time datetime="{{ school.startIso }}">{{ school.startDisplay }}</time> –
+          {% if school.isOngoing %}<span class="dot" aria-hidden="true"></span>Present{% else %}<time datetime="{{ school.endIso }}">{{ school.endDisplay }}</time>{% endif %}
+          {%- if school.duration %}<span class="record__span">{{ school.duration.text }}</span>{% endif %}
+        </p>
         {{ m.mark(school.logo) }}
         {%- if school.description %}
         <div class="record__detail">
@@ -118,14 +123,129 @@ pageDescription: Experience, education and credentials.
   </section>
   {%- endif %}
 
-  {%- set credentials = stats.collections.certificate.total + stats.collections.award.total %}
-  {%- if credentials %}
+  {#- Publications and projects are taken from pinned_content, in the order it is
+      written, because a CV is curated by significance and nothing else in the
+      data expresses that: recency would put the newest work first rather than
+      the best. Nothing pinned means no section, the same as every other empty
+      section here, so the choice is never second guessed. -#}
+  {%- set papers = pinned_items | where("collection", "publication") | limit(3) %}
+  {%- if papers | length %}
   <section class="block">
     <div class="block__head">
-      <h2 class="block__title">Credentials</h2>
-      <span class="block__aux">{{ credentials }}</span>
+      <h2 class="block__title">Publications</h2>
+      <span class="block__aux">{{ papers | length }}</span>
     </div>
-    {{ hub.list(all_content, item.collections) }}
+    <ol class="rows">
+      {%- for paper in papers %}
+      {#- Set as a citation: the authors and the venue are what make the entry
+          one, so they get their own lines rather than being dropped. -#}
+      {{ r.line(
+        href=paper.permalink,
+        title=paper.title,
+        meta=paper.dateDisplay,
+        secondary=paper.authors | join(", "),
+        description=paper.publisher,
+        logo=paper.logo,
+        extra="row--detail"
+      ) }}
+      {%- endfor %}
+    </ol>
+  </section>
+  {%- endif %}
+
+  {%- set projects = pinned_items | where("collection", "project") | limit(3) %}
+  {%- if projects | length %}
+  <section class="block">
+    <div class="block__head">
+      <h2 class="block__title">Projects</h2>
+      <span class="block__aux">{{ projects | length }}</span>
+    </div>
+    <ol class="rows">
+      {%- for project in projects %}
+      {{ r.line(
+        href=project.permalink,
+        title=project.title,
+        meta=project.startDisplay + " – " + ("Present" if project.isOngoing else project.endDisplay),
+        secondary=project.description,
+        logo=project.logo,
+        ongoing=project.isOngoing,
+        extra="row--detail"
+      ) }}
+      {%- endfor %}
+    </ol>
+  </section>
+  {%- endif %}
+
+  {#- Paper only. A tracking system matches keywords, and on screen this would
+      only repeat the skills index the rail already links to. The declared
+      skills lead, since those are the ones chosen rather than counted, and the
+      indexed ones follow without repeating any of them. -#}
+  {%- set cvSkills = profile.skills | union(taxonomy.skillNames) | limit(28) %}
+  {%- if cvSkills | length %}
+  <section class="block printonly">
+    <div class="block__head">
+      <h2 class="block__title">Skills</h2>
+    </div>
+    <p class="skills-line">
+      {%- for skill in cvSkills -%}
+      {{ skill }}{% if not loop.last %}, {% endif %}
+      {%- endfor -%}
+    </p>
+  </section>
+  {%- endif %}
+
+
+  {#- Certifications and awards are separate sections rather than one headed
+      Credentials, because an applicant tracking system looks for those words.
+      Dates are the display form here, since "Mar 2026" reads as a date to a
+      parser and to a person, where the sortable "2026-03" reads as neither. -#}
+  {%- set certificates = collections_data.certificate %}
+  {%- if certificates | length %}
+  <section class="block">
+    <div class="block__head">
+      <h2 class="block__title">Certifications</h2>
+      <span class="block__aux">{{ certificates | length }}</span>
+    </div>
+    <ol class="rows">
+      {%- for item in certificates %}
+      {{ r.line(href=item.permalink, title=item.title, meta=item.dateDisplay,
+                secondary=item.issuer, logo=item.logo) }}
+      {%- endfor %}
+    </ol>
+  </section>
+  {%- endif %}
+
+  {%- set awards = collections_data.award %}
+  {%- if awards | length %}
+  <section class="block">
+    <div class="block__head">
+      <h2 class="block__title">Awards</h2>
+      <span class="block__aux">{{ awards | length }}</span>
+    </div>
+    <ol class="rows">
+      {%- for item in awards %}
+      {{ r.line(href=item.permalink, title=item.title, meta=item.dateDisplay,
+                secondary=item.issuer, logo=item.logo) }}
+      {%- endfor %}
+    </ol>
+  </section>
+  {%- endif %}
+
+
+  {%- if profile.languages | length %}
+  <section class="block">
+    <div class="block__head">
+      <h2 class="block__title">Languages</h2>
+      <span class="block__aux">{{ profile.languages | length }}</span>
+    </div>
+    <ul class="languages">
+      {%- for language in profile.languages %}
+      <li class="language">
+        <span class="language__name">{{ language.name }}</span>
+        <span class="language__level">{{ language.levelLabel }}</span>
+      </li>
+      {%- endfor %}
+    </ul>
   </section>
   {%- endif %}
 </div>
