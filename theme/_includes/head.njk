@@ -50,6 +50,8 @@
 {%- if hasMath %}
 <link rel="stylesheet" href="/assets/katex.css?v={{ build.generatedAt | slugify }}">
 {%- endif %}
+{#- Its own stylesheet rather than a block inside site.css, see print.njk. -#}
+<link rel="stylesheet" href="/assets/print.css?v={{ build.generatedAt | slugify }}" media="print">
 
 {%- include "schema.njk" %}
 

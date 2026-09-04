@@ -19,6 +19,7 @@ import { renderMarkdown, renderMarkdownInline } from '../pipeline/markdown-rende
 import { resolveAbsoluteUrl } from '../pipeline/seo-normalizer.js';
 import { sortByRecency, sortByDate } from '../pipeline/ordering.js';
 import { resolveAssetFsPath } from '../pipeline/asset-normalizer.js';
+import { stripMarkdownAndHtml } from '../search/text-sanitizer.js';
 
 export { formatDate, formatDateRange, toIsoDate, toRfc822Date, slugify };
 
@@ -177,6 +178,8 @@ export function registerFilters(eleventyConfig, contentDir) {
   // Markdown
   eleventyConfig.addFilter('markdown', (content) => renderMarkdown(content));
   eleventyConfig.addFilter('markdownInline', (content) => renderMarkdownInline(content));
+  // Plain text, for the few spots Markdown must not reach: JSON-LD, meta tags.
+  eleventyConfig.addFilter('stripMarkdown', (content) => stripMarkdownAndHtml(content));
 
   eleventyConfig.addFilter('rfc822Date', (val) => toRfc822Date(val));
   eleventyConfig.addFilter('duration', (start, end) => computeDuration(start, end)?.text || '');

@@ -374,8 +374,16 @@ so code follows light and dark like everything else.
 
 Every collection item reaches one of two shapes through `theme/_includes/cards.njk`:
 `compact` (the dense two-line row used on the home page and search) or `relaxed` (the same
-row held taller, room for a description, used on the blog, publications and work indexes).
-Neither shape knows which collection it is showing.
+row held taller, with a description, skills and a date range for anything with a `start`,
+used on the blog, publications and projects indexes). Neither shape knows which collection
+it is showing.
+
+`relaxed(item, strip=true)` defaults to a scannable index row: description stripped to plain
+text and clamped to two lines, skills held to one row. Pass `strip=false` for the opposite —
+description rendered as Markdown in full, skills wrapping freely — which is what the CV's
+Publications and Projects sections do, the one place a `relaxed` item gets the room a
+`record` has everywhere else. `collection()` and `item()` both take and forward `strip`;
+`compact()` has no such setting, since it is plain and terse regardless.
 
 Each collection has a default, so a page that does not want to think about it can just ask
 for an item:
@@ -427,7 +435,7 @@ needs, since a role's sub-line is composed from `organization`, `type`, `modalit
 `location` rather than the engine's own `subtitle`. Wrapping a list of records in
 `<ol class="cards cards--timeline">` adds the connecting spine, which is why only experience
 and education, the two ranged, ongoing-capable sections, use it; a pinned publication or
-project on the CV is `relaxed` like everywhere else that collection appears.
+project on the CV is still `relaxed`, just with `strip=false`.
 
 ## Controls
 
@@ -510,8 +518,14 @@ the page scrolling itself. A cross-fade has no geometry to get wrong.
 ## Print
 
 The printed CV is a different document from the screen one, because it has to survive an
-applicant tracking system: those read the PDF's text layer and nothing else. The print block
-rebuilds the page rather than restyling it.
+applicant tracking system: those read the PDF's text layer and nothing else. `theme/print.njk`
+(`/assets/print.css`) rebuilds the page rather than restyling it, and is its own stylesheet,
+loaded by `head.njk` after `site.css` with `media="print"`, rather than an `@media print` block
+buried in the middle of it. `site.css` still loads for print too (its reset and `.prose` rules
+are genuinely page-agnostic, and a printed blog post still needs them), so print's own rules
+still have to outrank or explicitly restate the screen rule for anything CV-specific, exactly as
+before; the difference is that the whole of that logic is now readable in one file instead of
+scattered through `styles.njk`.
 
 `cv.njk`'s Download and Print buttons both exist regardless of `profile.resume`. With a resume
 on file, Download links straight to it and Print still prints the live page. Without one, both
@@ -523,23 +537,33 @@ button rather than the first, for exactly this case.
   reconstructs by geometry sees two columns and interleaves them, so print puts the date on the
   title's line instead.
 - **Standard families.** The web fonts embed as Type 3, a procedural format several parsers read
-  badly. Arial and Helvetica embed as CID TrueType with a usable unicode map.
+  badly. Arial and Helvetica embed as CID TrueType with a usable unicode map; a stray `<code>` on
+  a printed article falls back to the platform's own monospace for the same reason.
 - **Section names a parser searches for**: Summary, Skills, Experience, Education, Publications,
   Projects, Certifications, Awards. Two of those, Summary and Skills, exist only on paper.
-- **Nothing meaningful is a graphic.** Marks and the timeline spine are dropped.
+- **Nothing meaningful is a graphic.** Marks and the timeline spine are dropped, and no bullet or
+  rule is a background image, so everything visible is real, extractable text.
+- **Nothing is clipped.** `card__desc`'s two line clamp and `card__sub`'s ellipsis are screen
+  affordances for a fixed-height row; print resets both, since a parser (and a person) should
+  get the whole field, not the part that fit in a card.
 
-Two traps to know about when adding to this block. `rem` resolves against the root, not the
-body, so anything left in `rem` keeps its screen size however small the body is set. And any
-screen rule with higher specificity wins here too: `.cards:has(.mark) .card__link` and
-`.card--record .card__sub a` both had to be named explicitly before print could restyle them.
+Traps to know about when touching this file. `rem` resolves against the root, not the body, so
+anything left in `rem` keeps its screen size however small the body is set. Any screen rule with
+higher specificity still wins during print: `.cards:has(.mark) .card__link`,
+`.card--record .card__sub a`, and `:root[data-theme='dark']` (and its
+`:root:not([data-theme='light'])` system-preference twin) all have to be named at the same
+specificity print used to beat, or a mark-column grid, an underline, or a dark-mode visitor's
+own palette leaks through onto paper. That last one is easy to get wrong quietly: it only shows
+up for a reader who has actually chosen dark, so a plain `:root` override can look correct on
+every manual check and still print black-on-black for that one visitor.
 
-A third, easy to reintroduce by accident: anything positioned inside the printed CV, even a
-`position: relative` parent for an absolute pseudo-element bullet, changes where Chromium
-places its text in the exported PDF's content stream, not just how it paints. `.card__note`'s
-bullet is a real `list-style` marker rather than a drawn one for exactly this reason, and
-`.cards--timeline` resets to `position: static` in print once its spine is hidden. A parser
-that reads the stream in order, rather than by position, would otherwise attach a bullet or an
-entire section to the wrong heading while the screen and a human's eyes see nothing wrong.
+Positioning is the other one, easy to reintroduce by accident: anything positioned inside the
+printed CV, even a `position: relative` parent for an absolute pseudo-element bullet, changes
+where Chromium places its text in the exported PDF's content stream, not just how it paints.
+`.card__note`'s bullet is a real `list-style` marker rather than a drawn one for exactly this
+reason, and `.cards--timeline` resets to `position: static` in print once its spine is hidden. A
+parser that reads the stream in order, rather than by position, would otherwise attach a bullet
+or an entire section to the wrong heading while the screen and a human's eyes see nothing wrong.
 
 ## Contract
 

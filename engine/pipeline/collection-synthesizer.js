@@ -9,6 +9,7 @@ import { validateCollectionItem } from '../validation/validator.js';
 import { ValidationError } from '../validation/errors.js';
 import { renderMarkdown, renderMarkdownDocument } from './markdown-renderer.js';
 import { calculateReadingMetrics, generateExcerpt } from './content-metrics.js';
+import { stripMarkdownAndHtml } from '../search/text-sanitizer.js';
 import { buildItemSeo } from './seo-normalizer.js';
 import { attachRelatedItemsToCollections } from './content-graph.js';
 import { sortByRecency, isOngoing } from './ordering.js';
@@ -255,7 +256,9 @@ function buildInlineItem(entry, { collectionType, contentDir, siteData, locale }
       toc: [],
       wordCount: 0,
       readingTime: 0,
-      excerpt: entry.description || '',
+      // Plain text, matching buildMarkdownItem's excerpt: description may hold
+      // Markdown, and this feeds the RSS feed, which can't render it.
+      excerpt: stripMarkdownAndHtml(entry.description || ''),
       filePath: null,
       baseDir: ''
     },

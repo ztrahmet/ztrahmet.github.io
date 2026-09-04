@@ -1,4 +1,5 @@
 import { generateExcerpt } from './content-metrics.js';
+import { stripMarkdownAndHtml } from '../search/text-sanitizer.js';
 import { toDateString, toIsoDate } from '../config/format.js';
 
 /**
@@ -38,7 +39,9 @@ export function buildItemSeo(item = {}, site = {}) {
   const siteUrl = site?.url || '';
   const siteTitle = site?.title || 'Portfolio';
   const itemTitle = item?.title || siteTitle;
-  const rawDescription = item?.description || generateExcerpt(item?.content || '') || site?.description || '';
+  // description may carry Markdown now that it renders that way on the page;
+  // a <meta> tag and an OG description can't, so this is always plain text.
+  const rawDescription = stripMarkdownAndHtml(item?.description || '') || generateExcerpt(item?.content || '') || site?.description || '';
 
   const permalink = item?.permalink || '/';
   const canonicalUrl = resolveAbsoluteUrl(permalink, siteUrl);

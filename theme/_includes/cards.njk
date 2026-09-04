@@ -19,11 +19,11 @@
 
 {# ---------------------------------------------------------------- line -- #}
 
-{#- A single clickable row on the site's main grid: a metadata stack (date,
-    type), a content stack (title, one secondary line, an optional clamped
-    description) and an optional mark. Bare, this is the compact form used
-    everywhere; extra="card--relaxed" is the taller index form. -#}
-{% macro line(href, title, meta="", tag="", secondary="", description="", logo=None, ongoing=false, extra="") %}
+{#- A single clickable row: a metadata stack, a content stack, an optional
+    mark. Skill tags sit outside the link as their own row, since an <a>
+    cannot nest another one. strip picks plain clamped text and one row of
+    tags, or rendered Markdown and tags wrapping freely. -#}
+{% macro line(href, title, meta="", tag="", secondary="", description="", logo=None, ongoing=false, skills=[], strip=true, extra="") %}
 <li class="card{% if extra %} {{ extra }}{% endif %}">
   <a class="card__link" href="{{ href }}">
     <span class="card__meta">
@@ -38,41 +38,62 @@
     <span class="card__main">
       <span class="card__title">{{ title }}</span>
       {%- if secondary %}<span class="card__sub">{{ secondary }}</span>{% endif %}
-      {%- if description %}<span class="card__desc">{{ description }}</span>{% endif %}
+      {%- if description %}
+      {%- if strip %}
+      <div class="card__desc">{{ description | stripMarkdown }}</div>
+      {%- else %}
+      <div class="card__desc card__desc--full">{{ description | markdown | safe }}</div>
+      {%- endif %}
+      {%- endif %}
     </span>
     {{- m.mark(logo) }}
   </a>
+  {%- if skills | length %}
+  <ul class="tags{% if strip %} tags--clamp{% endif %}">
+    {%- for skill in skills %}<li><a href="/skills/{{ skill | slugify }}/">{{ skill }}</a></li>{% endfor %}
+  </ul>
+  {%- endif %}
 </li>
 {% endmacro %}
 
+{#- A start/end range for anything that has one (a project, like experience
+    and education), the single primaryDate otherwise. Kept in the engine's
+    raw sortable form, matching every other date on these rows. -#}
+{% macro dateLabel(item) %}
+{%- if item.start %}{{ item.start }} – {% if item.isOngoing %}Present{% else %}{{ item.end }}{% endif %}{% else %}{{ item.primaryDate }}{% endif -%}
+{% endmacro %}
+
 {#- The compact form of any collection item: two lines, the second being
-    whatever the collection offers, so no row is left with a bare title. -#}
+    whatever the collection offers. Always plain and terse; no strip
+    parameter, since it has nothing to opt out of. -#}
 {% macro compact(item) %}
 {{ line(
   href=item.permalink,
   title=item.title,
-  meta=item.primaryDate,
+  meta=dateLabel(item),
   tag=item.collection | collectionLabel(false),
-  secondary=item.subtitle or item.description,
+  secondary=item.subtitle or (item.description | stripMarkdown),
   logo=item.logo,
   ongoing=item.isOngoing
 ) }}
 {% endmacro %}
 
-{#- The relaxed form of any collection item: the same row held taller, with
-    the attribution given its own line and a description added below it. An
-    index reaching for room to breathe, not a change in what it contains —
-    it takes items in whatever order they arrive, same as compact. -#}
-{% macro relaxed(item) %}
+{#- The relaxed form: the same row held taller, with a description and its
+    skills below the attribution. strip=true (default) keeps an index
+    scannable; the CV passes strip=false for Publications and Projects, where
+    a record has room for the full, rendered thing. -#}
+{% macro relaxed(item, strip=true) %}
 {{ line(
   href=item.permalink,
   title=item.title,
-  meta=item.primaryDate,
+  meta=dateLabel(item),
   tag=item.collection | collectionLabel(false),
   secondary=item.subtitle,
   description=item.description,
   logo=item.logo,
   ongoing=item.isOngoing,
+  skills=item.skills,
+  strip=strip,
   extra="card--relaxed"
 ) }}
 {% endmacro %}
@@ -184,8 +205,9 @@
     about it can just ask for an item and get something sensible: blog,
     project and publication read better with room for a description,
     certificate and award are short enough that compact loses nothing.
-    Pass layout to override it for this one item instead. -#}
-{% macro item(entry, layout=None) %}
+    Pass layout to override it for this one item instead. strip reaches only
+    relaxed(); compact() has no use for it. -#}
+{% macro item(entry, layout=None, strip=true) %}
 {%- set mode = layout or {
   blog: "relaxed",
   project: "relaxed",
@@ -193,7 +215,7 @@
   certificate: "compact",
   award: "compact"
 }[entry.collection] or "compact" %}
-{%- if mode == "relaxed" %}{{ relaxed(entry) }}{% else %}{{ compact(entry) }}{% endif %}
+{%- if mode == "relaxed" %}{{ relaxed(entry, strip) }}{% else %}{{ compact(entry) }}{% endif %}
 {% endmacro %}
 
 {#- A whole list of collection items. Leave layout out and each item renders
@@ -203,10 +225,10 @@
     home page wants: pinned work and recent posts sit side by side there and
     read as one list, not as several defaults collided together. Neither
     reorders items or groups them by date; a page that wants a particular
-    order passes items already in it. -#}
-{% macro collection(items, layout=None) %}
+    order passes items already in it. strip forwards to relaxed(). -#}
+{% macro collection(items, layout=None, strip=true) %}
 <ol class="cards">
-  {%- for entry in items %}{{ item(entry, layout) }}{% endfor %}
+  {%- for entry in items %}{{ item(entry, layout, strip) }}{% endfor %}
 </ol>
 {% endmacro %}
 

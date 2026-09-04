@@ -71,7 +71,7 @@ eleventyComputed:
     {%- endif %}
 
     {%- if entry.description %}
-    <p class="lede">{{ entry.description }}</p>
+    <div class="lede">{{ entry.description | markdown | safe }}</div>
     {%- endif %}
 
     {%- if entry.hasMarkdown %}
@@ -116,7 +116,7 @@ eleventyComputed:
         title=item.title,
         meta=item.date,
         tag=item.collection | collectionLabel(false),
-        secondary=item.description,
+        secondary=item.description | stripMarkdown,
         logo=item.logo,
         ongoing=item.isOngoing
       ) }}

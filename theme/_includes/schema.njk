@@ -12,7 +12,7 @@
   "alternateName": {{ profile.handle | dump | safe }}
   {%- endif %}
   {%- if profile.summary %},
-  "description": {{ profile.summary | dump | safe }}
+  "description": {{ profile.summary | stripMarkdown | dump | safe }}
   {%- endif %}
   {%- if profile.avatar %},
   "image": {{ (profile.avatar.light or profile.avatar) | absoluteUrl(site.url) | dump | safe }}

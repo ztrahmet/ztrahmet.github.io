@@ -1,0 +1,227 @@
+---
+permalink: /assets/print.css
+eleventyExcludeFromCollections: true
+---
+{% raw %}
+/* Print
+   Its own stylesheet (see head.njk), loaded after site.css and only for print
+   media, rather than an @media block buried in the middle of it. Paper still
+   shares site.css's reset and .prose, which are page-agnostic; everything
+   below states its own layout in full instead of nudging a screen rule and
+   trusting it for the rest, which has already broken twice: a renamed
+   screen-only class, and a two-line clamp silently truncating a description.
+
+   The CV printed here has to survive an applicant tracking system, which
+   reads the PDF's text layer and nothing else:
+
+   - One column. The screen CV puts dates in a rail beside the record; a
+     parser reconstructing by geometry would interleave two columns. Here the
+     date sits on the title's line instead.
+   - Standard families. Web fonts embed as Type 3, which many parsers extract
+     badly; Arial and Helvetica embed as CID TrueType.
+   - Section names a parser looks for: Summary, Skills, Experience, Education,
+     Publications, Projects, Certifications, Awards.
+   - Nothing meaningful is a graphic, and no bullet or separator is a
+     background image: everything visible is real, extractable text.
+   - A real list marker, not a drawn pseudo-element: a positioned one here
+     once made Chromium emit a paragraph after everything later on the page,
+     which a parser reading that stream in order attached to the wrong record.
+   - No table. A grid puts the date beside the title, but nothing here is a
+     <table>, which some parsers refuse to read at all.
+   - Nothing is clipped: a two-line clamp or an ellipsis is a screen
+     affordance for a fixed-height row, so every field below prints in full.
+
+   The browser's own header and footer are defeated by the page margin: it
+   draws them in that margin, omitting the date and URL at 8mm and the page
+   number at a 12mm side. The readable margin is added back as padding on
+   the content instead. */
+
+@page { margin: 8mm 12mm; }
+
+/* site.css's dark palette is declared on :root[data-theme='dark'] and on
+   :root:not([data-theme='light']) for a system dark preference, both more
+   specific than a bare :root, and still loaded during print. Matching only
+   :root here printed a dark-mode visitor's page in their own ink; all three
+   states need naming to actually win. */
+:root,
+:root:not([data-theme='light']),
+:root[data-theme='dark'] {
+  color-scheme: light;
+  /* Denser than the screen palette: paper is not backlit and the type runs a
+     size smaller, so the screen greys come out washed out in ink. */
+  --ground: #fff;
+  --sunken: #fff;
+  --ink: #000;
+  --ink-2: #1a1a1a;
+  --ink-3: #333;
+  --rule: #bdbdbd;
+  --rule-strong: #7a7a7a;
+  --accent: #000;
+  --accent-ink: #000;
+  --syn-comment: #656d76;
+  --syn-keyword: #cf222e;
+  --syn-string:  #0a3069;
+  --syn-number:  #0550ae;
+  --syn-title:   #6f42c1;
+  --syn-type:    #953800;
+  --syn-name:    #116329;
+  --syn-add-ink: #116329;
+  --syn-add-bg:  transparent;
+  --syn-del-ink: #82071e;
+  --syn-del-bg:  transparent;
+}
+
+/* Every printed face, mono included: a web font embeds as Type 3, which the
+   families above exist to avoid, and the mono ones carry the same risk. */
+body, .pagehead__title, .pagehead__sub, .contacts, .lede,
+.card__title, .card__sub, .card__when, .card__note,
+.block__title, .card__desc, .card__date, .card__tag,
+.tags a, .skills-line, .language__name, .language__level {
+  font-family: Arial, Helvetica, sans-serif;
+}
+/* A stray <code> falls back to the platform's own monospace, same reason.
+   .card__desc code and .lede code are named at screen's own specificity, or
+   a bare code does not outrank them. */
+pre, code, kbd, samp, .card__desc code, .lede code { font-family: 'Courier New', Courier, monospace; }
+
+body { font-size: 8.5pt; line-height: 1.26; background: #fff; }
+
+/* Screen furniture. None of it carries information the page does not repeat
+   as text, so it is dropped rather than printed. */
+.rail, .foot, .skip, .search, .scheme, .cv-actions, .adjacent, .toc__fill,
+.palette, .totop, .masthead__avatar, .block__aux, .pagehead__kicker,
+.card__span, .card__tag, .mark { display: none !important; }
+
+/* Marks stay on screen: decorative, never the only carrier of a fact, and
+   at print size an OCR fallback would read them as noise, not a logo. */
+.printonly { display: block; }
+/* Paper is light, so a themed pair prints its light variant or it disappears. */
+.light-only { display: block !important; }
+.dark-only { display: none !important; }
+
+/* A printed document sizes to its content, and the page margin above is only
+   as wide as it needs to be, so the readable margin is added here. */
+.shell, body.page--split .shell { display: block; max-width: none; padding: 0; min-height: 0; }
+.main { padding: 0 6mm; }
+.page { display: block; }
+.page__aside { display: none; }
+.prose, .lede { max-width: none; }
+
+/* -------------------------------------------------------------- pagehead */
+/* Name, then one line of role and place, then contacts, standing in for the
+   rail, which only exists on screen. */
+.pagehead__title { font-size: 15pt; letter-spacing: -0.01em; }
+.pagehead__sub { font-size: 8.75pt; margin-top: 1pt; }
+.contacts { font-size: 8pt; margin-top: 2pt; }
+/* Stated in full: screen's own rule only ever nudged the margin. */
+.pagehead__rule { border: 0; height: 1px; background: var(--rule); margin-block: 5pt; }
+.lede { font-size: 8.5pt; margin-block: 0 6pt; }
+
+/* -------------------------------------------------------------- sections */
+/* Headings in the words a parser searches for. */
+.block { margin-top: 6pt; }
+.block__head { padding-bottom: 1.5pt; margin-bottom: 2.5pt; border-bottom: 0.5pt solid var(--rule-strong); }
+.block__title { font-size: 9pt; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+.block__head, .pagehead { break-after: avoid; }
+
+/* ---------------------------------------------------------------- record */
+/* Experience and education: one column, the date on the title's line, not
+   the screen's two-column timeline. */
+.cards--timeline, .cards--timeline .card--record { position: static; padding-left: 0; }
+.cards--timeline .card--record::before, .cards--timeline .card--record::after, .card__when .dot { display: none; }
+
+.card--record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 5pt;
+  row-gap: 2pt;
+  padding-block: 2pt;
+  break-inside: avoid;
+}
+.card--record + .card--record { border-top: 0.5pt solid var(--rule); }
+.card__heading { grid-column: 1; grid-row: 1; }
+.card__when { grid-column: 2; grid-row: 1; text-align: right; white-space: nowrap; font-size: 8pt; }
+.card--record .card__detail { grid-column: 1 / -1; grid-row: 2; }
+.card--record .card__detail > :first-child { margin-top: 0; }
+
+.card--record .card__title { font-size: 9.5pt; font-weight: 700; line-height: 1.22; }
+/* Prose, not a clipped one-liner, or a longer education line loses its tail. */
+.card--record .card__sub { font-size: 8.5pt; line-height: 1.25; white-space: normal; overflow: visible; text-overflow: clip; }
+.card__note { margin-top: 1.5pt; font-size: 8.5pt; line-height: 1.28; }
+.card__note p + p { margin-top: 1pt; }
+.card--record .card__detail .tags { margin-top: 1.5pt; }
+
+.card__note p {
+  display: list-item;
+  list-style: disc;
+  margin-left: 10pt;
+  font-size: 8.5pt;
+  line-height: 1.28;
+}
+
+/* ------------------------------------------------------------------ list */
+/* Every other printed card, stated in full, display: grid included, rather
+   than tweaking a column count declared only on screen. */
+.card { break-inside: avoid; }
+.card + .card { border-top: 0.5pt solid var(--rule); }
+.card__link,
+.cards:has(.mark) .card__link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 6pt;
+  padding-block: 2pt;
+  align-items: baseline;
+}
+.card__main { grid-column: 1; grid-row: 1; display: block; }
+.card__meta { grid-column: 2; grid-row: 1; text-align: right; }
+/* Screen indents this under a left date column print doesn't have, and sets
+   its padding-block in rem, which would keep screen's size here. Both
+   cancelled; a small pt rhythm around tags takes over instead. */
+.card--relaxed { padding-block: 0; }
+.card--relaxed .card__link { padding-bottom: 0; }
+.card--relaxed > .tags { margin-left: 0; margin-top: 2pt; margin-bottom: 2pt; }
+.card__title { font-size: 9pt; font-weight: 700; }
+/* A credential's issuer follows the title on one line; a record's sub-line
+   gets no dash, since it's already its own sentence. Unclipped, unlike screen. */
+.card__sub { display: inline; font-size: 8.5pt; white-space: normal; overflow: visible; text-overflow: clip; }
+.card__sub::before { content: ' — '; }
+.card--record .card__sub::before { content: none; }
+/* Screen clips this to two lines; paper prints whatever is there. */
+.card__desc { display: block; -webkit-line-clamp: unset; line-clamp: unset; overflow: visible; font-size: 8.5pt; line-height: 1.25; margin-top: 1pt; }
+.card__date { font-size: 8pt; white-space: nowrap; }
+
+/* ------------------------------------------------------------------ misc */
+/* Keyword line: a parser matches against this, so it is a plain sentence of
+   comma separated terms rather than a set of boxes. */
+.skills-line { font-size: 8.5pt; }
+
+/* Languages run inline on paper: a column of four short rows would cost more
+   of a page than it earns. */
+.languages { display: block; margin-top: 2.5pt; font-size: 8.5pt; }
+.language { display: inline; }
+.language + .language::before { content: ' · '; }
+.language__level::before { content: ' '; }
+.language__name, .language__level { font-size: 8.5pt; }
+
+/* Plain text, comma separated, not screen's bordered pills. display: block
+   overrides its flex row so an inline li can flow, not blockify. */
+.tags { display: block; margin-top: 2pt; }
+.tags li { display: inline; }
+/* Cancels screen's pill display, padding and border rather than leaving
+   them unset, where they'd still be in the cascade underneath. */
+.tags a { display: inline; padding: 0; border: 0; font-size: 8pt; }
+.tags li:not(:last-child) a::after { content: ', '; }
+
+/* Links print as plain text; the URL is written out in .contacts already.
+   Each selector is named at the specificity screen used to colour it. */
+a, .card__title a, .card__sub a, .card--record .card__sub a,
+.card__desc a, .lede a, .aside__row dd a { color: #000; text-decoration: none; }
+
+/* --------------------------------------------------------------- prose */
+/* Printed articles, not just the CV: nothing scrolls on paper, so a scroll
+   container would silently crop, and a figure or code block needs to break
+   cleanly rather than split across a page. */
+.table-scroll, .katex-display, .prose pre { overflow: visible; }
+.prose pre { white-space: pre-wrap; overflow-wrap: break-word; }
+.prose figure, .prose .table-scroll, .prose pre { break-inside: avoid; }
+{% endraw %}

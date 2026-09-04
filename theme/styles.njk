@@ -617,11 +617,19 @@ body {
    cards.njk macros. */
 
 .cards { display: grid; }
+/* Shared with the tags row outside card__link's own grid, so its indent
+   cannot drift out of sync with the column it lines up under. */
+.card {
+  --meta-w: 8rem;
+  /* min-width:0, or tags--clamp's unshrinkable row widens the grid track
+     instead of being clipped inside it. */
+  min-width: 0;
+}
 .card + .card { border-top: 1px solid var(--rule); }
 
 .card__link {
   display: grid;
-  grid-template-columns: 8rem minmax(0, 1fr);
+  grid-template-columns: var(--meta-w) minmax(0, 1fr);
   gap: var(--s4);
   align-items: baseline;
   padding-block: var(--s3);
@@ -631,7 +639,7 @@ body {
 /* The mark column is reserved only for lists that actually contain one, so a
    list of blog posts does not carry an empty column. */
 .cards:has(.mark) .card__link {
-  grid-template-columns: 8rem minmax(0, 1fr) var(--mark-w-list);
+  grid-template-columns: var(--meta-w) minmax(0, 1fr) var(--mark-w-list);
 }
 .card__link > .mark { width: var(--mark-w-list); align-self: start; }
 
@@ -688,6 +696,9 @@ body {
 }
 
 @media (max-width: 40rem) {
+  /* The meta column moves below the title at this width (order, just below),
+     so nothing is left for the tags row to line up against either. */
+  .card { --meta-w: 0rem; }
   .card__link { grid-template-columns: minmax(0, 1fr) var(--mark-w-list); gap: var(--s1) var(--s3); }
   .cards:has(.mark) .card__link { grid-template-columns: minmax(0, 1fr) var(--mark-w-list); }
   .card__main { grid-column: 1; order: 1; }
@@ -706,9 +717,21 @@ body {
 
 /* card--relaxed: the index variant. Taller, adds the description under the
    attribution. Takes its items in whatever order the page passes; it does
-   not sort or group them itself. */
-.card--relaxed .card__link { align-items: start; padding-block: var(--s4); }
+   not sort or group them itself.
+
+   padding-block belongs to the card, not card__link: the same either way a
+   card ends, in the link (no skills) or in tags (skills follow it). */
+.card--relaxed { padding-block: var(--s4); }
+.card--relaxed .card__link { align-items: start; padding-block: 0; }
 .card--relaxed .card__sub { white-space: normal; overflow: visible; }
+/* Skill tags sit outside card__link (an <a> cannot nest another one), so
+   they line up under the title by margin, not a shared grid column. */
+.card--relaxed > .tags { margin-left: calc(var(--meta-w) + var(--s4)); }
+@media (max-width: 40rem) {
+  .card--relaxed > .tags { margin-left: 0; }
+}
+/* Clamped and plain by default; card__desc--full is the CV's Publications
+   and Projects opting out, where a record has room for the whole thing. */
 .card__desc {
   margin-top: 0.15rem;
   font-size: 0.9375rem;
@@ -720,6 +743,22 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.card__desc--full {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+}
+/* Markdown's own elements, not .prose's: only card__desc--full ever renders
+   any, since the clamped default is plain text already. */
+.card__desc--full > * + * { margin-top: 0.3em; }
+.card__desc--full ul, .card__desc--full ol { padding-left: 1.1em; }
+.card__desc--full ul { list-style: disc; }
+.card__desc--full ol { list-style: decimal; }
+.card__desc--full li + li { margin-top: 0.15em; }
+.card__desc--full a { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.15em; }
+.card__desc--full a:hover { color: var(--ink); }
+.card__desc--full code { font-family: var(--mono); font-size: 0.85em; }
 
 /* ----------------------------------------------------------- skills map */
 /* Weight is the subject of this page, so the bar is the one place the accent
@@ -1201,6 +1240,14 @@ body {
 .card__note p + p { margin-top: var(--s3); }
 
 .tags { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+/* One row: whatever does not fit fades out rather than wrapping or cutting a pill in half. */
+.tags--clamp {
+  flex-wrap: nowrap;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+}
+.tags--clamp > li { flex: none; }
 .tags a {
   display: inline-block;
   padding: 0.1rem var(--s2);
@@ -1225,6 +1272,16 @@ body {
   color: var(--ink-2);
   text-wrap: pretty;
 }
+/* Markdown's own elements, not .prose's: a summary is a paragraph or two and
+   maybe a list, not a full article body. */
+.lede > * + * { margin-top: 0.6em; }
+.lede ul, .lede ol { padding-left: 1.15em; }
+.lede ul { list-style: disc; }
+.lede ol { list-style: decimal; }
+.lede li + li { margin-top: 0.3em; }
+.lede a { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.15em; }
+.lede a:hover { color: var(--accent-ink); }
+.lede code { font-family: var(--mono); font-size: 0.8em; }
 
 /* A mount rather than a bare image. Cover art is usually bright, so on the dark
    theme an unmounted image reads as a hole punched in the page. The matte gives
@@ -1595,207 +1652,4 @@ body {
   ::view-transition-new(*) { animation: none !important; }
 }
 
-/* ---------------------------------------------------------------- print */
-/* Paper is a different document from the screen one. The CV printed here has to
-   survive an applicant tracking system, which reads the PDF's text layer and
-   nothing else, so this block rebuilds the page rather than restyling it:
-
-   - One column. The screen CV puts dates in a left rail beside the record, and a
-     parser that reconstructs by geometry sees two columns and interleaves them.
-     Here the date sits on the title's line, which is what a CV normally does.
-   - Standard families. The web fonts embed as Type 3, a procedural format many
-     parsers extract badly; Arial and Helvetica embed as CID TrueType.
-   - Section names a parser looks for: Summary, Skills, Experience, Education,
-     Publications, Projects, Certifications, Awards.
-   - Nothing that carries meaning is a graphic, so marks and the timeline spine
-     are dropped rather than printed.
-
-   The browser's own header and footer are defeated by the page margin: it draws
-   them in that margin, omitting the date and URL at 8mm and the page number at a
-   12mm side. The readable margin is put back as padding on the content, which is
-   safe horizontally because only vertical padding is split across pages. */
-
-@page { margin: 8mm 12mm; }
-
-@media print {
-  /* The dark palette is declared on :root:not([data-theme='light']) and on
-     :root[data-theme='dark'], both of which outrank a bare :root, and paper does
-     not stop them matching. Without matching that specificity a reader who had
-     chosen dark printed the page in its own ink. color-scheme goes with it, or
-     the UA keeps painting the page canvas dark behind the content. */
-  :root,
-  :root:not([data-theme='light']),
-  :root[data-theme='dark'] {
-    color-scheme: light;
-    --ground: #fff;
-    --sunken: #fff;
-    /* Denser than the screen palette: paper is not backlit and the type runs a
-       size smaller, so the screen greys come out washed out in ink. */
-    --ink: #000;
-    --ink-2: #1a1a1a;
-    --ink-3: #333;
-    --rule: #bdbdbd;
-    --rule-strong: #7a7a7a;
-    --accent: #000;
-    --accent-ink: #000;
-    --syn-comment: #656d76;
-    --syn-keyword: #cf222e;
-    --syn-string:  #0a3069;
-    --syn-number:  #0550ae;
-    --syn-title:   #6f42c1;
-    --syn-type:    #953800;
-    --syn-name:    #116329;
-    --syn-add-ink: #116329;
-    --syn-add-bg:  transparent;
-    --syn-del-ink: #82071e;
-    --syn-del-bg:  transparent;
-  }
-
-  /* Chrome embeds the web fonts as Type 3, which is a procedural format rather
-     than an outline one, and several parsers read it poorly or not at all. A
-     standard family embeds as CID TrueType with a usable unicode map. Set on
-     everything, since the mono faces have the same problem. */
-  body, .pagehead__title, .pagehead__sub, .contacts, .lede,
-  .card__title, .card__sub, .card__when, .card__note,
-  .block__title, .card__desc, .card__date, .card__tag,
-  .tags a, .skills-line {
-    font-family: Arial, Helvetica, sans-serif;
-  }
-
-  /* Screen furniture. None of it carries information the page does not repeat
-     as text, so it is dropped rather than printed. */
-  .rail, .foot, .skip, .search, .scheme, .cv-actions, .adjacent, .toc__fill,
-  .palette, .totop, .masthead__avatar, .block__aux, .pagehead__kicker,
-  .card__span, .card__tag, .mark { display: none !important; }
-
-  /* Marks stay on screen and off paper. They cost the text layer nothing, which
-     was measured, but at print size they are unrecognisable monochrome glyphs,
-     and an applicant tracking system that falls back to OCR reads pixels rather
-     than text. No information is lost by dropping them and one failure path goes
-     with them. */
-  .card--record .card__sub { display: block; }
-  .printonly { display: block; }
-  /* Paper is light, so a themed pair prints its light variant or it disappears. */
-  .light-only { display: block !important; }
-  .dark-only { display: none !important; }
-
-  /* A printed document sizes to its content, and the page margin above is only
-     as wide as it needs to be, so the readable margin is added here. */
-  .shell, body.page--split .shell { display: block; max-width: none; padding: 0; min-height: 0; }
-  .main { padding: 0 6mm; }
-  .page { display: block; }
-  .page__aside { display: none; }
-  .prose, .lede { max-width: none; }
-
-  body { font-size: 9pt; line-height: 1.34; background: #fff; }
-
-  /* Heading block. Name, then one line of role and place, then contacts. */
-  .pagehead__title { font-size: 15.5pt; letter-spacing: -0.01em; }
-  .pagehead__sub { font-size: 9.5pt; margin-top: 1pt; }
-  .contacts { font-size: 8.5pt; margin-top: 2pt; }
-  .pagehead__rule { margin-block: 6pt; }
-  .lede { font-size: 9pt; margin-block: 0 8pt; }
-
-  /* Section headings, in the words a parser searches for. */
-  .block { margin-top: 8pt; }
-  .block__head { padding-bottom: 2pt; margin-bottom: 3pt; border-bottom: 0.5pt solid var(--rule-strong); }
-  .block__title { font-size: 9.5pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
-
-  /* One column. The title takes the line and the date sits at its right, which
-     is the shape a CV is read in and the shape a parser expects. */
-  .cards--timeline .card--record::before, .cards--timeline .card--record::after, .card__when .dot { display: none; }
-  /* The spine and its nodes are gone, so nothing here still needs the position
-     that anchored them. Left in place, Chromium moved the whole timeline's text
-     to after every section that follows it in the PDF's content stream, which
-     read as every job attached to the wrong heading in a parser that reads the
-     stream in order. Printing has nothing positioned left to explain. */
-  .cards--timeline, .cards--timeline .card--record { position: static; padding-left: 0; }
-  .card--record {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    column-gap: 5pt;
-    row-gap: 3pt;
-    padding-block: 3pt;
-    break-inside: avoid;
-  }
-  .card__heading { grid-column: 1; grid-row: 1; }
-  .card__when { grid-column: 2; grid-row: 1; text-align: right; white-space: nowrap; font-size: 8.5pt; }
-  .card--record .card__detail { grid-column: 1 / -1; grid-row: 2; }
-
-  .card--record .card__title { font-size: 10pt; font-weight: 700; line-height: 1.25; }
-  .card--record .card__sub { font-size: 9pt; line-height: 1.3; }
-  .card__note { margin-top: 2pt; font-size: 9pt; line-height: 1.32; }
-  .card__note p + p { margin-top: 1.5pt; }
-  /* The skills line closes a record, so it sits tight under the last bullet. */
-  .card--record .card__detail .tags { margin-top: 2pt; }
-
-  /* Every printed card, record or compact: publications, projects, roles,
-     certifications, awards. Sharing one name once meant sharing one rule. */
-  .card { break-inside: avoid; }
-  .card + .card { border-top: 0.5pt solid var(--rule); }
-  /* Matches the specificity of the screen rule that reserves a mark column.
-     Left alone it wins here too, and the title wraps in what is left. */
-  .card__link,
-  .cards:has(.mark) .card__link {
-    grid-template-columns: minmax(0, 1fr) auto;
-    column-gap: 6pt;
-    padding-block: 2.5pt;
-    align-items: baseline;
-  }
-  /* All three on row one explicitly. The date comes first in the markup, so
-     sparse auto-placement would push the title to a second row. */
-  /* Aligned to the title rather than centred on the row: a publication runs to
-     three lines and a centred mark sits between two of them. */
-  .card__main { grid-column: 1; grid-row: 1; display: block; }
-  .card__meta { grid-column: 2; grid-row: 1; text-align: right; }
-  .card__title { font-size: 9.5pt; font-weight: 700; }
-  /* A credential fits on one line, so its issuer follows the title. */
-  .card__sub { display: inline; font-size: 9pt; }
-  .card__sub::before { content: ' — '; }
-  /* A record's sub-line is its own sentence, not a credential's issuer. */
-  .card--record .card__sub::before { content: none; }
-
-  /* A real list marker, not a drawn one: a positioned pseudo-element here made
-     Chromium emit the paragraph after everything else on the page in the PDF's
-     text stream, so a parser that reads the stream in order, rather than by
-     position, attached every bullet to the wrong record. list-style is not a
-     background graphic, so the marker survives printing with backgrounds off. */
-  .card__note p {
-    display: list-item;
-    list-style: disc;
-    margin-left: 11pt;
-    font-size: 9pt;
-    line-height: 1.32;
-  }
-  .card__desc { font-size: 9pt; margin-top: 1pt; }
-  .card__date { font-size: 8.5pt; white-space: nowrap; }
-
-  /* Keyword line. A parser matches against this, so it is a plain sentence of
-     comma separated terms rather than a set of boxes. */
-  .skills-line { font-size: 9pt; }
-  /* Languages run inline on paper: a column of four short rows would cost more
-     of a page than it earns. */
-  .languages { display: block; margin-top: 3pt; font-size: 9pt; }
-  .language { display: inline; }
-  .language + .language::before { content: ' · '; }
-  .language__level::before { content: ' '; }
-  /* Both halves need a point size: the name is set in rem, which resolves
-     against the root and so keeps its screen size here otherwise. */
-  .language__name, .language__level { font-family: inherit; font-size: 9pt; }
-  .tags { gap: 0 0.3em; margin-top: 3pt; }
-  .tags a { padding: 0; border: 0; font-size: 8.5pt; }
-  .tags li:not(:last-child) a::after { content: ","; }
-
-  .block__head, .pagehead { break-after: avoid; }
-
-  /* Nothing scrolls on paper, so a scroll container would silently crop. */
-  .table-scroll, .katex-display, .prose pre { overflow: visible; }
-  .prose pre { white-space: pre-wrap; overflow-wrap: break-word; }
-  .prose figure, .prose .table-scroll, .prose pre { break-inside: avoid; }
-
-  /* Links print as text. The URL is written out where it matters, in contacts.
-     The organisation link carries an underline on screen and outranks a bare a,
-     so it needs naming or every employer prints underlined. */
-  a, .card__title a, .card__sub a, .aside__row dd a { color: #000; text-decoration: none; }
-}
 {% endraw %}

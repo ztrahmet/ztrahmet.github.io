@@ -43,7 +43,8 @@ project:
       light: /images/projects/engine-light.png
       dark: /images/projects/engine-dark.png
     description: |-
-      High-performance static site generator powered by YAML configuration and Markdown files.
+      - High-performance static site generator powered by YAML configuration and Markdown files.
+      - Incremental compilation of document trees, cutting rebuild times from minutes to seconds.
     skills:
       - TypeScript
       - Node.js
