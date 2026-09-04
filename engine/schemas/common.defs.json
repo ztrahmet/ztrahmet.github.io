@@ -80,6 +80,10 @@
       "type": "string",
       "enum": ["in-person", "hybrid", "remote"]
     },
+    "Accent": {
+      "type": "string",
+      "enum": ["petrol", "amber", "blue", "green", "red", "purple"]
+    },
     "LanguageLevel": {
       "description": "CEFR band or native, in any case: a1 a2 b1 b2 c1 c2 native",
       "type": "string",

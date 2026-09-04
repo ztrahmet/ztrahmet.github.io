@@ -1,0 +1,117 @@
+{#- Design tokens: every custom property the stylesheet reads is set here, once.
+    Restyling the site starts and ends with this file. Accent is the one token
+    picked from content rather than fixed, via site.accent in data.yaml. -#}
+{%- set accentPalette = {
+  "petrol": { "light": "#0a6f68", "lightInk": "#065852", "dark": "#3fb9ac", "darkInk": "#55c7ba" },
+  "amber":  { "light": "#8a5a00", "lightInk": "#6b4400", "dark": "#e8a33d", "darkInk": "#f5be6b" },
+  "blue":   { "light": "#1f5fae", "lightInk": "#164a87", "dark": "#6fa8dc", "darkInk": "#9cc4ea" },
+  "green":  { "light": "#1a7a3e", "lightInk": "#145c31", "dark": "#4fbd77", "darkInk": "#7ad89c" },
+  "red":    { "light": "#b23a2e", "lightInk": "#8a2c22", "dark": "#e8695c", "darkInk": "#f28f84" },
+  "purple": { "light": "#6a3fa0", "lightInk": "#55317f", "dark": "#b58ce0", "darkInk": "#c7a4e8" }
+} %}
+{%- set accent = accentPalette[site.accent] or accentPalette.petrol %}
+
+/* Every colour is measured against its ground. Light: ink 16.6:1, ink-2 7.3:1,
+   ink-3 5.7:1. Dark: ink 13.5:1, ink-2 7.4:1, ink-3 6.1:1. Accent figures are
+   for petrol, the default; every accentPalette entry above clears the same
+   bar (checked against --ground: accent-ink >= 7:1 light, accent >= 5:1
+   dark, white/on-accent text >= 5:1 on the solid accent button). */
+
+:root {
+  color-scheme: light;
+
+  --ground: #f5f6f7;
+  --sunken: #eceef0;
+  --ink: #14171a;
+  --ink-2: #4a5259;
+  --ink-3: #5a636b;
+  --rule: rgb(20 23 26 / 0.13);
+  --rule-strong: rgb(20 23 26 / 0.26);
+  --accent: {{ accent.light }};
+  --accent-ink: {{ accent.lightInk }};
+  --on-accent: #ffffff;
+
+  --sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace;
+
+  --t-display: clamp(2.5rem, 1.5rem + 3.6vw, 3.75rem);
+  --t-h1: 1.875rem;
+  --t-h2: 1.375rem;
+  --t-h3: 1.1875rem;
+  --t-body: 1.125rem;
+  --t-small: 1rem;
+  --t-mono: 0.875rem;
+  --t-mono-s: 0.8125rem;
+  --t-label: 0.75rem;
+
+  --lh-prose: 1.65;
+  --lh-tight: 1.2;
+  --lh-ui: 1.45;
+
+  --s1: 0.25rem; --s2: 0.5rem;  --s3: 0.75rem; --s4: 1rem;
+  --s5: 1.5rem;  --s6: 2rem;    --s7: 3rem;    --s8: 4rem;  --s9: 6rem;
+
+  --rail-w: 15.5rem;
+  --measure: 46rem;
+  --aside-w: 12.5rem;
+  --gutter: 3rem;
+  --pad-x: 1.25rem;
+  /* Width of a CV organisation mark, and of the column reserved for it. */
+  --mark-w: clamp(2.5rem, 4.5vw, 3.125rem);
+  --mark-w-list: 2.375rem;
+  /* Container caps, sized so the tracks inside actually fill them rather than
+     leaving dead space at the right. Widen these two to widen the whole site. */
+  --shell: 70rem;
+  --shell-wide: 84rem;
+  /* Running text stops short of the column so the line stays readable, while
+     figures, tables, code and rows use the full width. Held at the paragraph
+     width the site already had, so nothing breaks earlier than before; the
+     column grew around it rather than the text shrinking into it. */
+  --measure-text: 44rem;
+
+  --fast: 120ms;
+  --slow: 240ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  /* Overshoots slightly, which is what makes a control feel sprung rather than
+     merely animated. Used for anything that settles into place. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* How far a control travels when pressed. One pixel reads as a press at this
+     type size; more reads as a glitch. */
+  --press: 1px;
+}
+
+/* Dark is a designed counterpart, not an inversion: the ground keeps a blue
+   cast, ink stops short of white, and the accent moves up in lightness so it
+   stays legible as text. Declared twice so the toggle wins in both directions. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --ground: #0e1114;
+    --sunken: #161a1e;
+    --ink: #d6dae0;
+    --ink-2: #9aa3ac;
+    --ink-3: #8a939c;
+    --rule: rgb(214 218 224 / 0.15);
+    --rule-strong: rgb(214 218 224 / 0.3);
+    --accent: {{ accent.dark }};
+    --accent-ink: {{ accent.darkInk }};
+    --on-accent: #0e1114;
+  }
+  :root:not([data-theme='light']) body { -webkit-font-smoothing: antialiased; }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --ground: #0e1114;
+  --sunken: #161a1e;
+  --ink: #d6dae0;
+  --ink-2: #9aa3ac;
+  --ink-3: #8a939c;
+  --rule: rgb(214 218 224 / 0.15);
+  --rule-strong: rgb(214 218 224 / 0.3);
+  --accent: {{ accent.dark }};
+  --accent-ink: {{ accent.darkInk }};
+  --on-accent: #0e1114;
+}
+:root[data-theme='dark'] body { -webkit-font-smoothing: antialiased; }
+
+@media (min-width: 60rem) { :root { --pad-x: 2.5rem; } }

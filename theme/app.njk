@@ -225,11 +225,13 @@ eleventyExcludeFromCollections: true
   addEventListener('scroll', update, { passive: true });
   addEventListener('resize', function () { measure(); update(); });
 })();
-/* Print action on the CV. Hidden without JS, since Cmd+P still works. */
+/* Print action on the CV. Hidden without JS, since Cmd+P still works. There can
+   be two of these (Print, and Download PDF standing in for it), so all of them. */
 (function () {
-  var button = document.querySelector('[data-print]');
-  if (!button) return;
-  button.addEventListener('click', function () { window.print(); });
+  var buttons = document.querySelectorAll('[data-print]');
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].addEventListener('click', function () { window.print(); });
+  }
 })();
 /* Reading rail. Fills the contents rule as the article is read, and marks the
    section currently in view. Offsets are measured once and re-measured on

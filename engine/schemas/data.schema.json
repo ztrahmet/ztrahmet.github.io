@@ -16,7 +16,8 @@
         "lang": { "$ref": "common.defs.json#/definitions/Slug" },
         "locale": { "$ref": "common.defs.json#/definitions/Slug" },
         "favicon": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
-        "share_image": { "$ref": "common.defs.json#/definitions/ThemedAsset" }
+        "share_image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
+        "accent": { "$ref": "common.defs.json#/definitions/Accent" }
       }
     },
     "profile": {

@@ -30,6 +30,7 @@ site:
   locale: en_US
   favicon: /images/favicon.svg
   share_image: /images/share.png
+  accent: petrol                       # petrol, amber, blue, green, red, purple
 
 profile:
   name: Name Surname                   # required
@@ -47,7 +48,7 @@ profile:
       level: native                    # a1 a2 b1 b2 c1 c2 native, any case
     - name: German
       level: B2
-  resume: /documents/resume.pdf
+  resume: /documents/resume.pdf        # optional; see "Resume" below
   social:
     - label: GitHub
       url: https://github.com/username
@@ -252,6 +253,13 @@ A missing asset warns but does not stop the build, so you can write first and ad
 Adding a file to an existing folder is picked up by the dev server. Adding the very first file
 to a brand new folder next to a markdown entry needs a restart, because that mapping is
 registered when the server starts.
+
+## Resume
+
+A resume is not generated from content. `profile.resume` is unset by default, and the CV page's
+Download and Print buttons both fall back to the browser's print dialog, where "Save as PDF" is
+the download. Point `resume` at a real file to replace that fallback: Download then links to it
+directly, and Print still prints the live page.
 
 ## Skills
 

@@ -9,6 +9,7 @@ site:
   locale: en_US
   favicon: /images/favicon.svg
   share_image: /images/share.png
+  accent: petrol # petrol, amber, blue, green, red, purple
 
 profile:
   name: Name Surname
@@ -37,7 +38,9 @@ profile:
     - name: French
       level: a2
 
-  resume: /documents/resume.pdf
+  # No file on disk: the CV page falls back to a print/download button pair
+  # driven by the browser's print dialog. Point this at a PDF to use it instead.
+  # resume: /documents/resume.pdf
   social:
     - label: GitHub
       url: https://github.com/username

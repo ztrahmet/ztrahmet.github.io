@@ -32,6 +32,20 @@ name as a content directory, the content one is published, the theme one is
 skipped, and the build warns. Rename the theme directory if that happens.
 
 
+## Design tokens
+
+Every custom property the stylesheet reads lives in `theme/_includes/tokens.njk`, not
+`styles.njk` itself: colour, type scale, spacing, layout widths, motion. Restyling the site is
+editing that one file. `styles.njk` pulls it in with `{% include "tokens.njk" %}`, the one line
+in the file not wrapped in `{% raw %}`, since the rest is static CSS Nunjucks never needs to
+touch.
+
+Accent is the one token read from content rather than fixed: `tokens.njk` holds a small palette
+keyed by name (`petrol`, `amber`, `blue`, `green`, `red`, `purple`), and picks from it using
+`site.accent`. Adding a colour to the site means adding an entry to that palette and to the
+`Accent` enum in `engine/schemas/common.defs.json`, so an invalid name fails the content build
+rather than silently falling back.
+
 ## Smallest working theme
 
 `theme/_layouts/base.njk`
@@ -86,7 +100,7 @@ map, the second is the Eleventy collection, which is what you need for paginatio
 
 | Key | What it is |
 |---|---|
-| `site` | `url` `title` `description` `lang` `locale` `favicon` `share_image` |
+| `site` | `url` `title` `description` `lang` `locale` `favicon` `share_image` `accent` |
 | `profile` | identity, `social`, `experience`, `education` |
 | `collections_data` | `blog` `project` `publication` `certificate` `award` |
 | `collection_types` | one row per collection, for building navigation |
@@ -498,6 +512,12 @@ the page scrolling itself. A cross-fade has no geometry to get wrong.
 The printed CV is a different document from the screen one, because it has to survive an
 applicant tracking system: those read the PDF's text layer and nothing else. The print block
 rebuilds the page rather than restyling it.
+
+`cv.njk`'s Download and Print buttons both exist regardless of `profile.resume`. With a resume
+on file, Download links straight to it and Print still prints the live page. Without one, both
+buttons carry `data-print` and open the same print dialog, since "Save as PDF" there is the only
+download the theme can offer on its own; `app.njk`'s print handler binds every `[data-print]`
+button rather than the first, for exactly this case.
 
 - **One column.** The screen CV puts dates in a rail beside each record. A parser that
   reconstructs by geometry sees two columns and interleaves them, so print puts the date on the
