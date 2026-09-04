@@ -38,6 +38,16 @@ export const DEGREE_TYPE_MAPPINGS = Object.freeze({
   'certificate': 'Certificate'
 });
 
+export const LANGUAGE_LEVEL_MAPPINGS = Object.freeze({
+  a1: 'A1',
+  a2: 'A2',
+  b1: 'B1',
+  b2: 'B2',
+  c1: 'C1',
+  c2: 'C2',
+  native: 'Native'
+});
+
 export const COLLECTION_LABEL_MAPPINGS = Object.freeze({
   singular: Object.freeze({
     blog: 'Blog Post',
@@ -62,6 +72,7 @@ export const UI_MAPPINGS = Object.freeze({
   modality: MODALITY_MAPPINGS,
   employmentType: EMPLOYMENT_TYPE_MAPPINGS,
   degreeType: DEGREE_TYPE_MAPPINGS,
+  languageLevel: LANGUAGE_LEVEL_MAPPINGS,
   collections: COLLECTION_LABEL_MAPPINGS
 });
 
@@ -103,6 +114,16 @@ export function getDegreeTypeLabel(type) {
  * @param {boolean} [plural=true] - Whether to return plural form
  * @returns {string} Mapped display string
  */
+/**
+ * Resolves the display label for a language level.
+ * @param {string} level - Normalized level key
+ * @returns {string} Display label, or the level unchanged when unknown
+ */
+export function getLanguageLevelLabel(level) {
+  if (!level) return '';
+  return LANGUAGE_LEVEL_MAPPINGS[level] || level;
+}
+
 export function getCollectionLabel(collection, plural = true) {
   if (!collection) return '';
   const form = plural ? 'plural' : 'singular';

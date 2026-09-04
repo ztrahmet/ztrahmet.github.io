@@ -2,6 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
+import { normalizeLanguageLevels } from '../pipeline/data-loader.js';
+import { LANGUAGE_LEVELS } from '../config/enums.js';
+import { getLanguageLevelLabel } from '../config/mappings.js';
 import { loadYamlFile } from '../pipeline/yaml-loader.js';
 import {
   createValidator,
@@ -330,6 +333,51 @@ describe('Schema Registry Consistency', () => {
     for (const type of COLLECTION_TYPES) {
       const file = path.resolve(__dirname, `../schemas/collections/${type}.item.json`);
       expect(fs.existsSync(file), `missing schema for ${type}`).toBe(true);
+    }
+  });
+});
+
+describe('Profile Languages', () => {
+  const withLanguages = (languages) => ({
+    site: { url: 'https://e.com', title: 'T', description: 'D' },
+    profile: { name: 'A', handle: 'a', role: 'r', languages }
+  });
+
+  it('accepts a level in any case without being normalized first', () => {
+    // data.yaml carries a yaml-language-server binding, so an editor validates
+    // the raw file where nothing has been lowered yet.
+    for (const level of ['a1', 'A1', 'b2', 'B2', 'C1', 'c2', 'native', 'NATIVE']) {
+      expect(() => validateData(withLanguages([{ name: 'X', level }]), 'data.yaml')).not.toThrow();
+    }
+    for (const level of ['fluent', 'd1', 'a3', 'nativ', '']) {
+      expect(() => validateData(withLanguages([{ name: 'X', level }]), 'data.yaml')).toThrow();
+    }
+  });
+
+  it('lowers a level so a theme only ever sees one spelling', () => {
+    const data = normalizeLanguageLevels(
+      withLanguages([{ name: 'German', level: 'B2' }, { name: 'Turkish', level: 'Native' }])
+    );
+
+    expect(data.profile.languages.map((l) => l.level)).toEqual(['b2', 'native']);
+    expect(() => validateData(data, 'data.yaml')).not.toThrow();
+  });
+
+  it('rejects a level that is not a CEFR band or native', () => {
+    const data = normalizeLanguageLevels(withLanguages([{ name: 'German', level: 'fluent' }]));
+
+    expect(() => validateData(data, 'data.yaml')).toThrow();
+  });
+
+  it('leaves data without languages untouched', () => {
+    const data = { profile: { name: 'A' } };
+    expect(normalizeLanguageLevels(data)).toBe(data);
+  });
+
+  it('labels every level it accepts', () => {
+    for (const level of LANGUAGE_LEVELS) {
+      expect(getLanguageLevelLabel(level)).toBeTruthy();
+      expect(getLanguageLevelLabel(level)).not.toBe(level);
     }
   });
 });

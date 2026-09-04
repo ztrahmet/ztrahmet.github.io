@@ -20,6 +20,17 @@ export const DEGREE_TYPES = Object.freeze([
   'certificate'
 ]);
 
+/** CEFR, plus native for a language that is not learned to a level. */
+export const LANGUAGE_LEVELS = Object.freeze([
+  'a1',
+  'a2',
+  'b1',
+  'b2',
+  'c1',
+  'c2',
+  'native'
+]);
+
 export const MODALITIES = Object.freeze([
   'in-person',
   'hybrid',

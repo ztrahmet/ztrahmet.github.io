@@ -30,6 +30,22 @@
         "avatar": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
         "location": { "$ref": "common.defs.json#/definitions/Text" },
         "summary": { "$ref": "common.defs.json#/definitions/MultilineText" },
+        "skills": {
+          "type": "array",
+          "items": { "$ref": "common.defs.json#/definitions/Text" }
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "level"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "$ref": "common.defs.json#/definitions/Text" },
+              "level": { "$ref": "common.defs.json#/definitions/LanguageLevel" }
+            }
+          }
+        },
         "resume": { "$ref": "common.defs.json#/definitions/Asset" },
         "social": {
           "type": "array",

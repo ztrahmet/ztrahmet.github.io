@@ -27,6 +27,33 @@ function normalizeOptionalAsset(target, key, options) {
 }
 
 /**
+ * Lowercases language levels so an author can write B2, b2 or Native.
+ *
+ * This runs before validation rather than after, because the schema enum is the
+ * thing being satisfied and JSON Schema has no case-insensitive enum. The data
+ * is copied down to the level being changed; nothing else is touched.
+ *
+ * @param {object} data - Parsed data.yaml, before validation
+ * @returns {object} Data with normalized language levels
+ */
+export function normalizeLanguageLevels(data) {
+  const languages = data?.profile?.languages;
+  if (!Array.isArray(languages)) return data;
+
+  return {
+    ...data,
+    profile: {
+      ...data.profile,
+      languages: languages.map((language) => (
+        typeof language?.level === 'string'
+          ? { ...language, level: language.level.trim().toLowerCase() }
+          : language
+      ))
+    }
+  };
+}
+
+/**
  * Normalizes all asset paths in data.yaml (site and profile entities).
  * Checks physical existence of referenced assets within contentDir.
  *
@@ -127,12 +154,14 @@ export function loadEngineData(customContentDir) {
   const rawData = loadYamlFile(dataFilePath);
   const rawContent = loadYamlFile(contentFilePath);
 
-  // 2. Validate YAML files against JSON Schemas (fail fast)
-  validateData(rawData, path.relative(process.cwd(), dataFilePath));
+  // 2. Validate YAML files against JSON Schemas (fail fast). Language levels are
+  //    lowered first, since the schema enum is what they have to satisfy.
+  const leveledData = normalizeLanguageLevels(rawData);
+  validateData(leveledData, path.relative(process.cwd(), dataFilePath));
   validateContent(rawContent, path.relative(process.cwd(), contentFilePath));
 
   // 3. Normalize site and profile assets
-  const normalizedData = normalizeDataAssets(rawData, contentDir);
+  const normalizedData = normalizeDataAssets(leveledData, contentDir);
 
   // 4. Synthesize collections (Markdown + inline items, sorting, navigation, TOC, SEO, related)
   const collections = synthesizeAllCollections(contentDir, rawContent, normalizedData.site);

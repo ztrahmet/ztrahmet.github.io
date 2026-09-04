@@ -80,6 +80,11 @@
       "type": "string",
       "enum": ["in-person", "hybrid", "remote"]
     },
+    "LanguageLevel": {
+      "description": "CEFR band or native, in any case: a1 a2 b1 b2 c1 c2 native",
+      "type": "string",
+      "pattern": "^([Aa][12]|[Bb][12]|[Cc][12]|[Nn][Aa][Tt][Ii][Vv][Ee])$"
+    },
     "ContentRef": {
       "type": "string",
       "pattern": "^(blog|project|publication|certificate|award):[a-zA-Z0-9_-]+$"

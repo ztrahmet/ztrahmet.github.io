@@ -132,6 +132,15 @@ describe('Theme Surface', () => {
   });
 
   describe('list filters Nunjucks cannot provide', () => {
+    it('unions two lists without repeating a skill in another case', () => {
+      const merged = filters.union(['Go', 'TypeScript'], ['go', 'Compilers', 'TYPESCRIPT']);
+
+      expect(merged).toEqual(['Go', 'TypeScript', 'Compilers']);
+      // The spelling that arrives first is the one kept
+      expect(filters.union(['node.js'], ['Node.js'])).toEqual(['node.js']);
+      expect(filters.union(null, undefined)).toEqual([]);
+    });
+
     const filters = {};
     registerFilters({ addFilter: (name, fn) => { filters[name] = fn; } });
     const items = [{ t: 'a', c: 'blog' }, { t: 'b', c: 'blog' }, { t: 'c', c: 'project' }];

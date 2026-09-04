@@ -38,6 +38,18 @@ export type DegreeType =
 
 export type Modality = 'in-person' | 'hybrid' | 'remote';
 
+/** CEFR, plus native for a language that is not learned to a level. */
+export type LanguageLevel = 'a1' | 'a2' | 'b1' | 'b2' | 'c1' | 'c2' | 'native';
+
+/**
+ * Language entry (data.yaml -> profile.languages)
+ */
+export interface LanguageItem {
+  name: string;
+  /** Authored in any case; always lowercase by the time a theme sees it. */
+  level: LanguageLevel;
+}
+
 export type CollectionType = 'blog' | 'project' | 'publication' | 'certificate' | 'award';
 
 export type ContentRef = `${CollectionType}:${string}`;
@@ -139,6 +151,9 @@ export interface ProfileData {
   avatar?: ThemedAsset;
   location?: string;
   summary?: string;
+  /** Declared skills, kept out of the taxonomy so they never make an empty skill page. */
+  skills?: string[];
+  languages?: Array<LanguageItem & { levelLabel: string }>;
   resume?: Asset;
   social?: SocialLink[];
   experience?: Array<ExperienceItem & ProfileEntryPresentation>;
@@ -418,6 +433,7 @@ export interface UiMappings {
   };
   employmentType: Record<EmploymentType, string>;
   degreeType: Record<DegreeType, string>;
+  languageLevel: Record<LanguageLevel, string>;
   collections: {
     singular: Record<CollectionType, string>;
     plural: Record<CollectionType, string>;

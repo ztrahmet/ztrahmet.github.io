@@ -1,5 +1,6 @@
 import { formatDate, formatDateRange, toIsoDate, computeDuration } from '../config/format.js';
 import { isOngoing } from './ordering.js';
+import { getLanguageLevelLabel } from '../config/mappings.js';
 
 /**
  * Adds the presentation fields a profile entry needs, mirroring what collection
@@ -39,6 +40,12 @@ export function enrichProfile(profile, locale = 'en-US') {
   }
   if (Array.isArray(enriched.education)) {
     enriched.education = enriched.education.map((entry) => enrichEntry(entry, locale));
+  }
+  if (Array.isArray(enriched.languages)) {
+    enriched.languages = enriched.languages.map((language) => ({
+      ...language,
+      levelLabel: getLanguageLevelLabel(language.level)
+    }));
   }
 
   return enriched;

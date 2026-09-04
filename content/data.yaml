@@ -20,6 +20,23 @@ profile:
     Engineer working on build tooling, static compilers and the unglamorous parts of
     developer experience. I like systems that stay fast as they grow, and documentation
     that tells you why rather than what.
+  skills:
+    - Distributed Systems
+    - Go
+    - TypeScript
+    - Compilers
+    - Kubernetes
+
+  languages:
+    - name: English
+      level: native
+    - name: German
+      level: B2
+    - name: Turkish
+      level: native
+    - name: French
+      level: a2
+
   resume: /documents/resume.pdf
   social:
     - label: GitHub

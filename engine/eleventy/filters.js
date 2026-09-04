@@ -4,6 +4,7 @@ import {
   getModalityLabel,
   getEmploymentTypeLabel,
   getDegreeTypeLabel,
+  getLanguageLevelLabel,
   getCollectionLabel
 } from '../config/mappings.js';
 import {
@@ -165,6 +166,7 @@ export function registerFilters(eleventyConfig, contentDir) {
   eleventyConfig.addFilter('modalityLabel', (val, context) => getModalityLabel(val, context));
   eleventyConfig.addFilter('employmentTypeLabel', (val) => getEmploymentTypeLabel(val));
   eleventyConfig.addFilter('degreeTypeLabel', (val) => getDegreeTypeLabel(val));
+  eleventyConfig.addFilter('languageLevelLabel', (val) => getLanguageLevelLabel(val));
   eleventyConfig.addFilter('collectionLabel', (val, plural) => getCollectionLabel(val, plural));
 
   // Dates
@@ -203,4 +205,17 @@ export function registerFilters(eleventyConfig, contentDir) {
   });
   eleventyConfig.addFilter('byRecency', (list) => (Array.isArray(list) ? sortByRecency(list) : list));
   eleventyConfig.addFilter('byDate', (list) => (Array.isArray(list) ? sortByDate(list) : list));
+  /* Concatenates two lists and drops repeats, keeping the first spelling seen.
+     Skills are compared without case, since "Node.js" and "node.js" name one
+     thing, and Nunjucks can neither join two arrays nor deduplicate. */
+  eleventyConfig.addFilter('union', (list, other) => {
+    const items = [...(Array.isArray(list) ? list : []), ...(Array.isArray(other) ? other : [])];
+    const seen = new Set();
+    return items.filter((item) => {
+      const key = typeof item === 'string' ? item.trim().toLowerCase() : item;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  });
 }
