@@ -625,7 +625,8 @@ body {
      instead of being clipped inside it. */
   min-width: 0;
 }
-.card + .card { border-top: 1px solid var(--rule); }
+/* Lighter than --rule's usual weight: a hint between rows, not a rule. */
+.card + .card { border-top: 1px solid color-mix(in srgb, var(--rule) 55%, transparent); }
 
 .card__link {
   display: grid;

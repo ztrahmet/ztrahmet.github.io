@@ -163,7 +163,7 @@ body { font-size: 8.5pt; line-height: 1.26; background: #fff; }
 /* Every other printed card, stated in full, display: grid included, rather
    than tweaking a column count declared only on screen. */
 .card { break-inside: avoid; }
-.card + .card { border-top: 0.5pt solid var(--rule); }
+.card + .card { border-top: 0.5pt solid color-mix(in srgb, var(--rule) 55%, transparent); }
 .card__link,
 .cards:has(.mark) .card__link {
   display: grid;
