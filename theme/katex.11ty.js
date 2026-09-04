@@ -6,7 +6,7 @@ import path from 'node:path';
  * from the installed package keeps the CSS in step with the version the engine
  * renders with, instead of vendoring a copy that silently goes stale.
  *
- * The woff2 files are published from content/static/fonts/katex/, so the src
+ * The woff2 files are published from theme/static/fonts/katex/, so the src
  * lists are rewritten to point there and the woff and ttf fallbacks are dropped.
  */
 const SOURCE = 'node_modules/katex/dist/katex.min.css';

@@ -5,14 +5,10 @@ title: Skills
 section: skills
 pageDescription: Everything indexed by skill, weighted by how often it appears.
 ---
+{% import "pagehead.njk" as pagehead %}
 {%- set top = taxonomy.allSkills[0].count %}
 <div class="page__body">
-  <header class="pagehead">
-    <p class="pagehead__kicker">Index</p>
-    <h1 class="pagehead__title">Skills</h1>
-    <p class="pagehead__sub">{{ taxonomy.totalUniqueSkills }} skills across {{ stats.totalItems }} entries and {{ profile.experience | length }} roles, grouped by how often each appears.</p>
-    <hr class="pagehead__rule">
-  </header>
+  {{ pagehead.simple("Skills", sub=(taxonomy.totalUniqueSkills ~ " skills across " ~ stats.totalItems ~ " entries and " ~ (profile.experience | length) ~ " roles, grouped by how often each appears.")) }}
 
   {%- if taxonomy.allSkills | length %}
   <section class="block block--flush">

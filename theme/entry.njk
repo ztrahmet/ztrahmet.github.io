@@ -15,9 +15,10 @@ eleventyComputed:
   publishedIso: "{{ entry.seo.publishedIso }}"
   section: "{% for hub in nav %}{% if entry.collection in hub.collections %}{{ hub.id }}{% endif %}{% endfor %}"
 ---
-{% import "rows.njk" as r %}
+{% import "cards.njk" as cards %}
 {% import "mark.njk" as m %}
 {% import "icons.njk" as i %}
+{% import "button.njk" as button %}
 
 <div class="page__body">
   <article class="entry">
@@ -43,14 +44,10 @@ eleventyComputed:
           {%- if entry.url or entry.repository %}
           <p class="pagehead__links">
             {%- if entry.url %}
-            <a class="btn btn--out" href="{{ entry.url }}" rel="noopener">
-              <span>{{ entry.url | replace("https://", "") | replace("http://", "") }}</span>{{ i.ui("external") }}
-            </a>
+            {% call button.link(href=entry.url, extra="btn--out", rel="noopener") %}<span>{{ entry.url | replace("https://", "") | replace("http://", "") }}</span>{{ i.ui("external") }}{% endcall %}
             {%- endif %}
             {%- if entry.repository %}
-            <a class="btn btn--out" href="{{ entry.repository }}" rel="noopener">
-              <span>Repository</span>{{ i.ui("external") }}
-            </a>
+            {% call button.link(href=entry.repository, extra="btn--out", rel="noopener") %}<span>Repository</span>{{ i.ui("external") }}{% endcall %}
             {%- endif %}
           </p>
           {%- endif %}
@@ -86,22 +83,22 @@ eleventyComputed:
   {%- if entry.newer or entry.older %}
   <nav class="adjacent" aria-label="Adjacent entries">
     {%- if entry.older %}
-    <a class="btn btn--back adjacent__link" href="{{ entry.older.permalink }}">
+    {% call button.link(href=entry.older.permalink, extra="btn--back adjacent__link") %}
       {{ i.ui("left") }}
       <span class="adjacent__text">
         <span class="adjacent__dir">Older</span>
         <span class="adjacent__title">{{ entry.older.title }}</span>
       </span>
-    </a>
+    {% endcall %}
     {%- endif %}
     {%- if entry.newer %}
-    <a class="btn adjacent__link adjacent__link--next" href="{{ entry.newer.permalink }}">
+    {% call button.link(href=entry.newer.permalink, extra="adjacent__link adjacent__link--next") %}
       <span class="adjacent__text">
         <span class="adjacent__dir">Newer</span>
         <span class="adjacent__title">{{ entry.newer.title }}</span>
       </span>
       {{ i.ui("right") }}
-    </a>
+    {% endcall %}
     {%- endif %}
   </nav>
   {%- endif %}
@@ -112,9 +109,9 @@ eleventyComputed:
       <h2 class="block__title">Related</h2>
       <span class="block__aux">{{ entry.related | length }}</span>
     </div>
-    <ol class="rows">
+    <ol class="cards">
       {%- for item in entry.related %}
-      {{ r.line(
+      {{ cards.line(
         href=item.permalink,
         title=item.title,
         meta=item.date,

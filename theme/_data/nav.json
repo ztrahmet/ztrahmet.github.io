@@ -1,6 +1,7 @@
 [
-  { "id": "cv",      "label": "CV",      "permalink": "/cv/",      "collections": ["certificate", "award"] },
-  { "id": "writing", "label": "Writing", "permalink": "/writing/", "collections": ["blog", "publication"] },
-  { "id": "work",    "label": "Work",    "permalink": "/work/",    "collections": ["project"] },
-  { "id": "skills",  "label": "Skills",  "permalink": "/skills/",  "collections": [] }
+  { "id": "cv",           "label": "CV",           "permalink": "/cv/",           "collections": ["certificate", "award"] },
+  { "id": "blog",         "label": "Blog",         "permalink": "/blog/",         "collections": ["blog"] },
+  { "id": "publications", "label": "Publications", "permalink": "/publications/", "collections": ["publication"] },
+  { "id": "work",         "label": "Work",         "permalink": "/work/",         "collections": ["project"] },
+  { "id": "skills",       "label": "Skills",       "permalink": "/skills/",       "collections": [] }
 ]

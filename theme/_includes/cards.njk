@@ -1,0 +1,224 @@
+{#- Every dated thing on the site: a collection item, a profile role, a skill
+    reference. One vocabulary of layouts, so any of them can be shown any way.
+
+    Two primitives, each a shape and nothing else:
+      line()   a single clickable row: metadata stack, content stack, mark.
+      record() a CV entry: a heading, a date column, a mark, an open detail.
+
+    A primitive takes plain, pre-resolved values and knows no collection.
+    Everything below the primitives is an adapter: it knows one shape of data
+    (a synthesized collection item, an experience record) and calls the
+    primitive that fits. Adapters are what a page actually calls; item() and
+    collection() are the adapters for the common case, a collection item
+    shown either in its own collection's default layout or in one a page
+    names explicitly. Reach for a primitive directly only when a list is a
+    one-off shape, the way the related list and the skill index are. -#}
+{% import "mark.njk" as m %}
+{% import "icons.njk" as i %}
+{% import "button.njk" as button %}
+
+{# ---------------------------------------------------------------- line -- #}
+
+{#- A single clickable row on the site's main grid: a metadata stack (date,
+    type), a content stack (title, one secondary line, an optional clamped
+    description) and an optional mark. Bare, this is the compact form used
+    everywhere; extra="card--relaxed" is the taller index form. -#}
+{% macro line(href, title, meta="", tag="", secondary="", description="", logo=None, ongoing=false, extra="") %}
+<li class="card{% if extra %} {{ extra }}{% endif %}">
+  <a class="card__link" href="{{ href }}">
+    <span class="card__meta">
+      {%- if meta %}<span class="card__date">{{ meta }}</span>{% endif %}
+      {%- if tag %}
+      <span class="card__tag">
+        {%- if ongoing %}<span class="dot" aria-hidden="true"></span><span class="u-hidden">Ongoing, </span>{% endif -%}
+        {{ tag }}
+      </span>
+      {%- endif %}
+    </span>
+    <span class="card__main">
+      <span class="card__title">{{ title }}</span>
+      {%- if secondary %}<span class="card__sub">{{ secondary }}</span>{% endif %}
+      {%- if description %}<span class="card__desc">{{ description }}</span>{% endif %}
+    </span>
+    {{- m.mark(logo) }}
+  </a>
+</li>
+{% endmacro %}
+
+{#- The compact form of any collection item: two lines, the second being
+    whatever the collection offers, so no row is left with a bare title. -#}
+{% macro compact(item) %}
+{{ line(
+  href=item.permalink,
+  title=item.title,
+  meta=item.primaryDate,
+  tag=item.collection | collectionLabel(false),
+  secondary=item.subtitle or item.description,
+  logo=item.logo,
+  ongoing=item.isOngoing
+) }}
+{% endmacro %}
+
+{#- The relaxed form of any collection item: the same row held taller, with
+    the attribution given its own line and a description added below it. An
+    index reaching for room to breathe, not a change in what it contains —
+    it takes items in whatever order they arrive, same as compact. -#}
+{% macro relaxed(item) %}
+{{ line(
+  href=item.permalink,
+  title=item.title,
+  meta=item.primaryDate,
+  tag=item.collection | collectionLabel(false),
+  secondary=item.subtitle,
+  description=item.description,
+  logo=item.logo,
+  ongoing=item.isOngoing,
+  extra="card--relaxed"
+) }}
+{% endmacro %}
+
+{# -------------------------------------------------------------- record -- #}
+
+{#- A CV entry: a title (linked when href is given), an optional sub-line
+    (organisation, venue or authors, linked when subHref is given, with
+    subExtra trailing it as plain text — a type, a modality, a grade), a date
+    column, an optional mark, and an open detail of notes and skill tags.
+
+    Pass a start/end pair for a ranged entry, or dateDisplay/dateIso alone for
+    one that just happened; the pair wins when both are present. endIso is
+    optional even on a ranged entry, since a project only ever carries the
+    engine's single dateIso and prints its end as plain text rather than a
+    second, absent, timestamp. -#}
+{% macro record(title, href="", sub="", subHref="", subExtra="", startDisplay="", startIso="", endDisplay="", endIso="", ongoing=false, dateDisplay="", dateIso="", duration=None, logo=None, note="", skills=[], current=false) %}
+<li class="card card--record{% if current %} is-current{% endif %}">
+  <div class="card__heading">
+    <h3 class="card__title">{% if href %}<a href="{{ href }}">{{ title }}</a>{% else %}{{ title }}{% endif %}</h3>
+    {%- if sub %}
+    <p class="card__sub">
+      {%- if subHref %}<a href="{{ subHref }}">{{ sub }}</a>{% else %}{{ sub }}{% endif -%}
+      {%- if subExtra %} · {{ subExtra }}{% endif -%}
+    </p>
+    {%- endif %}
+  </div>
+  <p class="card__when">
+    {%- if startDisplay %}
+    <time datetime="{{ startIso }}">{{ startDisplay }}</time> –
+    {% if ongoing %}<span class="dot" aria-hidden="true"></span>Present{% elif endIso %}<time datetime="{{ endIso }}">{{ endDisplay }}</time>{% else %}{{ endDisplay }}{% endif %}
+    {%- else %}
+    <time datetime="{{ dateIso }}">{{ dateDisplay }}</time>
+    {%- endif %}
+    {%- if duration %}<span class="card__span">{{ duration.text }}</span>{% endif %}
+  </p>
+  {{ m.mark(logo) }}
+  {%- if note or skills | length %}
+  <div class="card__detail">
+    {%- if note %}<div class="card__note">{{ note | markdown | safe }}</div>{% endif %}
+    {%- if skills | length %}
+    <ul class="tags">
+      {%- for skill in skills %}<li><a href="/skills/{{ skill | slugify }}/">{{ skill }}</a></li>{% endfor %}
+    </ul>
+    {%- endif %}
+  </div>
+  {%- endif %}
+</li>
+{% endmacro %}
+
+{#- An experience record. Only the organisation carries the link; employment
+    type, modality and location trail it as plain text, each only when the
+    entry has one. -#}
+{% macro experienceRecord(job) %}
+{%- set extra = "" %}
+{%- if job.type %}{% set extra = job.type | employmentTypeLabel %}{% endif %}
+{%- if job.modality %}{% set extra = extra ~ (" · " if extra else "") ~ (job.modality | modalityLabel("experience")) %}{% endif %}
+{%- if job.location %}{% set extra = extra ~ (" · " if extra else "") ~ job.location %}{% endif %}
+{{ record(
+  title=job.title,
+  sub=job.organization,
+  subHref=job.url,
+  subExtra=extra,
+  startDisplay=job.startDisplay,
+  startIso=job.startIso,
+  endDisplay=job.endDisplay,
+  endIso=job.endIso,
+  ongoing=job.isOngoing,
+  duration=job.duration,
+  logo=job.logo,
+  note=job.description,
+  skills=job.skills,
+  current=job.isOngoing
+) }}
+{% endmacro %}
+
+{#- An education record. Only the organisation carries the link; degree type,
+    modality, location and grade trail it as plain text, each only when the
+    entry has one — the same fields experienceRecord shows, in the same
+    order, plus grade, since a degree schema carries nothing an employment
+    record does not. -#}
+{% macro educationRecord(school) %}
+{%- set extra = "" %}
+{%- if school.type %}{% set extra = school.type | degreeTypeLabel %}{% endif %}
+{%- if school.modality %}{% set extra = extra ~ (" · " if extra else "") ~ (school.modality | modalityLabel("education")) %}{% endif %}
+{%- if school.location %}{% set extra = extra ~ (" · " if extra else "") ~ school.location %}{% endif %}
+{%- if school.grade %}{% set extra = extra ~ (" · " if extra else "") ~ school.grade %}{% endif %}
+{{ record(
+  title=school.title,
+  sub=school.organization,
+  subHref=school.url,
+  subExtra=extra,
+  startDisplay=school.startDisplay,
+  startIso=school.startIso,
+  endDisplay=school.endDisplay,
+  endIso=school.endIso,
+  ongoing=school.isOngoing,
+  duration=school.duration,
+  logo=school.logo,
+  note=school.description,
+  skills=school.skills,
+  current=school.isOngoing
+) }}
+{% endmacro %}
+
+{# ----------------------------------------------------------- collection -- #}
+
+{#- Every collection's usual shape, so a page that does not want to think
+    about it can just ask for an item and get something sensible: blog,
+    project and publication read better with room for a description,
+    certificate and award are short enough that compact loses nothing.
+    Pass layout to override it for this one item instead. -#}
+{% macro item(entry, layout=None) %}
+{%- set mode = layout or {
+  blog: "relaxed",
+  project: "relaxed",
+  publication: "relaxed",
+  certificate: "compact",
+  award: "compact"
+}[entry.collection] or "compact" %}
+{%- if mode == "relaxed" %}{{ relaxed(entry) }}{% else %}{{ compact(entry) }}{% endif %}
+{% endmacro %}
+
+{#- A whole list of collection items. Leave layout out and each item renders
+    in its own collection's default, so a page listing one collection never
+    has to name a layout at all. Pass layout to force one shape on
+    everything in it regardless of collection instead, which is what the
+    home page wants: pinned work and recent posts sit side by side there and
+    read as one list, not as several defaults collided together. Neither
+    reorders items or groups them by date; a page that wants a particular
+    order passes items already in it. -#}
+{% macro collection(items, layout=None) %}
+<ol class="cards">
+  {%- for entry in items %}{{ item(entry, layout) }}{% endfor %}
+</ol>
+{% endmacro %}
+
+{#- The block__aux slot for a capped list: the count when a section shows
+    everything it has, or a link to the rest in that same slot when it does
+    not, so a page with room for only a few items can say so instead of
+    reading as though those few were the whole of it. shown is what actually
+    renders; total is compared against its length to decide which of the two
+    this is, so a collection with exactly as many entries as the cap gets
+    the plain count rather than a link to a page that would only repeat it. -#}
+{% macro aux(shown, total, href) %}
+{%- if total > shown | length %}
+{%- call button.link(href=href, extra="btn--small") %}<span>All {{ total }}</span>{{ i.ui("right") }}{% endcall %}
+{%- else %}{{ shown | length }}{% endif -%}
+{% endmacro %}

@@ -10,7 +10,7 @@ eleventyComputed:
   title: "{{ skill.name }}"
   pageDescription: "Everything tagged {{ skill.name }}."
 ---
-{% import "rows.njk" as r %}
+{% import "cards.njk" as cards %}
 
 <div class="page__body">
   <header class="pagehead">
@@ -20,9 +20,9 @@ eleventyComputed:
     <hr class="pagehead__rule">
   </header>
 
-  <ol class="rows">
+  <ol class="cards">
     {%- for ref in skill.items %}
-    {{ r.line(
+    {{ cards.line(
       href=ref.permalink,
       title=ref.title,
       meta=ref.date or "—",

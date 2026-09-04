@@ -356,17 +356,109 @@ Fenced code arrives already highlighted, as `hljs-` class names carrying no colo
 The theme owns that palette. This one maps the classes to `--syn-*` tokens declared per scheme,
 so code follows light and dark like everything else.
 
+## Layouts
+
+Every collection item reaches one of two shapes through `theme/_includes/cards.njk`:
+`compact` (the dense two-line row used on the home page and search) or `relaxed` (the same
+row held taller, room for a description, used on the blog, publications and work indexes).
+Neither shape knows which collection it is showing.
+
+Each collection has a default, so a page that does not want to think about it can just ask
+for an item:
+
+```njk
+{% import "cards.njk" as cards %}
+{{ cards.collection(items) }}
+```
+
+Blog, project and publication default to `relaxed`; certificate and award default to
+`compact`. A list can mix collections and each item still renders in its own default. Pass
+`layout` to `collection()` or `item()` to force one shape regardless of collection instead,
+which is what the home page does — pinned work and recent posts sit side by side there and
+should read as one list, not several defaults collided together:
+
+```njk
+{{ cards.collection(pinned_items, "compact") }}
+```
+
+Neither layout sorts or groups its items; a page passes them in whatever order it wants
+shown, which for most lists is the order the engine already hands back (`all_content` and
+every `collections_data.*` array arrive `byRecency`).
+
+`aux(shown, total, href)` is what goes in a capped section's `block__aux` slot, in place of
+the plain count every other section puts there: the count when `shown` is everything there is,
+or a link to the rest in that same slot when it is not, so a curated subset never silently
+reads as the whole collection.
+
+```njk
+<span class="block__aux">{{ cards.aux(papers, stats.collections.publication.total, "/publications/") }}</span>
+```
+
+The CV's pinned Publications and Projects use it (`stats.collections.<name>.total` against the
+3 pinned) and so does the home page's Recent section (`stats.totalItems` against the 6 shown).
+The list itself still renders through the ordinary `collection()` call beneath the header;
+`aux()` only decides what the header says.
+
+A one-off shape that is not a whole collection, such as a related list or a skill's
+references, calls the `line()` primitive directly instead of an adapter:
+
+```njk
+{{ cards.line(href=item.permalink, title=item.title, meta=item.date, logo=item.logo) }}
+```
+
+The CV's third shape, `record` (a heading, a date column, an open detail), is not one of
+`collection()`'s choices — the CV is the only place anything takes it, and only behind a
+timeline. `experienceRecord` and `educationRecord` are the two adapters profile history
+needs, since a role's sub-line is composed from `organization`, `type`, `modality` and
+`location` rather than the engine's own `subtitle`. Wrapping a list of records in
+`<ol class="cards cards--timeline">` adds the connecting spine, which is why only experience
+and education, the two ranged, ongoing-capable sections, use it; a pinned publication or
+project on the CV is `relaxed` like everywhere else that collection appears.
+
 ## Controls
 
 Anything clickable that is not running text uses `.btn`: the adjacent entries, an entry's
-external destinations, the CV actions, back to top. It is square like the rest of the page and
-presses in by `--press` rather than lighting up, so the feedback is physical. `.btn--out` marks
-a link that leaves the site, `.btn--back` one that goes backwards, and `.btn--key` the single
-action a page actually wants taken. Each moves its arrow in the direction it travels.
+external destinations, the CV actions, back to top, a capped section's link to the rest. It is
+square like the rest of the page and presses in by `--press` rather than lighting up, so the
+feedback is physical. `.btn--out` marks a link that leaves the site, `.btn--back` one that goes
+backwards, `.btn--key` the single action a page actually wants taken, and `.btn--small` the same
+control held small enough to sit in a section header. Each moves its arrow in the direction it
+travels.
+
+Every `.btn` is built by `theme/_includes/button.njk`, not written by hand: `link(href, extra,
+download, rel, data, ariaLabel)` for an `<a>`, `action(extra, data, ariaLabel)` for a `<button>`.
+Content comes through `{% call %}` rather than a label parameter, since a button's inside ranges
+from a single `<span>` to the two-line block adjacent navigation needs:
+
+```njk
+{% import "button.njk" as button %}
+{% import "icons.njk" as i %}
+{% call button.link(href=entry.url, extra="btn--out", rel="noopener") %}
+  <span>{{ entry.url }}</span>{{ i.ui("external") }}
+{% endcall %}
+```
+
+Only the outer element and its modifiers are standardised; what a reader sees inside is still
+whatever the caller writes. Reach for the macro even for a plain-text button — it is what keeps
+every control the same element with the same attributes, so a class typo never quietly produces
+something that looks like a button but is not one.
 
 `.dither` lays an ordered pixel pattern behind an element and fades it out along the run. It is
 deliberately used once, on the one key action, because a texture that appears everywhere stops
 drawing attention to anything.
+
+A plain index header — kicker, title, an optional standfirst, the rule — is
+`theme/_includes/pagehead.njk`'s `simple(title, kicker="Index", sub="")`, used by every index
+that is just a title over a list. `sub` is trusted markup, not escaped text, since the search
+page's standfirst carries a `<kbd>`. A header with more than that — an action, a mark, a byline,
+a linked kicker — is written by hand instead; forcing those into one more parameter each would
+cost more clarity than the shared macro saves.
+
+A segmented control (currently only the colour scheme switch) reads its stage count from the
+options list that renders it rather than a number written into the CSS separately: `rail.njk`
+sets `style="--stages: {{ options | length }}"` on the group, and `.scheme`'s
+`grid-template-columns` and thumb width both read `var(--stages)`. Adding or removing a stage
+is a one-line change to the list, not two counts kept in sync by hand.
 
 ## Controls that need a script
 
@@ -409,8 +501,16 @@ rebuilds the page rather than restyling it.
 
 Two traps to know about when adding to this block. `rem` resolves against the root, not the
 body, so anything left in `rem` keeps its screen size however small the body is set. And any
-screen rule with higher specificity wins here too: `.rows:has(.mark) .row__link` and
-`.record__org a` both had to be named explicitly before print could restyle them.
+screen rule with higher specificity wins here too: `.cards:has(.mark) .card__link` and
+`.card--record .card__sub a` both had to be named explicitly before print could restyle them.
+
+A third, easy to reintroduce by accident: anything positioned inside the printed CV, even a
+`position: relative` parent for an absolute pseudo-element bullet, changes where Chromium
+places its text in the exported PDF's content stream, not just how it paints. `.card__note`'s
+bullet is a real `list-style` marker rather than a drawn one for exactly this reason, and
+`.cards--timeline` resets to `position: static` in print once its spine is hidden. A parser
+that reads the stream in order, rather than by position, would otherwise attach a bullet or an
+entire section to the wrong heading while the screen and a human's eyes see nothing wrong.
 
 ## Contract
 

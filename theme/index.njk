@@ -2,7 +2,7 @@
 layout: base.njk
 section: home
 ---
-{% import "rows.njk" as r %}
+{% import "cards.njk" as cards %}
 {% import "mark.njk" as m %}
 
 <div class="page__body">
@@ -13,18 +13,22 @@ section: home
         <p class="masthead__role">{{ profile.role }}</p>
       </div>
       {%- if profile.avatar %}
-      <span class="masthead__avatar">
-        {%- if profile.avatar.light %}
-        <span class="light-only">{{ m.asset(profile.avatar.light) }}</span>
-        <span class="dark-only">{{ m.asset(profile.avatar.dark) }}</span>
-        {%- else %}
-        {{ m.asset(profile.avatar) }}
-        {%- endif %}
-      </span>
+      <span class="masthead__avatar">{{ m.themed(profile.avatar) }}</span>
       {%- endif %}
     </div>
     <hr class="masthead__rule">
   </header>
+
+  {%- if all_content | length %}
+  {%- set recent = all_content | byDate | limit(5) %}
+  <section class="block">
+    <div class="block__head">
+      <h2 class="block__title">Recent</h2>
+      <span class="block__aux">{{ cards.aux(recent, stats.totalItems, "/search/") }}</span>
+    </div>
+    {{ cards.collection(recent, "compact") }}
+  </section>
+  {%- endif %}
 
   {%- if pinned_items | length %}
   <section class="block">
@@ -32,21 +36,10 @@ section: home
       <h2 class="block__title">Selected</h2>
       <span class="block__aux">{{ pinned_items | length }}</span>
     </div>
-    <ol class="rows">
-      {%- for item in pinned_items %}{{ r.row(item) }}{% endfor %}
-    </ol>
-  </section>
-  {%- endif %}
-
-  {%- if all_content | length %}
-  <section class="block">
-    <div class="block__head">
-      <h2 class="block__title">Recent</h2>
-      <span class="block__aux"><a href="/search/">All {{ stats.totalItems }}</a></span>
-    </div>
-    <ol class="rows">
-      {%- for item in all_content | byDate | limit(6) %}{{ r.row(item) }}{% endfor %}
-    </ol>
+    {#- Compact throughout, forced rather than left to each collection's
+        default: pinned work and recent posts sit side by side here and read
+        as one list, not as several defaults collided together. -#}
+    {{ cards.collection(pinned_items, "compact") }}
   </section>
   {%- endif %}
 </div>

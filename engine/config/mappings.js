@@ -109,12 +109,6 @@ export function getDegreeTypeLabel(type) {
 }
 
 /**
- * Resolves a human-readable collection label.
- * @param {string} collection - Collection name (blog, project, etc.)
- * @param {boolean} [plural=true] - Whether to return plural form
- * @returns {string} Mapped display string
- */
-/**
  * Resolves the display label for a language level.
  * @param {string} level - Normalized level key
  * @returns {string} Display label, or the level unchanged when unknown
@@ -124,6 +118,12 @@ export function getLanguageLevelLabel(level) {
   return LANGUAGE_LEVEL_MAPPINGS[level] || level;
 }
 
+/**
+ * Resolves a human-readable collection label.
+ * @param {string} collection - Collection name (blog, project, etc.)
+ * @param {boolean} [plural=true] - Whether to return plural form
+ * @returns {string} Mapped display string
+ */
 export function getCollectionLabel(collection, plural = true) {
   if (!collection) return '';
   const form = plural ? 'plural' : 'singular';

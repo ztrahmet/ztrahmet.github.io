@@ -1,4 +1,5 @@
 {% import "icons.njk" as i %}
+{% import "button.njk" as button %}
 <!doctype html>
 <html lang="{{ site.lang }}" class="no-js">
   <head>
@@ -17,9 +18,7 @@
     </div>
     {#- Revealed by the script once the page has actually been scrolled, so it
         never occupies a corner it has not earned. -#}
-    <button class="btn totop" type="button" data-totop aria-label="Back to top">
-      {{ i.ui("up") }}
-    </button>
+    {% call button.action(extra="totop", data="data-totop", ariaLabel="Back to top") %}{{ i.ui("up") }}{% endcall %}
 
     <dialog class="palette" id="palette" aria-label="Search">
       <div class="palette__head">

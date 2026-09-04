@@ -132,6 +132,10 @@ describe('Theme Surface', () => {
   });
 
   describe('list filters Nunjucks cannot provide', () => {
+    const filters = {};
+    registerFilters({ addFilter: (name, fn) => { filters[name] = fn; } });
+    const items = [{ t: 'a', c: 'blog' }, { t: 'b', c: 'blog' }, { t: 'c', c: 'project' }];
+
     it('unions two lists without repeating a skill in another case', () => {
       const merged = filters.union(['Go', 'TypeScript'], ['go', 'Compilers', 'TYPESCRIPT']);
 
@@ -140,10 +144,6 @@ describe('Theme Surface', () => {
       expect(filters.union(['node.js'], ['Node.js'])).toEqual(['node.js']);
       expect(filters.union(null, undefined)).toEqual([]);
     });
-
-    const filters = {};
-    registerFilters({ addFilter: (name, fn) => { filters[name] = fn; } });
-    const items = [{ t: 'a', c: 'blog' }, { t: 'b', c: 'blog' }, { t: 'c', c: 'project' }];
 
     it('limits, filters and sorts lists', () => {
       expect(filters.limit(items, 2).map((i) => i.t)).toEqual(['a', 'b']);

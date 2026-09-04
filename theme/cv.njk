@@ -5,11 +5,8 @@ title: CV
 section: cv
 pageDescription: Experience, education and credentials.
 ---
-{% import "hub.njk" as hub %}
-{% import "rows.njk" as r %}
-{% import "mark.njk" as m %}
-{% import "icons.njk" as i %}
-{% set item = nav | where("id", "cv") | first %}
+{% import "cards.njk" as cards %}
+{% import "button.njk" as button %}
 
 <div class="page__body">
   <header class="pagehead">
@@ -26,11 +23,9 @@ pageDescription: Experience, education and credentials.
     {%- endif %}
     <p class="cv-actions">
       {%- if profile.resume %}
-      <a class="btn btn--key dither" href="{{ profile.resume }}" download>
-        <span>Download PDF</span>
-      </a>
+      {% call button.link(href=profile.resume, extra="btn--key dither", download=true) %}<span>Download PDF</span>{% endcall %}
       {%- endif %}
-      <button type="button" class="btn" data-print>Print</button>
+      {% call button.action(data="data-print") %}<span>Print</span>{% endcall %}
     </p>
     <hr class="pagehead__rule">
   </header>
@@ -51,40 +46,8 @@ pageDescription: Experience, education and credentials.
       <h2 class="block__title">Experience</h2>
       <span class="block__aux">{{ profile.experience | length }}</span>
     </div>
-    <ol class="timeline">
-      {%- for job in profile.experience %}
-      <li class="record{% if job.isOngoing %} is-current{% endif %}">
-        <div class="record__heading">
-          <h3 class="record__title">{{ job.title }}</h3>
-          <p class="record__org">
-            {%- if job.url %}<a href="{{ job.url }}">{{ job.organization }}</a>{% else %}{{ job.organization }}{% endif -%}
-            {%- if job.type %} · {{ job.type | employmentTypeLabel }}{% endif -%}
-            {%- if job.modality %} · {{ job.modality | modalityLabel("experience") }}{% endif -%}
-            {%- if job.location %} · {{ job.location }}{% endif -%}
-          </p>
-        </div>
-        <p class="record__when">
-          <time datetime="{{ job.startIso }}">{{ job.startDisplay }}</time> –
-          {% if job.isOngoing %}<span class="dot" aria-hidden="true"></span>Present{% else %}<time datetime="{{ job.endIso }}">{{ job.endDisplay }}</time>{% endif %}
-          {%- if job.duration %}<span class="record__span">{{ job.duration.text }}</span>{% endif %}
-        </p>
-        {#- The mark sits beside the heading only. Everything below runs the full
-            width, so a description is never narrowed by the logo column. -#}
-        {{ m.mark(job.logo) }}
-        {%- if job.description or job.skills | length %}
-        <div class="record__detail">
-          {%- if job.description %}
-          <div class="record__note">{{ job.description | markdown | safe }}</div>
-          {%- endif %}
-          {%- if job.skills | length %}
-          <ul class="tags">
-            {%- for skill in job.skills %}<li><a href="/skills/{{ skill | slugify }}/">{{ skill }}</a></li>{% endfor %}
-          </ul>
-          {%- endif %}
-        </div>
-        {%- endif %}
-      </li>
-      {%- endfor %}
+    <ol class="cards cards--timeline">
+      {%- for job in profile.experience %}{{ cards.experienceRecord(job) }}{% endfor %}
     </ol>
   </section>
   {%- endif %}
@@ -95,30 +58,8 @@ pageDescription: Experience, education and credentials.
       <h2 class="block__title">Education</h2>
       <span class="block__aux">{{ profile.education | length }}</span>
     </div>
-    <ol class="timeline">
-      {%- for school in profile.education %}
-      <li class="record{% if school.isOngoing %} is-current{% endif %}">
-        <div class="record__heading">
-          <h3 class="record__title">{{ school.title }}</h3>
-          <p class="record__org">
-            {%- if school.url %}<a href="{{ school.url }}">{{ school.organization }}</a>{% else %}{{ school.organization }}{% endif -%}
-            {%- if school.type %} · {{ school.type | degreeTypeLabel }}{% endif -%}
-            {%- if school.grade %} · {{ school.grade }}{% endif -%}
-          </p>
-        </div>
-        <p class="record__when">
-          <time datetime="{{ school.startIso }}">{{ school.startDisplay }}</time> –
-          {% if school.isOngoing %}<span class="dot" aria-hidden="true"></span>Present{% else %}<time datetime="{{ school.endIso }}">{{ school.endDisplay }}</time>{% endif %}
-          {%- if school.duration %}<span class="record__span">{{ school.duration.text }}</span>{% endif %}
-        </p>
-        {{ m.mark(school.logo) }}
-        {%- if school.description %}
-        <div class="record__detail">
-          <div class="record__note">{{ school.description | markdown | safe }}</div>
-        </div>
-        {%- endif %}
-      </li>
-      {%- endfor %}
+    <ol class="cards cards--timeline">
+      {%- for school in profile.education %}{{ cards.educationRecord(school) }}{% endfor %}
     </ol>
   </section>
   {%- endif %}
@@ -133,23 +74,9 @@ pageDescription: Experience, education and credentials.
   <section class="block">
     <div class="block__head">
       <h2 class="block__title">Publications</h2>
-      <span class="block__aux">{{ papers | length }}</span>
+      <span class="block__aux">{{ cards.aux(papers, stats.collections.publication.total, "/publications/") }}</span>
     </div>
-    <ol class="rows">
-      {%- for paper in papers %}
-      {#- Set as a citation: the authors and the venue are what make the entry
-          one, so they get their own lines rather than being dropped. -#}
-      {{ r.line(
-        href=paper.permalink,
-        title=paper.title,
-        meta=paper.dateDisplay,
-        secondary=paper.authors | join(", "),
-        description=paper.publisher,
-        logo=paper.logo,
-        extra="row--detail"
-      ) }}
-      {%- endfor %}
-    </ol>
+    {{ cards.collection(papers) }}
   </section>
   {%- endif %}
 
@@ -158,21 +85,9 @@ pageDescription: Experience, education and credentials.
   <section class="block">
     <div class="block__head">
       <h2 class="block__title">Projects</h2>
-      <span class="block__aux">{{ projects | length }}</span>
+      <span class="block__aux">{{ cards.aux(projects, stats.collections.project.total, "/work/") }}</span>
     </div>
-    <ol class="rows">
-      {%- for project in projects %}
-      {{ r.line(
-        href=project.permalink,
-        title=project.title,
-        meta=project.startDisplay + " – " + ("Present" if project.isOngoing else project.endDisplay),
-        secondary=project.description,
-        logo=project.logo,
-        ongoing=project.isOngoing,
-        extra="row--detail"
-      ) }}
-      {%- endfor %}
-    </ol>
+    {{ cards.collection(projects) }}
   </section>
   {%- endif %}
 
@@ -206,9 +121,9 @@ pageDescription: Experience, education and credentials.
       <h2 class="block__title">Certifications</h2>
       <span class="block__aux">{{ certificates | length }}</span>
     </div>
-    <ol class="rows">
+    <ol class="cards">
       {%- for item in certificates %}
-      {{ r.line(href=item.permalink, title=item.title, meta=item.dateDisplay,
+      {{ cards.line(href=item.permalink, title=item.title, meta=item.dateDisplay,
                 secondary=item.issuer, logo=item.logo) }}
       {%- endfor %}
     </ol>
@@ -222,9 +137,9 @@ pageDescription: Experience, education and credentials.
       <h2 class="block__title">Awards</h2>
       <span class="block__aux">{{ awards | length }}</span>
     </div>
-    <ol class="rows">
+    <ol class="cards">
       {%- for item in awards %}
-      {{ r.line(href=item.permalink, title=item.title, meta=item.dateDisplay,
+      {{ cards.line(href=item.permalink, title=item.title, meta=item.dateDisplay,
                 secondary=item.issuer, logo=item.logo) }}
       {%- endfor %}
     </ol>

@@ -10,15 +10,21 @@
 {%- endif %}
 {% endmacro %}
 
+{#- A light/dark pair or a single asset, resolved to markup with no wrapper.
+    mark() below is this mounted in the small bordered tile every organisation
+    mark on the site sits in; a caller that wants the asset on its own terms,
+    such as a grid card's cover or the masthead avatar, uses this directly. -#}
+{% macro themed(src) %}
+{%- if src.light %}
+<span class="light-only">{{ asset(src.light) }}</span>
+<span class="dark-only">{{ asset(src.dark) }}</span>
+{%- else %}
+{{ asset(src) }}
+{%- endif %}
+{% endmacro %}
+
 {% macro mark(logo) %}
 {%- if logo %}
-<span class="mark">
-  {%- if logo.light %}
-  <span class="light-only">{{ asset(logo.light) }}</span>
-  <span class="dark-only">{{ asset(logo.dark) }}</span>
-  {%- else %}
-  {{ asset(logo) }}
-  {%- endif %}
-</span>
+<span class="mark">{{ themed(logo) }}</span>
 {%- endif %}
 {% endmacro %}

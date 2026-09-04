@@ -5,17 +5,12 @@ title: Search
 section: search
 pageDescription: Everything on this site, grouped by type.
 ---
-{% import "rows.njk" as r %}
+{% import "cards.njk" as cards %}
+{% import "pagehead.njk" as pagehead %}
+{%- set everythingSub %}{{ stats.totalItems }} entries across {{ collection_types | length }} collections.
+      Press <kbd class="key">/</kbd> anywhere for the search palette.{% endset %}
 <div class="page__body">
-  <header class="pagehead">
-    <p class="pagehead__kicker">Index</p>
-    <h1 class="pagehead__title">Everything</h1>
-    <p class="pagehead__sub">
-      {{ stats.totalItems }} entries across {{ collection_types | length }} collections.
-      Press <kbd class="key">/</kbd> anywhere for the search palette.
-    </p>
-    <hr class="pagehead__rule">
-  </header>
+  {{ pagehead.simple("Everything", sub=everythingSub) }}
 
   {#- Grouped from the engine's collection registry, so a new collection type
       would appear here without this page being edited. -#}
@@ -26,9 +21,9 @@ pageDescription: Everything on this site, grouped by type.
       <h2 class="block__title">{{ type.labelPlural }}</h2>
       <span class="block__aux">{{ type.count }}</span>
     </div>
-    <ol class="rows">
+    <ol class="cards">
       {%- for item in all_content %}
-        {%- if item.collection == type.name %}{{ r.row(item) }}{% endif %}
+        {%- if item.collection == type.name %}{{ cards.compact(item) }}{% endif %}
       {%- endfor %}
     </ol>
   </section>

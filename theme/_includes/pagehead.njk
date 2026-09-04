@@ -1,0 +1,16 @@
+{#- The plain index pagehead: a kicker, a title, an optional standfirst, the
+    rule. Every index that is just a title over a list uses this; a page
+    whose header carries more than that — actions, a mark, a byline — writes
+    its own, since forcing those into one more parameter each would make
+    this harder to read than the markup it replaces. sub is trusted markup
+    rather than escaped text, since the search index's standfirst carries a
+    <kbd>; a caller with nothing to mark up still passes plain text through
+    unharmed. -#}
+{% macro simple(title, kicker="Index", sub="") %}
+<header class="pagehead">
+  <p class="pagehead__kicker">{{ kicker }}</p>
+  <h1 class="pagehead__title">{{ title }}</h1>
+  {%- if sub %}<p class="pagehead__sub">{{ sub | safe }}</p>{% endif %}
+  <hr class="pagehead__rule">
+</header>
+{% endmacro %}

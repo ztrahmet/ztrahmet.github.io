@@ -57,11 +57,18 @@
   </ul>
   {%- endif %}
 
+  {#- The stage count the control's CSS needs is this list's length, not a
+      number written down separately — see the .scheme rule in styles.njk. -#}
+  {%- set schemeStages = [
+    { "value": "auto", "label": "Auto" },
+    { "value": "light", "label": "Light" },
+    { "value": "dark", "label": "Dark" }
+  ] %}
   <div class="rail__scheme">
-    <div class="scheme" role="group" aria-label="Colour scheme">
-      <button type="button" class="scheme__btn" data-scheme="auto" aria-pressed="true">Auto</button>
-      <button type="button" class="scheme__btn" data-scheme="light" aria-pressed="false">Light</button>
-      <button type="button" class="scheme__btn" data-scheme="dark" aria-pressed="false">Dark</button>
+    <div class="scheme" role="group" aria-label="Colour scheme" style="--stages: {{ schemeStages | length }}">
+      {%- for stage in schemeStages %}
+      <button type="button" class="scheme__btn" data-scheme="{{ stage.value }}" aria-pressed="{{ stage.value == 'auto' }}">{{ stage.label }}</button>
+      {%- endfor %}
     </div>
   </div>
 </header>

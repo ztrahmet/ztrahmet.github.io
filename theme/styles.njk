@@ -119,7 +119,7 @@ eleventyExcludeFromCollections: true
   --pad-x: 1.25rem;
   /* Width of a CV organisation mark, and of the column reserved for it. */
   --mark-w: clamp(2.5rem, 4.5vw, 3.125rem);
-  --mark-w-row: 2.375rem;
+  --mark-w-list: 2.375rem;
   /* Container caps, sized so the tracks inside actually fill them rather than
      leaving dead space at the right. Widen these two to widen the whole site. */
   --shell: 70rem;
@@ -440,16 +440,21 @@ body {
   .social { flex-direction: column; gap: var(--s1); }
 }
 
-/* Segmented scheme control: three equal cells with one thumb that slides
-   between them, so the change of state is a movement rather than a repaint.
+/* Segmented scheme control: equal cells with one thumb that slides between
+   them, so the change of state is a movement rather than a repaint.
    Deliberately not on the accent, which is reserved for content state.
 
-   --at is the index of the pressed cell, set by the script. Without JS the
-   control is hidden entirely, so the thumb never disagrees with reality. */
+   --stages is the number of cells, set once from the length of the options
+   list that renders them, so adding or removing one is a one-line change in
+   the markup rather than two counts kept in sync by hand across markup and
+   CSS. --at is the index of the pressed cell, set by the script. Without JS
+   the control is hidden entirely, so the thumb never disagrees with
+   reality. */
 .scheme {
+  --stages: 3;
   position: relative;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(var(--stages), 1fr);
   width: max-content;
   border: 1px solid var(--rule-strong);
   isolation: isolate;
@@ -459,7 +464,7 @@ body {
   position: absolute;
   z-index: -1;
   inset: 0;
-  width: calc(100% / 3);
+  width: calc(100% / var(--stages));
   background: var(--sunken);
   transform: translateX(calc(var(--at, 0) * 100%));
   transition: transform var(--slow) var(--ease-out);
@@ -590,6 +595,10 @@ body {
 .btn:hover { --btn-ink: var(--ink); --btn-edge: var(--ink-3); background: var(--sunken); }
 .btn:active { transform: translateY(var(--press)); }
 
+/* Same control, held small enough to sit level with a heading in a section's
+   aux slot rather than take a row of its own. */
+.btn--small { padding: 0.1rem 0.45rem; gap: 0.35em; }
+
 /* The arrow is the direction, so it moves the way the link goes. */
 .ui-arrow { flex: none; width: 1em; height: 1em; transition: transform var(--slow) var(--ease-out); }
 .btn:hover .ui-arrow { transform: translateX(0.15em); }
@@ -688,18 +697,25 @@ body {
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
 }
-.block__aux a { color: inherit; text-decoration: none; }
-.block__aux a:hover { color: var(--accent-ink); }
+/* An aux slot showing everything a section has stays plain text; one
+   showing fewer becomes a .btn (see btn--small below), never a rule of its
+   own, so a control looks like a control everywhere it appears. */
 
-/* ----------------------------------------------------------------- rows */
-/* One listing grid for every collection: a metadata stack, the content stack,
-   and an optional mark. The date is printed at the precision it was authored,
-   so 2023-01 stays 2023-01. */
+/* ---------------------------------------------------------------- cards */
+/* One listing grid for every collection: a metadata stack, the content
+   stack, and an optional mark. The date is printed at the precision it was
+   authored, so 2023-01 stays 2023-01.
 
-.rows { display: grid; }
-.row + .row { border-top: 1px solid var(--rule); }
+   Bare .card is the compact form, used everywhere by default. card--relaxed
+   below holds the same grid taller for an index; card--record, further
+   down, is its own shape entirely, sharing this vocabulary of elements
+   rather than this layout. Any collection reaches either through the same
+   cards.njk macros. */
 
-.row__link {
+.cards { display: grid; }
+.card + .card { border-top: 1px solid var(--rule); }
+
+.card__link {
   display: grid;
   grid-template-columns: 8rem minmax(0, 1fr);
   gap: var(--s4);
@@ -710,20 +726,20 @@ body {
 }
 /* The mark column is reserved only for lists that actually contain one, so a
    list of blog posts does not carry an empty column. */
-.rows:has(.mark) .row__link {
-  grid-template-columns: 8rem minmax(0, 1fr) var(--mark-w-row);
+.cards:has(.mark) .card__link {
+  grid-template-columns: 8rem minmax(0, 1fr) var(--mark-w-list);
 }
-.row__link > .mark { width: var(--mark-w-row); align-self: start; }
+.card__link > .mark { width: var(--mark-w-list); align-self: start; }
 
-.row__meta { display: grid; gap: 0.1rem; }
-.row__date {
+.card__meta { display: grid; gap: 0.1rem; }
+.card__date {
   font-family: var(--mono);
   font-size: var(--t-mono-s);
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
   transition: color var(--fast) var(--ease);
 }
-.row__tag {
+.card__tag {
   display: flex;
   align-items: center;
   gap: var(--s2);
@@ -734,8 +750,8 @@ body {
   color: var(--ink-3);
 }
 
-.row__main { display: grid; gap: 0.1rem; min-width: 0; }
-.row__title {
+.card__main { display: grid; gap: 0.1rem; min-width: 0; }
+.card__title {
   font-size: var(--t-small);
   font-weight: 500;
   line-height: 1.35;
@@ -747,7 +763,7 @@ body {
   transition: text-decoration-color var(--fast) var(--ease);
 }
 /* One line in the compact form so every row is the same height. */
-.row__sub {
+.card__sub {
   font-size: 0.9375rem;
   line-height: 1.35;
   color: var(--ink-3);
@@ -755,8 +771,8 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.row__link:hover .row__title { text-decoration-color: var(--accent); }
-.row__link:hover .row__date { color: var(--ink-2); }
+.card__link:hover .card__title { text-decoration-color: var(--accent); }
+.card__link:hover .card__date { color: var(--ink-2); }
 
 /* Ongoing is the one piece of content state the accent marks. */
 .dot {
@@ -768,20 +784,37 @@ body {
 }
 
 @media (max-width: 40rem) {
-  .row__link { grid-template-columns: minmax(0, 1fr) var(--mark-w-row); gap: var(--s1) var(--s3); }
-  .rows:has(.mark) .row__link { grid-template-columns: minmax(0, 1fr) var(--mark-w-row); }
-  .row__main { grid-column: 1; order: 1; }
-  .row__meta { grid-column: 1; order: 2; }
-  .row__link > .mark { grid-column: 2; grid-row: 1; order: 0; }
+  .card__link { grid-template-columns: minmax(0, 1fr) var(--mark-w-list); gap: var(--s1) var(--s3); }
+  .cards:has(.mark) .card__link { grid-template-columns: minmax(0, 1fr) var(--mark-w-list); }
+  .card__main { grid-column: 1; order: 1; }
+  .card__meta { grid-column: 1; order: 2; }
+  .card__link > .mark { grid-column: 2; grid-row: 1; order: 0; }
   /* One line cuts too much at this width, so the compact form gets two. */
-  .row__sub {
+  .card__sub {
     white-space: normal;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
   }
-  .row--detail .row__sub { display: block; }
+  .card--relaxed .card__sub { display: block; }
+}
+
+/* card--relaxed: the index variant. Taller, adds the description under the
+   attribution. Takes its items in whatever order the page passes; it does
+   not sort or group them itself. */
+.card--relaxed .card__link { align-items: start; padding-block: var(--s4); }
+.card--relaxed .card__sub { white-space: normal; overflow: visible; }
+.card__desc {
+  margin-top: 0.15rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ----------------------------------------------------------- skills map */
@@ -822,35 +855,6 @@ body {
 }
 .tier__item:hover { color: var(--accent-ink); text-decoration-color: var(--accent); }
 .tier__item:active { transform: translateY(var(--press)); }
-
-/* ----------------------------------------------------------- index rows */
-/* The hub variant. Taller, adds the description under the attribution, and the
-   first row of each year prints the year so the list reads as grouped. */
-
-.row--detail .row__link { align-items: start; padding-block: var(--s4); }
-.row--detail .row__sub { white-space: normal; overflow: visible; }
-.row__desc {
-  margin-top: 0.15rem;
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  color: var(--ink-3);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.row__year {
-  margin-bottom: var(--s2);
-  padding-bottom: var(--s2);
-  border-bottom: 1px solid var(--rule-strong);
-  font-family: var(--mono);
-  font-size: var(--t-mono);
-  letter-spacing: 0.1em;
-  color: var(--ink-3);
-  font-variant-numeric: tabular-nums;
-}
-.rows .row--year { margin-top: var(--s6); border-top: 0; }
-.rows .row--year:first-child { margin-top: 0; }
 
 /* ---------------------------------------------------------------- prose */
 
@@ -1201,35 +1205,39 @@ body {
   color: var(--ink-2);
 }
 
-/* -------------------------------------------------------------- records */
-/* CV entries. Same date-left shape as a row, with room for a description. */
+/* -------------------------------------------------------- card--record */
+/* CV entries. Same date-left instinct as a list card, with room for a note.
 
-/* Three columns: dates, text, mark. Only the heading yields to the mark; the
-   detail below spans past it, so a description keeps the full column width.
-   The mark column is a fixed width rather than auto, so a record without a logo
-   still lines up with one that has it. */
-.record {
+   Three columns: dates, text, mark. Only the heading yields to the mark; the
+   detail below spans past it, so a note keeps the full column width. The
+   mark column is a fixed width rather than auto, so a record without a logo
+   still lines up with one that has it.
+
+   card__title and card__sub are the same elements a list card uses; only
+   their size and link treatment change here, since a record's title carries
+   its own link and its sub-line is prose rather than a clipped one-liner. */
+.card--record {
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--mark-w);
   gap: var(--s3) var(--s4);
   align-items: start;
   padding-block: var(--s5);
 }
-.record + .record { border-top: 1px solid var(--rule); }
-.record__when { grid-column: 1; grid-row: 1; }
-.record > .mark { grid-column: 2; grid-row: 1; }
-.record__heading { grid-column: 1 / -1; grid-row: 2; }
-.record__detail { grid-column: 1 / -1; grid-row: 3; }
+.card--record + .card--record { border-top: 1px solid var(--rule); }
+.card__when { grid-column: 1; grid-row: 1; }
+.card--record > .mark { grid-column: 2; grid-row: 1; }
+.card__heading { grid-column: 1 / -1; grid-row: 2; }
+.card--record .card__detail { grid-column: 1 / -1; grid-row: 3; }
 
 @media (min-width: 46rem) {
-  .record { grid-template-columns: 11rem minmax(0, 1fr) var(--mark-w); column-gap: var(--s5); }
-  .record__heading { grid-column: 2; grid-row: 1; }
-  .record > .mark { grid-column: 3; grid-row: 1; }
-  .record__detail { grid-column: 2 / span 2; grid-row: 2; }
+  .card--record { grid-template-columns: 11rem minmax(0, 1fr) var(--mark-w); column-gap: var(--s5); }
+  .card__heading { grid-column: 2; grid-row: 1; }
+  .card--record > .mark { grid-column: 3; grid-row: 1; }
+  .card--record .card__detail { grid-column: 2 / span 2; grid-row: 2; }
 }
 /* The grid row gap already separates it from the heading. */
-.record__detail > :first-child { margin-top: 0; }
-.record__when {
+.card--record .card__detail > :first-child { margin-top: 0; }
+.card__when {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1240,9 +1248,19 @@ body {
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
 }
-.record__span { flex-basis: 100%; color: var(--ink-3); }
-.record__title { font-size: var(--t-h3); font-weight: 600; line-height: var(--lh-tight); }
-.record__org { margin-top: var(--s1); font-size: var(--t-small); color: var(--ink-2); }
+.card__span { flex-basis: 100%; color: var(--ink-3); }
+.card--record .card__title { font-size: var(--t-h3); font-weight: 600; line-height: var(--lh-tight); }
+.card--record .card__sub {
+  margin-top: var(--s1);
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  /* card__sub's base rule clips to one line for the compact form; a record's
+     sub-line runs longer (organisation, type, modality, location, grade) and
+     has the room to wrap instead. */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
 
 /* An organisation mark, mounted the same way the avatar and the cover figures
    are, so every image on the site reads alike. Shared by CV records and by the
@@ -1263,10 +1281,20 @@ body {
 /* The themed pair wrappers keep their own display, so they are sized, not collapsed. */
 .mark > .light-only,
 .mark > .dark-only { width: 100%; height: 100%; }
-.record__org a { color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.18em; }
-.record__org a:hover { color: var(--accent-ink); }
-.record__note { margin-top: var(--s3); font-size: var(--t-small); color: var(--ink-2); }
-.record__note p + p { margin-top: var(--s3); }
+/* A publication or project titles its own entry, so the title carries the link
+   rather than the sub-line. Underlined on hover only, like a list card. */
+.card--record .card__title a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color var(--fast) var(--ease);
+}
+.card--record .card__title a:hover { text-decoration-color: var(--accent); }
+.card--record .card__sub a { color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.18em; }
+.card--record .card__sub a:hover { color: var(--accent-ink); }
+.card__note { margin-top: var(--s3); font-size: var(--t-small); color: var(--ink-2); }
+.card__note p + p { margin-top: var(--s3); }
 
 .tags { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
 .tags a {
@@ -1466,19 +1494,19 @@ body {
   .aside__list { grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
 }
 
-/* -------------------------------------------------------------- timeline */
+/* --------------------------------------------------------- cards--timeline */
 /* The CV's one built element rather than styled element. A continuous spine
    with a node per record, filled when the role is still running. The rule
    draws once on load, which is the whole of the motion here. */
 
-.timeline { position: relative; }
-.timeline .record { position: relative; padding-left: 2rem; }
+.cards--timeline { position: relative; }
+.cards--timeline .card--record { position: relative; padding-left: 2rem; }
 /* The nodes separate the records, so the shared rule would be noise. */
-.timeline .record + .record { border-top: 0; }
+.cards--timeline .card--record + .card--record { border-top: 0; }
 
 /* Each record carries the segment down to the next node, so the spine spans
    node to node and a lone record shows a node with nothing trailing off it. */
-.timeline .record::after {
+.cards--timeline .card--record::after {
   content: '';
   position: absolute;
   left: 6px;
@@ -1489,8 +1517,8 @@ body {
   transform-origin: top center;
   animation: tl-draw 420ms var(--ease) both;
 }
-.timeline .record:last-child::after { content: none; }
-.timeline .record::before {
+.cards--timeline .card--record:last-child::after { content: none; }
+.cards--timeline .card--record::before {
   content: '';
   position: absolute;
   left: 0;
@@ -1503,14 +1531,14 @@ body {
   animation: tl-node 300ms var(--ease) both;
 }
 /* Ongoing is the same accent used for the ongoing dot everywhere else. */
-.timeline .record.is-current::before { border-color: var(--accent); background: var(--accent); }
+.cards--timeline .card--record.is-current::before { border-color: var(--accent); background: var(--accent); }
 
-.timeline .record:nth-child(1)::before, .timeline .record:nth-child(1)::after { animation-delay: 120ms; }
-.timeline .record:nth-child(2)::before, .timeline .record:nth-child(2)::after { animation-delay: 260ms; }
-.timeline .record:nth-child(3)::before, .timeline .record:nth-child(3)::after { animation-delay: 380ms; }
-.timeline .record:nth-child(4)::before, .timeline .record:nth-child(4)::after { animation-delay: 480ms; }
-.timeline .record:nth-child(5)::before, .timeline .record:nth-child(5)::after { animation-delay: 560ms; }
-.timeline .record:nth-child(n + 6)::before, .timeline .record:nth-child(n + 6)::after { animation-delay: 620ms; }
+.cards--timeline .card--record:nth-child(1)::before, .cards--timeline .card--record:nth-child(1)::after { animation-delay: 120ms; }
+.cards--timeline .card--record:nth-child(2)::before, .cards--timeline .card--record:nth-child(2)::after { animation-delay: 260ms; }
+.cards--timeline .card--record:nth-child(3)::before, .cards--timeline .card--record:nth-child(3)::after { animation-delay: 380ms; }
+.cards--timeline .card--record:nth-child(4)::before, .cards--timeline .card--record:nth-child(4)::after { animation-delay: 480ms; }
+.cards--timeline .card--record:nth-child(5)::before, .cards--timeline .card--record:nth-child(5)::after { animation-delay: 560ms; }
+.cards--timeline .card--record:nth-child(n + 6)::before, .cards--timeline .card--record:nth-child(n + 6)::after { animation-delay: 620ms; }
 
 @keyframes tl-draw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes tl-node { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
@@ -1724,8 +1752,8 @@ body {
      standard family embeds as CID TrueType with a usable unicode map. Set on
      everything, since the mono faces have the same problem. */
   body, .pagehead__title, .pagehead__sub, .contacts, .lede,
-  .record__title, .record__org, .record__when, .record__note,
-  .block__title, .row__title, .row__sub, .row__desc, .row__date, .row__tag,
+  .card__title, .card__sub, .card__when, .card__note,
+  .block__title, .card__desc, .card__date, .card__tag,
   .tags a, .skills-line {
     font-family: Arial, Helvetica, sans-serif;
   }
@@ -1734,7 +1762,14 @@ body {
      as text, so it is dropped rather than printed. */
   .rail, .foot, .skip, .search, .scheme, .cv-actions, .adjacent, .toc__fill,
   .palette, .totop, .masthead__avatar, .block__aux, .pagehead__kicker,
-  .mark, .record__span, .row__tag { display: none !important; }
+  .card__span, .card__tag, .mark { display: none !important; }
+
+  /* Marks stay on screen and off paper. They cost the text layer nothing, which
+     was measured, but at print size they are unrecognisable monochrome glyphs,
+     and an applicant tracking system that falls back to OCR reads pixels rather
+     than text. No information is lost by dropping them and one failure path goes
+     with them. */
+  .card--record .card__sub { display: block; }
   .printonly { display: block; }
   /* Paper is light, so a themed pair prints its light variant or it disappears. */
   .light-only { display: block !important; }
@@ -1751,70 +1786,85 @@ body {
   body { font-size: 9pt; line-height: 1.34; background: #fff; }
 
   /* Heading block. Name, then one line of role and place, then contacts. */
-  .pagehead__title { font-size: 17pt; letter-spacing: -0.01em; }
+  .pagehead__title { font-size: 15.5pt; letter-spacing: -0.01em; }
   .pagehead__sub { font-size: 9.5pt; margin-top: 1pt; }
   .contacts { font-size: 8.5pt; margin-top: 2pt; }
-  .pagehead__rule { margin-block: 7pt; }
+  .pagehead__rule { margin-block: 6pt; }
   .lede { font-size: 9pt; margin-block: 0 8pt; }
 
   /* Section headings, in the words a parser searches for. */
-  .block { margin-top: 9pt; }
-  .block__head { padding-bottom: 2pt; margin-bottom: 4pt; border-bottom: 0.5pt solid var(--rule-strong); }
+  .block { margin-top: 8pt; }
+  .block__head { padding-bottom: 2pt; margin-bottom: 3pt; border-bottom: 0.5pt solid var(--rule-strong); }
   .block__title { font-size: 9.5pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
 
   /* One column. The title takes the line and the date sits at its right, which
      is the shape a CV is read in and the shape a parser expects. */
-  .timeline .record::before, .timeline .record::after, .record__when .dot { display: none; }
-  .timeline .record { padding-left: 0; }
-  .record {
+  .cards--timeline .card--record::before, .cards--timeline .card--record::after, .card__when .dot { display: none; }
+  /* The spine and its nodes are gone, so nothing here still needs the position
+     that anchored them. Left in place, Chromium moved the whole timeline's text
+     to after every section that follows it in the PDF's content stream, which
+     read as every job attached to the wrong heading in a parser that reads the
+     stream in order. Printing has nothing positioned left to explain. */
+  .cards--timeline, .cards--timeline .card--record { position: static; padding-left: 0; }
+  .card--record {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    column-gap: 6pt;
-    padding-block: 5pt;
+    column-gap: 5pt;
+    row-gap: 3pt;
+    padding-block: 3pt;
     break-inside: avoid;
   }
-  .record + .record { border-top: 0.5pt solid var(--rule); }
-  .record__heading { grid-column: 1; grid-row: 1; }
-  .record__when { grid-column: 2; grid-row: 1; text-align: right; white-space: nowrap; font-size: 8.5pt; }
-  .record__detail { grid-column: 1 / -1; grid-row: 2; }
-  .record__title { font-size: 10pt; font-weight: 700; }
-  .record__org { font-size: 9pt; }
-  .record__note { margin-top: 3pt; font-size: 9pt; }
-  /* Achievements as bullets, the way a CV lists them. The marker is drawn, not
-     written into the text layer, so it adds nothing for a parser to trip on. */
-  .record__note p { display: list-item; list-style: disc; margin-left: 11pt; }
-  .record__note p + p { margin-top: 2pt; }
+  .card__heading { grid-column: 1; grid-row: 1; }
+  .card__when { grid-column: 2; grid-row: 1; text-align: right; white-space: nowrap; font-size: 8.5pt; }
+  .card--record .card__detail { grid-column: 1 / -1; grid-row: 2; }
 
-  /* Compact rows: publications, projects, certifications, awards. */
-  .row { break-inside: avoid; }
-  .row + .row { border-top: 0.5pt solid var(--rule); }
+  .card--record .card__title { font-size: 10pt; font-weight: 700; line-height: 1.25; }
+  .card--record .card__sub { font-size: 9pt; line-height: 1.3; }
+  .card__note { margin-top: 2pt; font-size: 9pt; line-height: 1.32; }
+  .card__note p + p { margin-top: 1.5pt; }
+  /* The skills line closes a record, so it sits tight under the last bullet. */
+  .card--record .card__detail .tags { margin-top: 2pt; }
+
+  /* Every printed card, record or compact: publications, projects, roles,
+     certifications, awards. Sharing one name once meant sharing one rule. */
+  .card { break-inside: avoid; }
+  .card + .card { border-top: 0.5pt solid var(--rule); }
   /* Matches the specificity of the screen rule that reserves a mark column.
      Left alone it wins here too, and the title wraps in what is left. */
-  .row__link,
-  .row--detail .row__link,
-  .rows:has(.mark) .row__link {
+  .card__link,
+  .cards:has(.mark) .card__link {
     grid-template-columns: minmax(0, 1fr) auto;
     column-gap: 6pt;
-    padding-block: 3pt;
+    padding-block: 2.5pt;
     align-items: baseline;
   }
-  /* Both on row one explicitly. The date comes first in the markup, so sparse
-     auto-placement would push the title to a second row. */
-  .row__main { grid-column: 1; grid-row: 1; display: block; }
-  .row__meta { grid-column: 2; grid-row: 1; text-align: right; }
-  .row__title { font-size: 9.5pt; font-weight: 700; }
-  /* The attribution follows the title on its line rather than under it, which
-     keeps a list of credentials to one line each. */
+  /* All three on row one explicitly. The date comes first in the markup, so
+     sparse auto-placement would push the title to a second row. */
+  /* Aligned to the title rather than centred on the row: a publication runs to
+     three lines and a centred mark sits between two of them. */
+  .card__main { grid-column: 1; grid-row: 1; display: block; }
+  .card__meta { grid-column: 2; grid-row: 1; text-align: right; }
+  .card__title { font-size: 9.5pt; font-weight: 700; }
   /* A credential fits on one line, so its issuer follows the title. */
-  .row__sub { display: inline; font-size: 9pt; }
-  .row__sub::before { content: ' — '; }
-  /* A publication's authors and a project's description do not, and inline they
-     wrapped around the date sitting at the right. Both take their own line. */
-  .row--detail .row__sub { display: block; }
-  .row--detail .row__sub::before { content: none; }
-  .row__desc { font-size: 9pt; margin-top: 1pt; }
-  .row__date { font-size: 8.5pt; white-space: nowrap; }
-  .row__year { display: none; }
+  .card__sub { display: inline; font-size: 9pt; }
+  .card__sub::before { content: ' — '; }
+  /* A record's sub-line is its own sentence, not a credential's issuer. */
+  .card--record .card__sub::before { content: none; }
+
+  /* A real list marker, not a drawn one: a positioned pseudo-element here made
+     Chromium emit the paragraph after everything else on the page in the PDF's
+     text stream, so a parser that reads the stream in order, rather than by
+     position, attached every bullet to the wrong record. list-style is not a
+     background graphic, so the marker survives printing with backgrounds off. */
+  .card__note p {
+    display: list-item;
+    list-style: disc;
+    margin-left: 11pt;
+    font-size: 9pt;
+    line-height: 1.32;
+  }
+  .card__desc { font-size: 9pt; margin-top: 1pt; }
+  .card__date { font-size: 8.5pt; white-space: nowrap; }
 
   /* Keyword line. A parser matches against this, so it is a plain sentence of
      comma separated terms rather than a set of boxes. */
@@ -1842,6 +1892,6 @@ body {
   /* Links print as text. The URL is written out where it matters, in contacts.
      The organisation link carries an underline on screen and outranks a bare a,
      so it needs naming or every employer prints underlined. */
-  a, .record__org a, .aside__row dd a { color: #000; text-decoration: none; }
+  a, .card__title a, .card__sub a, .aside__row dd a { color: #000; text-decoration: none; }
 }
 {% endraw %}

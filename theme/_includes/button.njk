@@ -1,0 +1,19 @@
+{#- The one clickable surface for anything that is not running text: a
+    labelled action, a bare icon, a directional link. Two macros, one for
+    each element a button can honestly be — an <a> that goes somewhere, or a
+    <button> that does something here — so nothing has to decide by hand
+    whether typing "btn" on a class list is enough to make something a
+    button; this is the only place that decides it.
+
+    Content is supplied by the caller through {% call %} rather than a
+    label parameter, since a button's inside ranges from a single span to
+    the two-line block adjacent navigation needs — only the outer element
+    and its modifiers are standardised, not what a reader sees inside it. -#}
+
+{% macro link(href, extra="", download=false, rel="", data="", ariaLabel="") %}
+<a class="btn{% if extra %} {{ extra }}{% endif %}" href="{{ href }}"{% if download %} download{% endif %}{% if rel %} rel="{{ rel }}"{% endif %}{% if data %} {{ data }}{% endif %}{% if ariaLabel %} aria-label="{{ ariaLabel }}"{% endif %}>{{ caller() }}</a>
+{% endmacro %}
+
+{% macro action(extra="", data="", ariaLabel="") %}
+<button type="button" class="btn{% if extra %} {{ extra }}{% endif %}"{% if data %} {{ data }}{% endif %}{% if ariaLabel %} aria-label="{{ ariaLabel }}"{% endif %}>{{ caller() }}</button>
+{% endmacro %}
