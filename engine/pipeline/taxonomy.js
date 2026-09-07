@@ -78,7 +78,7 @@ export function buildTaxonomy(engineData = {}) {
         type,
         title: item.title || item.slug,
         permalink: item.permalink || `/${type}/${item.slug}/`,
-        url: item.url || '',
+        url: item.link?.[0]?.url || item.url || '',
         slug: item.slug,
         date: item.date || item.start || '',
         end: item.end || '',
@@ -97,6 +97,7 @@ export function buildTaxonomy(engineData = {}) {
 
   const usedSlugs = new Map();
   const skills = {};
+  const bySlug = {};
 
   for (const entry of sorted) {
     const baseSlug = slugify(entry.name) || 'skill';
@@ -105,10 +106,12 @@ export function buildTaxonomy(engineData = {}) {
     usedSlugs.set(baseSlug, taken + 1);
     entry.items = sortByRecency(entry.items);
     skills[entry.key] = entry;
+    bySlug[entry.slug] = entry;
   }
 
   return {
     skills,
+    bySlug,
     allSkills: sorted,
     skillNames: sorted.map((entry) => entry.name),
     totalUniqueSkills: sorted.length
@@ -123,10 +126,8 @@ export function buildTaxonomy(engineData = {}) {
  * @returns {object|null} Matching taxonomy entry, or null
  */
 export function findSkill(taxonomy, value) {
-  if (!taxonomy?.skills || !value || typeof value !== 'string') return null;
+  if (!taxonomy || !value || typeof value !== 'string') return null;
 
   const key = value.trim().toLowerCase();
-  if (taxonomy.skills[key]) return taxonomy.skills[key];
-
-  return taxonomy.allSkills?.find((entry) => entry.slug === key) || null;
+  return taxonomy.skills?.[key] || taxonomy.bySlug?.[key] || taxonomy.allSkills?.find((entry) => entry.slug === key) || null;
 }

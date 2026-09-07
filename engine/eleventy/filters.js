@@ -62,39 +62,123 @@ export function absolutizeUrls(html, siteUrl, pagePath = '/') {
 }
 
 const inlinedSvgCache = new Map();
+let svgUid = 0;
 
 /**
- * Reads an SVG asset and returns its markup for inlining.
+ * Completely isolates an inlined SVG so its IDs, gradients, and <style> CSS rules
+ * can never leak into or collide with other SVGs or the host document.
+ *
+ * @param {string} markup - Raw SVG markup
+ * @param {string} token - Unique prefix token for this SVG instance
+ * @returns {string} Isolated SVG markup
+ */
+export function isolateSvgMarkup(markup, token) {
+  if (!markup || typeof markup !== 'string') return markup || '';
+
+  let out = markup;
+
+  // 1. Ensure root <svg> has a unique id or scoped identifier
+  let rootId = token;
+  const rootSvgMatch = out.match(/^<svg\b([^>]*)>/i);
+  if (rootSvgMatch) {
+    const attrs = rootSvgMatch[1];
+    const existingIdMatch = attrs.match(/\sid=(["'])(.*?)\1/i);
+    if (existingIdMatch) {
+      rootId = `${token}_${existingIdMatch[2]}`;
+      out = out.replace(/^<svg\b([^>]*)\sid=(["'])(.*?)\2/i, `<svg$1 id="${rootId}"`);
+    } else {
+      out = out.replace(/^<svg\b/i, `<svg id="${rootId}"`);
+    }
+  }
+
+  // 2. Namespace all IDs defined in the SVG (excluding rootId)
+  const ids = [...out.matchAll(/\sid=(["'])(.*?)\1/g)]
+    .map((m) => m[2])
+    .filter((id) => id !== rootId);
+
+  for (const id of new Set(ids)) {
+    const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const renamed = `${token}-${id}`;
+    out = out
+      .replace(new RegExp(`\\sid=(["'])${escaped}\\1`, 'g'), ` id="${renamed}"`)
+      .replace(new RegExp(`url\\(#${escaped}\\)`, 'g'), `url(#${renamed})`)
+      .replace(new RegExp(`((?:xlink:)?href)=(["'])#${escaped}\\2`, 'g'), `$1="#${renamed}"`);
+  }
+
+  // 3. Namespace and scope all classes defined in <style> blocks
+  const styleBlocks = [...out.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)];
+  const classNames = new Set();
+  for (const match of styleBlocks) {
+    const css = match[1];
+    const classes = [...css.matchAll(/\.([a-zA-Z0-9_-]+)/g)].map((m) => m[1]);
+    for (const c of classes) classNames.add(c);
+  }
+
+  if (classNames.size > 0) {
+    out = out.replace(/(<style\b[^>]*>)([\s\S]*?)(<\/style>)/gi, (_, open, css, close) => {
+      let scopedCss = css;
+      for (const c of classNames) {
+        scopedCss = scopedCss.replace(new RegExp(`\\.${c}(?=[^a-zA-Z0-9_-]|$)`, 'g'), `.${token}-${c}`);
+      }
+      scopedCss = scopedCss.replace(/([^{}]+)\{/g, (ruleMatch, selector) => {
+        const trimmed = selector.trim();
+        if (trimmed.startsWith('@')) return ruleMatch;
+        const scopedSelector = trimmed.split(',').map((part) => `#${rootId} ${part.trim()}`).join(', ');
+        return `${scopedSelector} {`;
+      });
+      return `${open}${scopedCss}${close}`;
+    });
+
+    for (const c of classNames) {
+      out = out.replace(/\sclass=(["'])(.*?)\1/gi, (match, quote, classes) => {
+        const list = classes.split(/\s+/).map((cls) => (cls === c ? `${token}-${c}` : cls));
+        return ` class=${quote}${list.join(' ')}${quote}`;
+      });
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Reads an SVG asset and returns its markup for inlining with unique style and ID isolation.
  *
  * An SVG referenced by `<img>` is a separate document, so `currentColor` inside
  * it never sees the page. Inlining is what lets an asset take the theme colour.
- * Scripts and event handlers are stripped, since the markup is injected as-is.
+ * Scripts and event handlers are stripped, and internal classes and IDs are isolated
+ * per instance so different logos never collide or bleed into each other.
  *
  * @param {string} assetPath - Root-relative asset path
  * @param {string} contentDir - Absolute path to content directory
  * @returns {string} SVG markup, or an empty string when not an inlinable SVG
  */
 export function inlineSvg(assetPath, contentDir) {
-  if (typeof assetPath !== 'string' || !assetPath.toLowerCase().endsWith('.svg')) return '';
-  if (!contentDir) return '';
+  if (typeof assetPath !== 'string') return '';
+  const cleanPath = assetPath.split(/[?#]/)[0];
+  if (!cleanPath.toLowerCase().endsWith('.svg') || !contentDir) return '';
 
-  const cacheKey = `${contentDir}::${assetPath}`;
-  if (inlinedSvgCache.has(cacheKey)) return inlinedSvgCache.get(cacheKey);
+  const cacheKey = `${contentDir}::${cleanPath}`;
+  let rawMarkup = inlinedSvgCache.get(cacheKey);
 
-  const fsPath = resolveAssetFsPath(assetPath, contentDir);
-  let markup = '';
-
-  if (fsPath && fs.existsSync(fsPath)) {
-    markup = fs.readFileSync(fsPath, 'utf-8')
-      .replace(/<\?xml[\s\S]*?\?>/gi, '')
-      .replace(/<!DOCTYPE[\s\S]*?>/gi, '')
-      .replace(/<script[\s\S]*?<\/script>/gi, '')
-      .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-      .trim();
+  if (rawMarkup === undefined) {
+    const fsPath = resolveAssetFsPath(cleanPath, contentDir);
+    if (fsPath && fs.existsSync(fsPath)) {
+      rawMarkup = fs.readFileSync(fsPath, 'utf-8')
+        .replace(/<\?xml[\s\S]*?\?>/gi, '')
+        .replace(/<!DOCTYPE[\s\S]*?>/gi, '')
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .trim();
+    } else {
+      rawMarkup = '';
+    }
+    inlinedSvgCache.set(cacheKey, rawMarkup);
   }
 
-  inlinedSvgCache.set(cacheKey, markup);
-  return markup;
+  if (!rawMarkup) return '';
+
+  svgUid += 1;
+  return isolateSvgMarkup(rawMarkup, `svg_${svgUid}`);
 }
 
 /**
@@ -102,23 +186,91 @@ export function inlineSvg(assetPath, contentDir) {
  */
 export function resetInlinedSvgCache() {
   inlinedSvgCache.clear();
+  svgUid = 0;
 }
 
-/** Ids are document scoped, so two inlined files can each define the same one. */
-function namespaceSvgIds(markup, token) {
-  const ids = [...markup.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
-  if (!ids.length) return markup;
+/**
+ * Transforms SVG markup so all fills and strokes are overridden to `currentColor`,
+ * making the graphic strictly symbolic and reactive to theme color modes.
+ *
+ * @param {string} markup - Raw or isolated SVG markup
+ * @returns {string} Symbolic SVG markup
+ */
+export function makeSvgSymbolic(markup) {
+  if (!markup || typeof markup !== 'string') return markup || '';
 
   let out = markup;
-  for (const id of new Set(ids)) {
-    const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const renamed = `${token}-${id}`;
-    out = out
-      .replace(new RegExp(`\\sid="${escaped}"`, 'g'), ` id="${renamed}"`)
-      .replace(new RegExp(`url\\(#${escaped}\\)`, 'g'), `url(#${renamed})`)
-      .replace(new RegExp(`((?:xlink:)?href)="#${escaped}"`, 'g'), `$1="#${renamed}"`);
+
+  // 1. In <style> blocks, override fill and stroke declarations to currentColor
+  out = out.replace(/(<style\b[^>]*>)([\s\S]*?)(<\/style>)/gi, (_, open, css, close) => {
+    const overridden = css
+      .replace(/fill\s*:\s*(?!(?:none|currentColor)\b)[^;}\s]+/gi, 'fill: currentColor')
+      .replace(/stroke\s*:\s*(?!(?:none|currentColor)\b)[^;}\s]+/gi, 'stroke: currentColor');
+    return `${open}${overridden}${close}`;
+  });
+
+  // 2. On elements, override hardcoded inline style="fill:...; stroke:..."
+  out = out.replace(/\sstyle=(["'])(.*?)\1/gi, (match, quote, styleContent) => {
+    const updated = styleContent
+      .replace(/fill\s*:\s*(?!(?:none|currentColor)\b)[^;]+/gi, 'fill: currentColor')
+      .replace(/stroke\s*:\s*(?!(?:none|currentColor)\b)[^;]+/gi, 'stroke: currentColor');
+    return ` style=${quote}${updated}${quote}`;
+  });
+
+  // 3. On elements, replace hardcoded fill="..." (except 'none' and 'currentColor')
+  out = out.replace(/\sfill=(["'])(?!(?:none|currentColor)\b)(.*?)\1/gi, ' fill="currentColor"');
+
+  // 4. On elements, replace hardcoded stroke="..." (except 'none' and 'currentColor')
+  out = out.replace(/\sstroke=(["'])(?!(?:none|currentColor)\b)(.*?)\1/gi, ' stroke="currentColor"');
+
+  // 5. If root <svg> has no fill attribute and isn't explicitly stroked-only, ensure fill="currentColor"
+  if (!/<svg\b[^>]*\sfill=/i.test(out)) {
+    out = out.replace(/^<svg\b/i, '<svg fill="currentColor"');
   }
+
   return out;
+}
+
+/**
+ * Reads an SVG asset and returns its markup forced to symbolic `currentColor`.
+ * Unlike a logo (which preserves authentic brand colors), an icon is always symbolic
+ * and overrides authored colors to inherit the current theme color.
+ *
+ * @param {string} assetPath - Root-relative asset path
+ * @param {string} contentDir - Absolute path to content directory
+ * @returns {string} Symbolic SVG markup, or an empty string when not an inlinable SVG
+ */
+export function inlineIcon(assetPath, contentDir) {
+  const markup = inlineSvg(assetPath, contentDir);
+  if (!markup) return '';
+  return makeSvgSymbolic(markup);
+}
+
+/**
+ * Renders an icon specification (local SVG path, remote CDN URL, or icon slug).
+ * Enforces the symbolic contract where the icon is always reactive to theme modes.
+ *
+ * @param {string} icon - Icon path, remote URL, or slug
+ * @param {string} contentDir - Absolute path to content directory
+ * @returns {string} Rendered markup or empty string if unhandled
+ */
+export function renderIcon(icon, contentDir) {
+  if (!icon || typeof icon !== 'string') return '';
+  const trimmed = icon.trim();
+
+  // External CDN URI: use CSS mask to adapt to currentColor dynamically
+  if (trimmed.includes('://')) {
+    return `<span class="social__icon" style="--icon: url('${trimmed}')" aria-hidden="true"></span>`;
+  }
+
+  // Local SVG asset path: inline with forced symbolic currentColor
+  if (trimmed.startsWith('/') || trimmed.endsWith('.svg')) {
+    const inlined = inlineIcon(trimmed, contentDir);
+    if (inlined) return inlined;
+    return `<span class="social__icon" style="--icon: url('${trimmed}')" aria-hidden="true"></span>`;
+  }
+
+  return '';
 }
 
 /**
@@ -137,23 +289,20 @@ function namespaceSvgIds(markup, token) {
 export function inlineThemedSvg(html, contentDir, baseDir = '') {
   if (typeof html !== 'string' || !html || !contentDir) return html || '';
 
-  let seq = 0;
   return html.replace(/<img\b[^>]*>/gi, (tag) => {
-    const src = tag.match(/\ssrc="([^"]+)"/i)?.[1];
+    const src = tag.match(/\ssrc=(["'])(.*?)\1/i)?.[2];
     if (!src || !src.split(/[?#]/)[0].toLowerCase().endsWith('.svg')) return tag;
 
     const assetPath = src.startsWith('/') ? src : path.posix.join('/', baseDir, src);
     const markup = inlineSvg(assetPath, contentDir);
     if (!markup || !markup.includes('currentColor')) return tag;
 
-    const alt = tag.match(/\salt="([^"]*)"/i)?.[1] ?? '';
+    const alt = tag.match(/\salt=(["'])(.*?)\1/i)?.[2] ?? '';
     const label = alt
       ? ` role="img" aria-label="${alt}"`
       : ' role="presentation" aria-hidden="true"';
 
-    seq += 1;
-    return namespaceSvgIds(markup, `svg${seq}`)
-      .replace(/^<svg\b/i, `<svg class="inline-svg"${label}`);
+    return markup.replace(/^<svg\b/i, `<svg class="inline-svg"${label}`);
   });
 }
 
@@ -189,8 +338,10 @@ export function registerFilters(eleventyConfig, contentDir) {
   eleventyConfig.addFilter('absoluteUrls', (html, siteUrl, pagePath) => absolutizeUrls(html, siteUrl, pagePath));
   eleventyConfig.addFilter('slugify', (val) => slugify(val));
 
-  // Assets
+  // Assets (logo and icon distinction)
   eleventyConfig.addFilter('inlineSvg', (assetPath) => inlineSvg(assetPath, contentDir));
+  eleventyConfig.addFilter('inlineIcon', (assetPath) => inlineIcon(assetPath, contentDir));
+  eleventyConfig.addFilter('renderIcon', (icon) => renderIcon(icon, contentDir));
   eleventyConfig.addFilter('inlineThemedSvg', (html, baseDir) => inlineThemedSvg(html, contentDir, baseDir));
 
   // List helpers. Nunjucks selectattr only tests truthiness and slice chunks

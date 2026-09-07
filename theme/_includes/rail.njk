@@ -13,7 +13,10 @@
       {%- set c1 = item.collections[1] %}
       {%- set n = (stats.collections[c0].total if c0 else 0) + (stats.collections[c1].total if c1 else 0) %}
       {%- if item.id == 'skills' %}{% set n = taxonomy.totalUniqueSkills %}{% endif %}
-      {%- if not c0 or n %}
+      {#- CV shows no count and isn't a collection listing itself (its real
+          content is profile experience/education), so it stays regardless of
+          how many certificates or awards exist. -#}
+      {%- if item.id == 'cv' or not c0 or n %}
       <a class="nav__item" href="{{ item.permalink }}"{% if section == item.id %} aria-current="page"{% endif %}>
         <span class="nav__label">{{ item.label }}</span>
         {%- if item.id != 'cv' %}<span class="nav__count">{{ n }}</span>{% endif %}
@@ -43,12 +46,10 @@
     {%- for link in profile.social %}
     <li>
       <a href="{{ link.url }}"{% if '://' in link.url %} rel="me noopener"{% endif %}>
-        {#- A slug picks a theme glyph; a path or URL is used as the asset it is.
-            Length, not truthiness: trim returns a SafeString, and an empty one is
-            still an object and so always truthy. -#}
+        {#- A slug picks a theme glyph; a path or URL is rendered symbolically via the engine. -#}
         {%- set glyph = i.icon(link.icon) | trim %}
-        {%- if glyph | length %}{{ glyph }}
-        {%- elif '/' in link.icon %}<span class="social__mark">{{ m.asset(link.icon) }}</span>
+        {%- if glyph | length %}{{ glyph | safe }}
+        {%- else %}{{ link.icon | renderIcon | safe }}
         {%- endif %}
         <span>{{ link.label }}</span>
       </a>

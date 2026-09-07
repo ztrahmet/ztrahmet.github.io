@@ -1,6 +1,6 @@
 <footer class="foot">
   <span>© {{ build.generatedYear }} {{ profile.name }}</span>
-  <span>{{ stats.totalItems }} entries</span>
-  <span>{{ stats.totalWords }} words</span>
-  <span>{{ taxonomy.totalUniqueSkills }} skills</span>
+  {%- if stats.totalItems %}<span>{{ stats.totalItems }} entries</span>{% endif %}
+  {%- if stats.totalWords %}<span>{{ stats.totalWords }} words</span>{% endif %}
+  {%- if taxonomy.totalUniqueSkills %}<span>{{ taxonomy.totalUniqueSkills }} skills</span>{% endif %}
 </footer>

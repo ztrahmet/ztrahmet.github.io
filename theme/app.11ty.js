@@ -1,8 +1,16 @@
----
-permalink: /assets/app.js
-eleventyExcludeFromCollections: true
----
-{% raw %}
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const esmPath = fileURLToPath(import.meta.resolve('minisearch'));
+const MINISEARCH_SOURCE = path.resolve(path.dirname(esmPath), '../umd/index.js');
+
+export const data = {
+  permalink: '/assets/app.js',
+  eleventyExcludeFromCollections: true
+};
+
+const clientScripts = `
 /* Colour scheme control. The page already works without this: it follows the
    system preference. This adds the override and remembers it. */
 (function () {
@@ -17,7 +25,6 @@ eleventyExcludeFromCollections: true
   function apply(mode) {
     if (mode === 'auto') delete root.dataset.theme;
     else root.dataset.theme = mode;
-    // The thumb positions itself from data-theme in CSS now (see --at in styles.njk).
     var buttons = group.querySelectorAll('[data-scheme]');
     for (var i = 0; i < buttons.length; i++) {
       buttons[i].setAttribute('aria-pressed', String(buttons[i].dataset.scheme === mode));
@@ -38,9 +45,8 @@ eleventyExcludeFromCollections: true
   });
 })();
 
-/* Search palette. Progressive enhancement over the /search/ page: the trigger
-   stays a real link, and the shortcut hint is only added once the script that
-   implements it is running. Nodes are built with textContent, never innerHTML. */
+/* Search palette. Powered by MiniSearch for fuzzy full-text indexing,
+   prefix search, typo tolerance, and multi-keyword relevance boosting. */
 (function () {
   var trigger = document.querySelector('[data-search-trigger]');
   var dialog = document.getElementById('palette');
@@ -51,32 +57,35 @@ eleventyExcludeFromCollections: true
   var status = dialog.querySelector('.palette__status');
   var closer = dialog.querySelector('[data-palette-close]');
 
-  var records = null;
+  var miniSearch = null;
+  var recordsCount = 0;
   var results = [];
   var cursor = 0;
 
   function load() {
-    if (records) return Promise.resolve(records);
+    if (miniSearch) return Promise.resolve(miniSearch);
     return fetch('/search-index.json')
       .then(function (response) { return response.json(); })
-      .then(function (data) { records = data.records || []; return records; })
-      .catch(function () { records = []; return records; });
-  }
-
-  function has(value, query) {
-    return (value || '').toLowerCase().indexOf(query) > -1;
-  }
-
-  /* Title matches outrank skills, which outrank body text. */
-  function score(record, query) {
-    var title = (record.title || '').toLowerCase();
-    if (title.indexOf(query) === 0) return 6;
-    if (title.indexOf(query) > -1) return 5;
-    if (has((record.skills || []).join(' '), query)) return 4;
-    if (has(record.subtitle, query)) return 3;
-    if (has(record.description, query)) return 2;
-    if (has(record.content, query)) return 1;
-    return 0;
+      .then(function (data) {
+        var records = data.records || [];
+        recordsCount = records.length;
+        if (typeof MiniSearch !== 'undefined') {
+          miniSearch = new MiniSearch({
+            fields: ['title', 'skills', 'subtitle', 'description', 'content'],
+            storeFields: ['title', 'subtitle', 'permalink', 'typeLabel', 'dateDisplay'],
+            searchOptions: {
+              boost: { title: 4, skills: 3, subtitle: 2, description: 1 },
+              fuzzy: 0.2,
+              prefix: true
+            }
+          });
+          miniSearch.addAll(records);
+        }
+        return miniSearch;
+      })
+      .catch(function () {
+        return null;
+      });
   }
 
   function option(record, index) {
@@ -116,24 +125,25 @@ eleventyExcludeFromCollections: true
   }
 
   function search() {
-    var query = input.value.trim().toLowerCase();
+    var query = input.value.trim();
     cursor = 0;
     if (!query) {
       results = [];
       render();
-      status.textContent = records ? records.length + ' entries indexed' : '';
+      status.textContent = recordsCount ? recordsCount + ' entries indexed' : '';
       return;
     }
-    results = (records || [])
-      .map(function (record) { return { record: record, rank: score(record, query) }; })
-      .filter(function (hit) { return hit.rank > 0; })
-      .sort(function (a, b) { return b.rank - a.rank; })
-      .slice(0, 12)
-      .map(function (hit) { return hit.record; });
+
+    if (miniSearch) {
+      results = miniSearch.search(query).slice(0, 12);
+    } else {
+      results = [];
+    }
+
     render();
     status.textContent = results.length
       ? results.length + ' result' + (results.length === 1 ? '' : 's')
-      : 'No matches for “' + input.value.trim() + '”';
+      : 'No matches for “' + query + '”';
   }
 
   function move(step) {
@@ -144,8 +154,6 @@ eleventyExcludeFromCollections: true
     if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest' });
   }
 
-  /* Reset on open rather than on close, so the palette starts clean whatever
-     dismissed it: escape, the backdrop, the button, or a form submission. */
   function open() {
     input.value = '';
     results = [];
@@ -165,7 +173,6 @@ eleventyExcludeFromCollections: true
 
   if (closer) closer.addEventListener('click', function () { dialog.close(); });
 
-  // Clicking the backdrop closes, since the dialog itself fills only part of it.
   dialog.addEventListener('click', function (event) {
     if (event.target === dialog) dialog.close();
   });
@@ -192,6 +199,7 @@ eleventyExcludeFromCollections: true
     }
   });
 })();
+
 /* Back to top. Hidden without JS, since the control would do nothing; the
    browser's own Home key already covers the no-script case. */
 (function () {
@@ -199,7 +207,6 @@ eleventyExcludeFromCollections: true
   if (!button) return;
 
   var shown = false;
-
   var threshold = 0;
 
   function measure() { threshold = Math.round(window.innerHeight * 0.75); }
@@ -209,7 +216,6 @@ eleventyExcludeFromCollections: true
     if (should === shown) return;
     shown = should;
     button.classList.toggle('is-shown', shown);
-    // Taken out of the tab order while invisible, so focus never lands on it.
     button.tabIndex = shown ? 0 : -1;
   }
 
@@ -225,18 +231,18 @@ eleventyExcludeFromCollections: true
   addEventListener('scroll', update, { passive: true });
   addEventListener('resize', function () { measure(); update(); });
 })();
-/* Print action on the CV. Hidden without JS, since Cmd+P still works. There can
-   be two of these (Print, and Download PDF standing in for it), so all of them. */
+
+/* Print action on the CV. Hidden without JS, since Cmd+P still works. */
 (function () {
   var buttons = document.querySelectorAll('[data-print]');
   for (var i = 0; i < buttons.length; i++) {
     buttons[i].addEventListener('click', function () { window.print(); });
   }
 })();
+
 /* Reading rail. Fills the contents rule as the article is read, and marks the
    section currently in view. Offsets are measured once and re-measured on
-   resize, so scrolling is pure arithmetic and never forces a layout. Purely
-   additive: without it the contents list is still a working set of links. */
+   resize, so scrolling is pure arithmetic and never forces a layout. */
 (function () {
   var rail = document.querySelector('[data-reading]');
   var article = document.querySelector('.entry');
@@ -269,7 +275,6 @@ eleventyExcludeFromCollections: true
       : 1;
     rail.style.setProperty('--read', read.toFixed(4));
 
-    // The current section is the last heading whose top has passed the mark.
     var mark = window.scrollY + 120;
     var index = 0;
     for (var i = 0; i < offsets.length; i++) {
@@ -290,10 +295,7 @@ eleventyExcludeFromCollections: true
 })();
 
 /* Body graphics become numbered figures, captioned from the description they
-   already carry. Covers both forms the engine can emit: a plain image, and an
-   SVG inlined so it can follow the theme. The description is cleared once it has
-   moved into the caption, so it is not announced twice. Without this the graphic
-   still renders and still describes itself. */
+   already carry. */
 (function () {
   var prose = document.querySelector('.prose');
   if (!prose) return;
@@ -312,9 +314,7 @@ eleventyExcludeFromCollections: true
     var description = describe(graphic);
     if (!description) return;
 
-    // Capture the paragraph before moving the graphic out of it.
     var paragraph = graphic.parentNode;
-
     var caption = document.createElement('figcaption');
     var text = document.createElement('span');
     text.className = 'figure__text';
@@ -330,4 +330,9 @@ eleventyExcludeFromCollections: true
     paragraph.parentNode.replaceChild(figure, paragraph);
   });
 })();
-{% endraw %}
+`;
+
+export function render() {
+  const miniSearchSource = fs.readFileSync(MINISEARCH_SOURCE, 'utf8');
+  return `${miniSearchSource}\n\n${clientScripts}`;
+}

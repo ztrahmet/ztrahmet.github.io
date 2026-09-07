@@ -1,0 +1,72 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  repository_dispatch:
+    types: [content-updated]
+  workflow_dispatch: {}
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout site
+        uses: actions/checkout@v4
+
+      # Only runs when CONTENT_DEPLOY_KEY is set. Without it, CONTENT_DIR stays
+      # unset below and the build falls back to the sample content/ shipped in
+      # this repo, so a fork works with no setup.
+      - name: Checkout private content
+        if: ${{ secrets.CONTENT_DEPLOY_KEY != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ztrahmet/site-content
+          ssh-key: ${{ secrets.CONTENT_DEPLOY_KEY }}
+          path: external-content
+
+      - name: Select content source
+        run: |
+          if [ -d external-content ]; then
+            echo "CONTENT_DIR=external-content" >> "$GITHUB_ENV"
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

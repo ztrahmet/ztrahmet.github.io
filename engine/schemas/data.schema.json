@@ -48,19 +48,7 @@
           }
         },
         "resume": { "$ref": "common.defs.json#/definitions/Asset" },
-        "social": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["label", "url"],
-            "additionalProperties": false,
-            "properties": {
-              "label": { "$ref": "common.defs.json#/definitions/Text" },
-              "url": { "$ref": "common.defs.json#/definitions/URI" },
-              "icon": { "$ref": "common.defs.json#/definitions/Icon" }
-            }
-          }
-        },
+        "social": { "$ref": "common.defs.json#/definitions/LinkList" },
         "experience": {
           "type": "array",
           "items": {

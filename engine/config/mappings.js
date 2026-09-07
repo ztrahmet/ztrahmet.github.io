@@ -65,6 +65,14 @@ export const COLLECTION_LABEL_MAPPINGS = Object.freeze({
   })
 });
 
+export const COLLECTION_INDEX_ROUTES = Object.freeze({
+  blog: '/blog/',
+  project: '/projects/',
+  publication: '/publications/',
+  certificate: '/cv/',
+  award: '/cv/'
+});
+
 /**
  * Standard UI Mappings Dictionary
  */
@@ -73,7 +81,8 @@ export const UI_MAPPINGS = Object.freeze({
   employmentType: EMPLOYMENT_TYPE_MAPPINGS,
   degreeType: DEGREE_TYPE_MAPPINGS,
   languageLevel: LANGUAGE_LEVEL_MAPPINGS,
-  collections: COLLECTION_LABEL_MAPPINGS
+  collections: COLLECTION_LABEL_MAPPINGS,
+  indexRoutes: COLLECTION_INDEX_ROUTES
 });
 
 /**

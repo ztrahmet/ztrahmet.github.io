@@ -129,7 +129,7 @@ export function buildSearchIndex(engineData) {
       const description = stripMarkdownAndHtml(item.description || '');
 
       const meta = {};
-      if (item.repository) meta.repository = item.repository;
+      if (Array.isArray(item.link) && item.link.length > 0) meta.link = item.link;
       if (Array.isArray(item.authors) && item.authors.length > 0) meta.authors = item.authors;
       if (item.credential_id) meta.credential_id = item.credential_id;
       if (item.expires) meta.expires = item.expiresDisplay ?? formatDate(item.expires, locale);
@@ -148,7 +148,7 @@ export function buildSearchIndex(engineData) {
         slug: item.slug,
         title: item.title,
         subtitle,
-        url: item.url || '',
+        url: item.link?.[0]?.url || item.url || '',
         permalink: item.permalink,
         date: item.primaryDate ?? (item.date || item.start || ''),
         dateDisplay,

@@ -10,7 +10,7 @@
     "issuer": { "$ref": "common.defs.json#/definitions/Text" },
     "date": { "$ref": "common.defs.json#/definitions/Date" },
     "expires": { "$ref": "common.defs.json#/definitions/Date" },
-    "url": { "$ref": "common.defs.json#/definitions/URI" },
+    "link": { "$ref": "common.defs.json#/definitions/LinkList" },
     "credential_id": { "$ref": "common.defs.json#/definitions/Text" },
     "image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
     "logo": { "$ref": "common.defs.json#/definitions/ThemedAsset" },

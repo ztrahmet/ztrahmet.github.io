@@ -2,7 +2,9 @@
 title: Cache-Oblivious Layout for Document Trees
 publisher: ACM Transactions on the Web
 date: 2025-06
-url: https://doi.org/10.1145/3712000
+link:
+  - label: DOI
+    url: https://doi.org/10.1145/3712000
 image: /images/publications/cache-oblivious.png
 logo: /images/organizations/acm.svg
 authors:

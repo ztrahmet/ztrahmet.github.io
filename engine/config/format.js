@@ -124,12 +124,19 @@ export function resolveLocale(site = {}) {
 }
 
 /**
- * Converts a date into an RFC-822 string, the format RSS requires for pubDate.
+ * Converts a date into an RFC-822 string, the format RSS requires for pubDate
+ * and lastBuildDate. Accepts both an authored date (2023, 2023-01, 2023-01-15)
+ * and a full ISO timestamp (build.generatedAt), which toIsoDate's own patterns
+ * don't match since they only describe a day, not a moment.
  *
- * @param {string|number} dateVal - Date string or integer year
+ * @param {string|number} dateVal - Date string, integer year, or ISO timestamp
  * @returns {string} RFC-822 date, or empty string when not a date
  */
 export function toRfc822Date(dateVal) {
+  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(dateVal)) {
+    const parsed = new Date(dateVal);
+    if (!Number.isNaN(parsed.getTime())) return parsed.toUTCString();
+  }
   const iso = toIsoDate(dateVal);
   if (!iso) return '';
   return new Date(`${iso}T00:00:00Z`).toUTCString();
@@ -156,7 +163,10 @@ export function computeDuration(start, end) {
   const [sy, sm] = startIso.split('-').map(Number);
   const [ey, em] = endIso.split('-').map(Number);
 
-  const months = Math.max(0, (ey - sy) * 12 + (em - sm)) + 1;
+  const diffMonths = (ey - sy) * 12 + (em - sm);
+  if (diffMonths < 0) return null;
+
+  const months = diffMonths + 1;
   const years = Math.floor(months / 12);
   const remainingMonths = months % 12;
 

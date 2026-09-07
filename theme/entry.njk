@@ -41,14 +41,19 @@ eleventyComputed:
           {#- The external destinations are what an entry is for, so they sit with
               the title rather than after the body. A credential with no body would
               otherwise put its verification link at the foot of an empty page. -#}
-          {%- if entry.url or entry.repository %}
+          {%- if entry.link | length %}
           <p class="pagehead__links">
-            {%- if entry.url %}
-            {% call button.link(href=entry.url, extra="btn--out", rel="noopener") %}<span>{{ entry.url | replace("https://", "") | replace("http://", "") }}</span>{{ i.ui("external") }}{% endcall %}
-            {%- endif %}
-            {%- if entry.repository %}
-            {% call button.link(href=entry.repository, extra="btn--out", rel="noopener") %}<span>Repository</span>{{ i.ui("external") }}{% endcall %}
-            {%- endif %}
+            {%- for l in entry.link %}
+            {% call button.link(href=l.url, extra="btn--out", rel="noopener") %}
+              {%- if l.icon %}
+                {%- set glyph = i.icon(l.icon) | trim %}
+                {%- if glyph | length %}{{ glyph | safe }}
+                {%- else %}{{ l.icon | renderIcon | safe }}
+                {%- endif %}
+              {%- endif %}
+              <span>{{ l.label }}</span>{{ i.ui("external") }}
+            {% endcall %}
+            {%- endfor %}
           </p>
           {%- endif %}
         </div>

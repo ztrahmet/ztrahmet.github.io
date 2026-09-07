@@ -5,8 +5,10 @@ import {
   formatDateRange,
   toDateString,
   toIsoDate,
-  resolveLocale
+  resolveLocale,
+  computeDuration
 } from '../config/format.js';
+import * as configIndex from '../config/index.js';
 
 describe('Formatting Primitives', () => {
   describe('slugify', () => {
@@ -76,6 +78,32 @@ describe('Formatting Primitives', () => {
       expect(resolveLocale({ locale: 'en_US' })).toBe('en-US');
       expect(resolveLocale({ lang: 'de' })).toBe('de');
       expect(resolveLocale({})).toBe('en-US');
+    });
+  });
+
+  describe('computeDuration', () => {
+    it('calculates duration inclusive of the start month', () => {
+      expect(computeDuration('2022-01', '2023-01')).toMatchObject({ years: 1, remainingMonths: 1, text: '1 yr 1 mo' });
+      expect(computeDuration('2023-01', '2023-12')).toMatchObject({ years: 1, remainingMonths: 0, text: '1 yr' });
+    });
+
+    it('returns null for inverted ranges (end date before start date)', () => {
+      expect(computeDuration('2024-06', '2022-01')).toBeNull();
+      expect(computeDuration('2023-05', '2023-04')).toBeNull();
+    });
+
+    it('returns null for invalid or absent dates', () => {
+      expect(computeDuration(null, '2023-01')).toBeNull();
+      expect(computeDuration('invalid', '2023-01')).toBeNull();
+    });
+  });
+
+  describe('config/index.js module re-exports', () => {
+    it('re-exports formatting primitives from config/index.js', () => {
+      expect(configIndex.formatDate).toBe(formatDate);
+      expect(configIndex.slugify).toBe(slugify);
+      expect(configIndex.computeDuration).toBe(computeDuration);
+      expect(configIndex.toIsoDate).toBe(toIsoDate);
     });
   });
 });

@@ -1,5 +1,5 @@
 import { COLLECTION_TYPES } from '../config/enums.js';
-import { getCollectionLabel } from '../config/mappings.js';
+import { getCollectionLabel, COLLECTION_INDEX_ROUTES } from '../config/mappings.js';
 
 /**
  * Builds a registry describing every collection type, so a theme can render
@@ -23,7 +23,7 @@ export function buildCollectionTypes(collections = {}) {
       name,
       label: getCollectionLabel(name, false),
       labelPlural: getCollectionLabel(name, true),
-      permalink: `/${name}/`,
+      permalink: COLLECTION_INDEX_ROUTES[name] || `/${name}/`,
       count: items.length,
       hasItems: items.length > 0
     };

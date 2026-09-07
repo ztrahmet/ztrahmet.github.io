@@ -19,7 +19,8 @@ import {
 import { buildTaxonomy, findSkill } from '../pipeline/taxonomy.js';
 import {
   computeRelatedItems,
-  attachRelatedItemsToCollections
+  attachRelatedItemsToCollections,
+  buildContentGraphIndex
 } from '../pipeline/content-graph.js';
 import { buildItemSeo, resolveAbsoluteUrl } from '../pipeline/seo-normalizer.js';
 import { loadEngineData } from '../pipeline/data-loader.js';
@@ -111,6 +112,12 @@ describe('Headless Feature Backbone Subsystem', () => {
       const longMetrics = calculateReadingMetrics(longText);
       expect(longMetrics.wordCount).toBe(450);
       expect(longMetrics.readingTime).toBe(3);
+
+      // International text tokenization (reading-time library)
+      const intlText = '这是一个关于软件架构的测试文档。包含多个汉字。';
+      const intlMetrics = calculateReadingMetrics(intlText);
+      expect(intlMetrics.wordCount).toBeGreaterThan(0);
+      expect(intlMetrics.readingTime).toBeGreaterThanOrEqual(1);
     });
 
     it('handles empty or whitespace content', () => {
@@ -283,6 +290,17 @@ Final content.
       const related = computeRelatedItems(allItems[0], allItems, 3);
       const slugs = related.map((r) => r.slug);
       expect(slugs).not.toContain('post-1');
+    });
+
+    it('builds an inverted index and computes related items using the index', () => {
+      const index = buildContentGraphIndex(allItems);
+      expect(index.skillToItems.has('javascript')).toBe(true);
+      expect(index.skillToItems.get('javascript')).toHaveLength(3);
+      expect(index.byCollection.has('blog')).toBe(true);
+
+      const relatedWithIndex = computeRelatedItems(allItems[0], allItems, 3, index);
+      const relatedWithoutIndex = computeRelatedItems(allItems[0], allItems, 3);
+      expect(relatedWithIndex).toEqual(relatedWithoutIndex);
     });
   });
 
@@ -496,6 +514,8 @@ describe('Taxonomy Canonicalization', () => {
       collections: {}
     });
 
+    expect(taxonomy.bySlug).toBeDefined();
+    expect(taxonomy.bySlug.nodejs.name).toBe('Node.js');
     expect(findSkill(taxonomy, 'Node.js').slug).toBe('nodejs');
     expect(findSkill(taxonomy, 'node.js').slug).toBe('nodejs');
     expect(findSkill(taxonomy, 'nodejs').slug).toBe('nodejs');

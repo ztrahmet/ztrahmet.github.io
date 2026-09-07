@@ -2,7 +2,9 @@
 title: Optimizing Static Web Generators for Scale
 publisher: IEEE Software Engineering Journal
 date: 2023-11
-url: https://doi.org/10.1000/182
+link:
+  - label: DOI
+    url: https://doi.org/10.1000/182
 image: /images/publications/opt-ssg.png
 logo: /images/organizations/ieee.svg
 authors:

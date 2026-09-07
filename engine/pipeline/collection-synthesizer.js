@@ -4,7 +4,7 @@ import fg from 'fast-glob';
 import { COLLECTION_TYPES } from '../config/enums.js';
 import { formatDate, toDateString, toIsoDate, resolveLocale } from '../config/format.js';
 import { loadMarkdownFile } from './frontmatter-loader.js';
-import { normalizeAsset } from './asset-normalizer.js';
+import { normalizeAsset, normalizeLinkList } from './asset-normalizer.js';
 import { validateCollectionItem } from '../validation/validator.js';
 import { ValidationError } from '../validation/errors.js';
 import { renderMarkdown, renderMarkdownDocument } from './markdown-renderer.js';
@@ -18,7 +18,7 @@ import { sortByRecency, isOngoing } from './ordering.js';
  * Properties synthesized by the pipeline that are not part of any content schema.
  * Stripped before validation so enriched items still satisfy `additionalProperties: false`.
  */
-const SYNTHETIC_KEYS = Object.freeze([
+const SYNTHETIC_KEYS = new Set([
   'content', 'html', 'excerpt', 'hasMarkdown', 'isMarkdown', 'filePath', 'baseDir',
   'permalink', 'collection', 'newer', 'older', 'wordCount', 'readingTime', 'toc',
   'related', 'seo', 'primaryDate', 'dateDisplay', 'dateIso', 'year', 'startDisplay', 'endDisplay',
@@ -53,6 +53,10 @@ function normalizeItemAssets(item, baseDir = '', contentDir = '') {
     cloned.logo = normalizeAsset(cloned.logo, options);
   }
 
+  if (Array.isArray(cloned.link)) {
+    cloned.link = normalizeLinkList(cloned.link, options);
+  }
+
   return cloned;
 }
 
@@ -67,7 +71,7 @@ export function extractSchemaPayload(item) {
   const payload = {};
 
   for (const [key, value] of Object.entries(item || {})) {
-    if (SYNTHETIC_KEYS.includes(key) || key.startsWith('_')) continue;
+    if (SYNTHETIC_KEYS.has(key) || key.startsWith('_')) continue;
     payload[key] = value;
   }
 

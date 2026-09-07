@@ -1,7 +1,9 @@
 ---
 title: How to Sign Commits with GPG
 date: 2023-09-01
-url: https://github.com/username/gpg-guide
+link:
+  - label: Guide Repository
+    url: https://github.com/username/gpg-guide
 image: /images/blogs/gpg-guide.png
 description: A step-by-step guide to setting up GPG keys and signing Git commits, plus what the verified badge does and does not prove.
 skills:

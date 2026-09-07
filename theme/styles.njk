@@ -334,6 +334,21 @@ body {
   height: 1.15em;
   fill: currentColor;
 }
+.social svg path,
+.social svg circle,
+.social svg rect,
+.social svg polygon {
+  fill: currentColor;
+}
+.social__icon {
+  display: inline-block;
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
+  background-color: currentColor;
+  -webkit-mask: var(--icon) no-repeat center / contain;
+  mask: var(--icon) no-repeat center / contain;
+}
 .social__mark { display: flex; flex: none; width: 1.15em; height: 1.15em; }
 .social__mark img, .social__mark svg { width: 100%; height: 100%; object-fit: contain; }
 @media (min-width: 60rem) {
@@ -1238,7 +1253,14 @@ body {
 .card--record .card__sub a { color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.18em; }
 .card--record .card__sub a:hover { color: var(--accent-ink); }
 .card__note { margin-top: var(--s3); font-size: var(--t-small); color: var(--ink-2); }
-.card__note p + p { margin-top: var(--s3); }
+.card__note > * + * { margin-top: var(--s3); }
+.card__note ul, .card__note ol { padding-left: 1.1em; }
+.card__note ul { list-style: disc; }
+.card__note ol { list-style: decimal; }
+.card__note li + li { margin-top: 0.15em; }
+.card__note a { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.15em; }
+.card__note a:hover { color: var(--ink); }
+.card__note code { font-family: var(--mono); font-size: 0.85em; }
 
 .tags { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
 /* One row: whatever does not fit fades out rather than wrapping or cutting a pill in half. */

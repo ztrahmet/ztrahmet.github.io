@@ -8,7 +8,9 @@ import {
   resolveAssetFsPath,
   checkAssetExists,
   resetMissingAssetWarnings,
-  normalizeAsset
+  normalizeAsset,
+  inferDomainIcon,
+  normalizeLinkList
 } from '../pipeline/asset-normalizer.js';
 import { ValidationError } from '../validation/errors.js';
 
@@ -190,7 +192,77 @@ describe('Asset Path Normalization & Resolvers', () => {
       });
     });
   });
+
+  describe('inferDomainIcon', () => {
+    it('infers github icon for github.com URLs', () => {
+      expect(inferDomainIcon('https://github.com/ztrahmet')).toBe('github');
+      expect(inferDomainIcon('http://www.github.com/repo')).toBe('github');
+    });
+
+    it('infers linkedin icon for linkedin.com URLs', () => {
+      expect(inferDomainIcon('https://linkedin.com/in/ztrahmet')).toBe('linkedin');
+      expect(inferDomainIcon('https://www.linkedin.com/company/example')).toBe('linkedin');
+    });
+
+    it('infers orcid icon for orcid.org URLs', () => {
+      expect(inferDomainIcon('https://orcid.org/0000-0002-1825-0097')).toBe('orcid');
+    });
+
+    it('infers x icon for twitter.com and x.com URLs', () => {
+      expect(inferDomainIcon('https://twitter.com/ztrahmet')).toBe('x');
+      expect(inferDomainIcon('https://x.com/ztrahmet')).toBe('x');
+    });
+
+    it('infers mastodon icon for mastodon domains', () => {
+      expect(inferDomainIcon('https://mastodon.social/@user')).toBe('mastodon');
+      expect(inferDomainIcon('https://fosstodon.org/@user')).toBe('mastodon');
+    });
+
+    it('infers mail icon for mailto: URLs', () => {
+      expect(inferDomainIcon('mailto:hello@example.com')).toBe('mail');
+    });
+
+    it('returns null for unknown hosts or invalid URLs', () => {
+      expect(inferDomainIcon('https://certificates.example.com/verify/123')).toBeNull();
+      expect(inferDomainIcon('not-a-valid-url')).toBeNull();
+      expect(inferDomainIcon(null)).toBeNull();
+      expect(inferDomainIcon(123)).toBeNull();
+    });
+  });
+
+  describe('normalizeLinkList', () => {
+    it('returns empty array when given non-array or empty input', () => {
+      expect(normalizeLinkList(null)).toEqual([]);
+      expect(normalizeLinkList(undefined)).toEqual([]);
+      expect(normalizeLinkList([])).toEqual([]);
+    });
+
+    it('infers domain icon if icon is omitted', () => {
+      const links = [
+        { label: 'GitHub', url: 'https://github.com/ztrahmet' },
+        { label: 'Verify', url: 'https://certificates.example.com/verify/123' }
+      ];
+      const normalized = normalizeLinkList(links);
+      expect(normalized).toEqual([
+        { label: 'GitHub', url: 'https://github.com/ztrahmet', icon: 'github' },
+        { label: 'Verify', url: 'https://certificates.example.com/verify/123' }
+      ]);
+    });
+
+    it('preserves existing icon and normalizes relative asset paths', () => {
+      const links = [
+        { label: 'Custom Icon', url: 'https://example.com', icon: './custom-icon.svg' },
+        { label: 'Named Slug', url: 'https://example.com', icon: 'award' }
+      ];
+      const normalized = normalizeLinkList(links, { baseDir: 'project/app' });
+      expect(normalized).toEqual([
+        { label: 'Custom Icon', url: 'https://example.com', icon: '/project/app/custom-icon.svg' },
+        { label: 'Named Slug', url: 'https://example.com', icon: 'award' }
+      ]);
+    });
+  });
 });
+
 
 describe('Asset Path Confinement', () => {
   it('resolves traversal segments and clamps root-relative paths to the content root', () => {

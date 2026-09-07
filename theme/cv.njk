@@ -25,11 +25,8 @@ pageDescription: Experience, education and credentials.
       {%- if profile.resume %}
       {% call button.link(href=profile.resume, extra="btn--key dither", download=true) %}<span>Download PDF</span>{% endcall %}
       {%- else %}
-      {#- No authored file to link to, so Download falls back to the same print
-          dialog as Print: "Save as PDF" there is the download. -#}
-      {% call button.action(extra="btn--key dither", data="data-print") %}<span>Download PDF</span>{% endcall %}
+      {% call button.action(extra="btn--key dither", data="data-print") %}<span>Print</span>{% endcall %}
       {%- endif %}
-      {% call button.action(data="data-print") %}<span>Print</span>{% endcall %}
     </p>
     <hr class="pagehead__rule">
   </header>

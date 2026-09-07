@@ -20,12 +20,15 @@
   {%- if profile.location %},
   "address": { "@type": "PostalAddress", "addressLocality": {{ profile.location | dump | safe }} }
   {%- endif %}
-  {#- Only web profiles belong in sameAs, so mailto: links are skipped. The list
-      is captured first and its trailing comma removed with a sentinel, because
-      loop.last fires on the skipped item and would leave the JSON invalid. -#}
-  {%- set profiles %}{% for link in profile.social %}{% if '://' in link.url %}{{ link.url | dump | safe }},{% endif %}{% endfor %}{% endset %}
-  {%- if profiles | trim | length %},
-  "sameAs": [{{ (profiles | trim ~ 'X') | replace(',X', '') | replace('X', '') | safe }}]
+  {#- Only web profiles belong in sameAs; mailto: links are skipped. -#}
+  {%- set sameAs = [] %}
+  {%- for link in profile.social %}
+    {%- if '://' in link.url %}
+      {%- set _ = sameAs.push(link.url) %}
+    {%- endif %}
+  {%- endfor %}
+  {%- if sameAs | length %},
+  "sameAs": {{ sameAs | dump | safe }}
   {%- endif %}
 }
 </script>

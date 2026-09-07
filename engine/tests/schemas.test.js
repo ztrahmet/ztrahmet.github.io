@@ -148,6 +148,25 @@ describe('JSON Schemas & Ajv Validation Pipeline', () => {
       })).toBe(true);
     });
 
+    it('validates Link and LinkList definitions', () => {
+      const validateLink = validator.ajv.getSchema('common.defs.json#/definitions/Link');
+      const validateLinkList = validator.ajv.getSchema('common.defs.json#/definitions/LinkList');
+
+      expect(validateLink({ label: 'Verify', url: 'https://example.com/verify' })).toBe(true);
+      expect(validateLink({ label: 'Code', url: 'https://github.com/org/repo', icon: 'github' })).toBe(true);
+      expect(validateLink({ label: 'Missing URL' })).toBe(false);
+      expect(validateLink({ url: 'https://example.com' })).toBe(false);
+      expect(validateLink({ label: 'Bad URI', url: 'not-a-uri' })).toBe(false);
+      expect(validateLink({ label: 'Extra', url: 'https://example.com', extra: 123 })).toBe(false);
+
+      expect(validateLinkList([
+        { label: 'Verify', url: 'https://example.com/verify' },
+        { label: 'Code', url: 'https://github.com/org/repo', icon: 'github' }
+      ])).toBe(true);
+      expect(validateLinkList([])).toBe(true);
+      expect(validateLinkList('not-an-array')).toBe(false);
+    });
+
     it('validates Enums (EmploymentType, DegreeType, Modality)', () => {
       const validateEmp = validator.ajv.getSchema('common.defs.json#/definitions/EmploymentType');
       for (const t of ['full-time', 'part-time', 'contract', 'freelance', 'internship', 'volunteer']) {

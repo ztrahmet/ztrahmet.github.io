@@ -2,8 +2,11 @@
 title: "glyphd: a Font Subsetting Daemon"
 start: 2024-08
 end: present
-url: https://glyphd.example.dev
-repository: https://github.com/username/glyphd
+link:
+  - label: Website
+    url: https://glyphd.example.dev
+  - label: Repository
+    url: https://github.com/username/glyphd
 image: /images/projects/glyphd.png
 logo: /images/projects/glyphd-mark.svg
 description: A long-running service that subsets and caches web fonts on demand, so a page ships only the glyphs it actually uses.

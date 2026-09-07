@@ -9,7 +9,15 @@ import configureEleventy, {
   registerAssetPassthroughs,
   registerThemeAssetPassthroughs
 } from '../eleventy/eleventy.config.js';
-import { inlineSvg, inlineThemedSvg, resetInlinedSvgCache } from '../eleventy/filters.js';
+import {
+  inlineSvg,
+  inlineThemedSvg,
+  resetInlinedSvgCache,
+  isolateSvgMarkup,
+  inlineIcon,
+  renderIcon,
+  makeSvgSymbolic
+} from '../eleventy/filters.js';
 import { sortByRecency } from '../pipeline/ordering.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -257,6 +265,128 @@ describe('End-to-End Data Engine Pipeline & Eleventy Integration', () => {
 
       fs.rmSync(dir, { recursive: true, force: true });
     });
+
+    it('isolates IDs, gradients, and style blocks with unique instance namespaces', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'svg-'));
+      fs.writeFileSync(
+        path.join(dir, 'logo.svg'),
+        '<svg viewBox="0 0 10 10"><defs><linearGradient id="g1"/></defs><style>.a{fill:#f00;}.b{fill:#00f;}</style><path class="a" fill="url(#g1)"/><path class="b"/></svg>'
+      );
+      resetInlinedSvgCache();
+
+      const first = inlineSvg('/logo.svg', dir);
+      const second = inlineSvg('/logo.svg', dir);
+
+      expect(first).toContain('id="svg_1"');
+      expect(first).toContain('id="svg_1-g1"');
+      expect(first).toContain('url(#svg_1-g1)');
+      expect(first).toContain('#svg_1 .svg_1-a');
+      expect(first).toContain('class="svg_1-a"');
+
+      expect(second).toContain('id="svg_2"');
+      expect(second).toContain('id="svg_2-g1"');
+      expect(second).toContain('url(#svg_2-g1)');
+      expect(second).toContain('#svg_2 .svg_2-a');
+      expect(second).toContain('class="svg_2-a"');
+
+      // Resetting cache resets the ID counter
+      resetInlinedSvgCache();
+      const third = inlineSvg('/logo.svg', dir);
+      expect(third).toContain('id="svg_1"');
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('isolateSvgMarkup scopes selectors and rewrites element classes and ID references', () => {
+      const input = '<svg id="my-icon" viewBox="0 0 10 10">'
+        + '<defs><linearGradient id="grad"/></defs>'
+        + '<style>.st0, .st1{fill:#123;}.st2{fill:#456;}</style>'
+        + '<g id="layer1"><circle id="dot" class="st0 st2" fill="url(#grad)"/><use href="#dot"/></g>'
+        + '</svg>';
+
+      const isolated = isolateSvgMarkup(input, 'test_token');
+
+      // Root svg id prefixed
+      expect(isolated).toContain('id="test_token_my-icon"');
+      // Style scoped with root id and token-prefixed classes
+      expect(isolated).toContain('#test_token_my-icon .test_token-st0, #test_token_my-icon .test_token-st1 {');
+      expect(isolated).toContain('#test_token_my-icon .test_token-st2 {');
+      // Element classes namespaced
+      expect(isolated).toContain('class="test_token-st0 test_token-st2"');
+      // IDs and internal references namespaced
+      expect(isolated).toContain('id="test_token-layer1"');
+      expect(isolated).toContain('id="test_token-dot"');
+      expect(isolated).toContain('href="#test_token-dot"');
+      expect(isolated).toContain('url(#test_token-grad)');
+    });
+  });
+
+  describe('Icon vs Logo Distinction & Symbolic Overrides', () => {
+    it('preserves authentic multi-colored palette in inlineSvg (for logos)', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'logo-'));
+      fs.writeFileSync(
+        path.join(dir, 'harvard.svg'),
+        '<svg viewBox="0 0 10 10"><style>.a{fill:#900d35;}</style><path class="a" fill="#900d35"/></svg>'
+      );
+      resetInlinedSvgCache();
+
+      const logo = inlineSvg('/harvard.svg', dir);
+      expect(logo).toContain('#900d35');
+      expect(logo).not.toContain('currentColor');
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('forces all fills and styles to currentColor in inlineIcon (for icons)', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'icon-'));
+      fs.writeFileSync(
+        path.join(dir, 'custom-icon.svg'),
+        '<svg viewBox="0 0 10 10"><style>.st0{fill:#123456;stroke:#654321;}</style><path class="st0" fill="#ff0000" stroke="#00ff00"/><circle fill="none" stroke="#abcdef"/></svg>'
+      );
+      resetInlinedSvgCache();
+
+      const icon = inlineIcon('/custom-icon.svg', dir);
+
+      // Fills and strokes overridden to currentColor
+      expect(icon).toContain('fill: currentColor');
+      expect(icon).toContain('stroke: currentColor');
+      expect(icon).toContain('fill="currentColor"');
+      expect(icon).toContain('stroke="currentColor"');
+      // fill="none" preserved
+      expect(icon).toContain('fill="none"');
+      // Hardcoded colors removed
+      expect(icon).not.toContain('#123456');
+      expect(icon).not.toContain('#ff0000');
+      expect(icon).not.toContain('#00ff00');
+      expect(icon).not.toContain('#abcdef');
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('renderIcon emits CSS mask for external CDN URLs and inlines local SVGs', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'render-icon-'));
+      fs.writeFileSync(
+        path.join(dir, 'icon.svg'),
+        '<svg viewBox="0 0 10 10"><path fill="#333"/></svg>'
+      );
+      resetInlinedSvgCache();
+
+      // External CDN URI -> CSS mask span with currentColor background
+      const cdn = renderIcon('https://thesvg.org/icons/linkedin/default.svg', dir);
+      expect(cdn).toContain('class="social__icon"');
+      expect(cdn).toContain("style=\"--icon: url('https://thesvg.org/icons/linkedin/default.svg')\"");
+
+      // Local SVG -> inlined and symbolic
+      const local = renderIcon('/icon.svg', dir);
+      expect(local).toContain('<svg');
+      expect(local).toContain('fill="currentColor"');
+      expect(local).not.toContain('#333');
+
+      // Unknown slug -> empty string (delegated to theme glyph macro)
+      expect(renderIcon('github', dir)).toBe('');
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
   });
 
   describe('inlineThemedSvg Template Filter', () => {
@@ -314,6 +444,18 @@ describe('End-to-End Data Engine Pipeline & Eleventy Integration', () => {
 
       expect(new Set(ids).size).toBe(ids.length);
       expect(refs.every((ref) => ids.includes(ref))).toBe(true);
+
+      fs.rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('inlines SVGs with single-quoted attributes and query strings', () => {
+      const dir = fixture();
+      resetInlinedSvgCache();
+
+      const html = "<img src='./themed.svg?v=1' alt='Single Quote Themed'>";
+      const out = inlineThemedSvg(html, dir, 'blog/post');
+
+      expect(out).toContain('<svg class="inline-svg" role="img" aria-label="Single Quote Themed"');
 
       fs.rmSync(dir, { recursive: true, force: true });
     });

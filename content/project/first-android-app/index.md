@@ -2,8 +2,11 @@
 title: First Android Mobile App
 start: 2021-06
 end: 2021-12
-url: https://play.google.com/store/apps/details?id=com.example.app
-repository: https://github.com/username/first-android-app
+link:
+  - label: Google Play
+    url: https://play.google.com/store/apps/details?id=com.example.app
+  - label: Repository
+    url: https://github.com/username/first-android-app
 image: /images/projects/android-app.png
 logo: /images/projects/android-mark.svg
 description: A native Android expense tracker with offline-first sync and budget visualisation, and the project where I learned what a memory leak feels like.

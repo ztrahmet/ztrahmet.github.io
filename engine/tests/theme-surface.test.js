@@ -29,6 +29,10 @@ describe('Theme Surface', () => {
       });
       expect(project.hasItems).toBe(false);
       expect(project.count).toBe(0);
+      expect(project.permalink).toBe('/projects/');
+      expect(types.find((t) => t.name === 'publication').permalink).toBe('/publications/');
+      expect(types.find((t) => t.name === 'certificate').permalink).toBe('/cv/');
+      expect(types.find((t) => t.name === 'award').permalink).toBe('/cv/');
     });
 
     it('lets a theme skip empty collections', () => {
@@ -168,4 +172,35 @@ describe('Theme Surface', () => {
       expect(loadEngineData(FIXTURES_VALID_DIR).site.lang).toBeTruthy();
     });
   });
+
+  describe('CV action buttons', () => {
+    it('renders Print button when profile.resume is absent, and Download PDF button when present', async () => {
+      const nunjucks = (await import('nunjucks')).default;
+      const env = new nunjucks.Environment(new nunjucks.FileSystemLoader([
+        path.resolve(__dirname, '../../theme'),
+        path.resolve(__dirname, '../../theme/_includes')
+      ]));
+      const template = `
+        {% import "button.njk" as button %}
+        <p class="cv-actions">
+          {%- if profile.resume %}
+          {% call button.link(href=profile.resume, extra="btn--key dither", download=true) %}<span>Download PDF</span>{% endcall %}
+          {%- else %}
+          {% call button.action(extra="btn--key dither", data="data-print") %}<span>Print</span>{% endcall %}
+          {%- endif %}
+        </p>
+      `;
+      const outputNoResume = env.renderString(template, { profile: {} });
+      expect(outputNoResume).toContain('Print');
+      expect(outputNoResume).toContain('data-print');
+      expect(outputNoResume).not.toContain('Download PDF');
+
+      const outputWithResume = env.renderString(template, { profile: { resume: '/documents/resume.pdf' } });
+      expect(outputWithResume).toContain('Download PDF');
+      expect(outputWithResume).toContain('href="/documents/resume.pdf"');
+      expect(outputWithResume).toContain('download');
+      expect(outputWithResume).not.toContain('Print');
+    });
+  });
 });
+

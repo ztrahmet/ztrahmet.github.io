@@ -3,7 +3,9 @@ title: AWS Certified Solutions Architect - Associate
 issuer: Amazon Web Services (AWS)
 date: 2023-04
 expires: 2026-04
-url: https://aws.amazon.com/verification
+link:
+  - label: Verify
+    url: https://aws.amazon.com/verification
 credential_id: AWS-SAA-987654
 image: /images/certificates/aws-saa.png
 logo: /images/organizations/aws.svg

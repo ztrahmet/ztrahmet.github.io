@@ -36,31 +36,49 @@ Examples:
 `);
 }
 
+import { parseArgs as parseUtilArgs } from 'node:util';
+
 /**
- * Parses the command and positional content path out of raw CLI arguments.
- * @param {Array<string>} args - Raw CLI arguments
- * @returns {{ command: string, positionalPath: string|null }}
+ * Parses CLI arguments into structured command, paths, and flags using Node's native parser.
+ * @param {Array<string>} rawArgs - Raw CLI arguments
+ * @returns {{ command: string, contentDir: string|null, outputDir: string, port: number, help: boolean }}
  */
-function parseArgs(args) {
-  let command = null;
+function parseCliArgs(rawArgs) {
+  const { values, positionals } = parseUtilArgs({
+    args: rawArgs,
+    options: {
+      content: { type: 'string', short: 'c' },
+      'content-dir': { type: 'string' },
+      output: { type: 'string', short: 'o', default: '_site' },
+      port: { type: 'string', short: 'p', default: '8080' },
+      help: { type: 'boolean', short: 'h', default: false }
+    },
+    allowPositionals: true,
+    strict: false
+  });
+
+  const KNOWN_COMMANDS = new Set(['build', 'dev', 'serve', 'validate']);
+  let command = 'build';
   let positionalPath = null;
 
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-
-    if (arg.startsWith('-')) {
-      if (VALUE_FLAGS.includes(arg) && i + 1 < args.length) i++;
-      continue;
-    }
-
-    if (!command && KNOWN_COMMANDS.includes(arg)) {
-      command = arg === 'serve' ? 'dev' : arg;
-    } else if (!positionalPath) {
-      positionalPath = arg;
+  if (positionals.length > 0) {
+    if (KNOWN_COMMANDS.has(positionals[0])) {
+      command = positionals[0] === 'serve' ? 'dev' : positionals[0];
+      positionalPath = positionals[1] || null;
+    } else {
+      positionalPath = positionals[0];
     }
   }
 
-  return { command: command || 'build', positionalPath };
+  const contentDir = positionalPath || values.content || values['content-dir'] || extractArgValue(rawArgs);
+
+  return {
+    command,
+    contentDir,
+    outputDir: values.output || '_site',
+    port: parseInt(values.port || '8080', 10),
+    help: Boolean(values.help)
+  };
 }
 
 /**
@@ -100,20 +118,16 @@ function createEleventy(outputDir) {
  */
 async function main() {
   const rawArgs = process.argv.slice(2);
+  const { command, contentDir, outputDir, port, help } = parseCliArgs(rawArgs);
 
-  if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  if (help) {
     printHelp();
     process.exit(0);
   }
 
-  const { command, positionalPath } = parseArgs(rawArgs);
-  const explicitContentDir = positionalPath || extractArgValue(rawArgs);
-
   try {
-    const targetDir = resolveContentDir(explicitContentDir);
+    const targetDir = resolveContentDir(contentDir);
     process.env.CONTENT_DIR = targetDir;
-
-    const outputDir = extractArgValue(rawArgs, ['--output', '-o']) || '_site';
 
     if (command === 'validate') {
       console.log(`🔍 Validating content data in: ${targetDir}`);
@@ -134,7 +148,6 @@ async function main() {
 
     if (command === 'dev') {
       console.log(`🚀 Starting local development server with content from: ${targetDir}`);
-      const port = parseInt(extractArgValue(rawArgs, ['--port', '-p']) || '8080', 10);
       const elev = createEleventy(outputDir);
 
       await elev.init();

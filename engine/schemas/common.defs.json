@@ -68,6 +68,20 @@
         { "$ref": "#/definitions/Slug" }
       ]
     },
+    "Link": {
+      "type": "object",
+      "required": ["label", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "$ref": "#/definitions/Text" },
+        "url": { "$ref": "#/definitions/URI" },
+        "icon": { "$ref": "#/definitions/Icon" }
+      }
+    },
+    "LinkList": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Link" }
+    },
     "EmploymentType": {
       "type": "string",
       "enum": ["full-time", "part-time", "contract", "freelance", "internship", "volunteer"]

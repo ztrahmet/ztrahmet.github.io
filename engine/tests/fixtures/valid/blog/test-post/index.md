@@ -1,7 +1,9 @@
 ---
 title: Markdown Test Post
 date: 2024-02-01
-url: https://example.com/test-post
+link:
+  - label: Post Link
+    url: https://example.com/test-post
 image: ./cover.png
 description: A markdown driven test post.
 skills:

@@ -75,11 +75,13 @@ export interface SiteData {
 /**
  * Profile social link
  */
-export interface SocialLink {
+export interface LinkItem {
   label: string;
   url: string;
   icon?: Icon;
 }
+
+export type SocialLink = LinkItem;
 
 /**
  * Experience record (data.yaml -> profile.experience)
@@ -251,8 +253,8 @@ export interface BaseCollectionItem {
   seo: SeoMetadata;
   filePath: string | null;
   baseDir: string;
-  /** External link declared by the author, distinct from the internal `permalink`. */
-  url?: string;
+  /** External links declared by the author, unified with the social link format. */
+  link?: LinkItem[];
   description?: string;
   image?: ThemedAsset;
   logo?: ThemedAsset;
@@ -269,7 +271,6 @@ export interface ProjectItem extends BaseCollectionItem {
   end?: DateOrPresent;
   startDisplay: string;
   endDisplay?: string;
-  repository?: string;
 }
 
 export interface PublicationItem extends BaseCollectionItem {

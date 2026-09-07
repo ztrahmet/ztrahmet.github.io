@@ -36,8 +36,11 @@ project:
     title: Open Source Static Site Engine
     start: 2023-01
     end: present
-    url: https://engine.example.dev
-    repository: https://github.com/username/engine
+    link:
+      - label: Website
+        url: https://engine.example.dev
+      - label: Repository
+        url: https://github.com/username/engine
     logo: /images/projects/engine-mark.svg
     image:
       light: /images/projects/engine-light.png
@@ -53,8 +56,11 @@ project:
     title: "Lattice: a CSS Grid Debugger"
     start: 2022-04
     end: 2022-11
-    url: https://lattice.example.dev
-    repository: https://github.com/username/lattice
+    link:
+      - label: Website
+        url: https://lattice.example.dev
+      - label: Repository
+        url: https://github.com/username/lattice
     logo: /images/projects/lattice-mark.svg
     description: |-
       A browser extension that overlays grid and flexbox geometry, with a keyboard-driven
@@ -71,7 +77,9 @@ publication:
     title: Incremental Compilation of Document Trees
     publisher: International Conference on Web Engineering (ICWE)
     date: 2023-11
-    url: https://doi.org/10.1000/182
+    link:
+      - label: DOI
+        url: https://doi.org/10.1000/182
     logo: /images/organizations/icwe.svg
     image: /images/publications/icwe-paper-preview.png
     authors:
@@ -91,7 +99,9 @@ certificate:
     title: Professional Cloud Architect
     issuer: Google Cloud
     date: 2026-03
-    url: https://cloud.google.com/certification
+    link:
+      - label: Verify
+        url: https://cloud.google.com/certification
     credential_id: GCP-PCA-4417923
     logo: /images/organizations/google-cloud.svg
     skills:
@@ -103,7 +113,9 @@ certificate:
     issuer: The Linux Foundation
     date: 2025-02
     expires: 2028-02
-    url: https://training.linuxfoundation.org/certification/verify
+    link:
+      - label: Verify
+        url: https://training.linuxfoundation.org/certification/verify
     credential_id: LF-CKA-8820314
     image: /images/certificates/cka-badge.png
     logo: /images/organizations/linux-foundation.svg
@@ -116,7 +128,9 @@ certificate:
     issuer: Amazon Web Services
     date: 2024-09
     expires: 2027-09
-    url: https://aws.amazon.com/verification
+    link:
+      - label: Verify
+        url: https://aws.amazon.com/verification
     credential_id: AWS-PSA-123456
     image: /images/certificates/aws-csa-badge.png
     logo: /images/organizations/aws.svg
@@ -128,7 +142,9 @@ certificate:
     issuer: HashiCorp
     date: 2022-11
     expires: 2024-11
-    url: https://developer.hashicorp.com/certifications
+    link:
+      - label: Verify
+        url: https://developer.hashicorp.com/certifications
     credential_id: HC-TA-551027
     logo: /images/organizations/hashicorp.svg
     skills:
@@ -140,7 +156,9 @@ award:
     title: Best Student Paper
     issuer: International Conference on Web Engineering
     date: 2023-11
-    url: https://example.org/icwe/awards
+    link:
+      - label: Announcement
+        url: https://example.org/icwe/awards
     logo: /images/organizations/icwe.svg
     description: |-
       Awarded for the paper on incremental compilation of document trees, selected from
@@ -153,7 +171,9 @@ award:
     title: Honor Graduate
     issuer: Example University
     date: 2022-06
-    url: https://example.edu/honors
+    link:
+      - label: Honors
+        url: https://example.edu/honors
     image: /images/awards/honor-medal.png
     logo: /images/organizations/university-logo.svg
     description: |-

@@ -9,7 +9,7 @@
     "title": { "$ref": "common.defs.json#/definitions/Text" },
     "issuer": { "$ref": "common.defs.json#/definitions/Text" },
     "date": { "$ref": "common.defs.json#/definitions/Date" },
-    "url": { "$ref": "common.defs.json#/definitions/URI" },
+    "link": { "$ref": "common.defs.json#/definitions/LinkList" },
     "image": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
     "logo": { "$ref": "common.defs.json#/definitions/ThemedAsset" },
     "description": { "$ref": "common.defs.json#/definitions/MultilineText" },

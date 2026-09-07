@@ -39,29 +39,83 @@ function toRelatedItem(item, sharedSkills, reason) {
 }
 
 /**
- * Calculates related items for a collection entry based on shared skills.
+ * Builds an inverted index of skills and recency-sorted collection maps
+ * across all items to eliminate O(N^2) pairwise comparisons in recommendation queries.
+ *
+ * @param {Array<object>} allItems - Flat list of all collection items
+ * @returns {{ skillToItems: Map<string, Array<object>>, byCollection: Map<string, Array<object>> }}
+ */
+export function buildContentGraphIndex(allItems = []) {
+  const skillToItems = new Map();
+  const byCollection = new Map();
+
+  for (const item of allItems) {
+    if (!item) continue;
+
+    const skills = Array.isArray(item.skills) ? item.skills : [];
+    for (const skill of skills) {
+      if (typeof skill !== 'string' || !skill.trim()) continue;
+      const key = skill.trim().toLowerCase();
+      let list = skillToItems.get(key);
+      if (!list) {
+        list = [];
+        skillToItems.set(key, list);
+      }
+      list.push(item);
+    }
+
+    if (item.collection) {
+      let list = byCollection.get(item.collection);
+      if (!list) {
+        list = [];
+        byCollection.set(item.collection, list);
+      }
+      list.push(item);
+    }
+  }
+
+  for (const [col, list] of byCollection.entries()) {
+    byCollection.set(col, sortByRecency(list));
+  }
+
+  return { skillToItems, byCollection };
+}
+
+/**
+ * Calculates related items for a collection entry based on shared skills using an inverted index.
  * When an item has too few skill matches, the remaining slots are filled with the
- * chronologically nearest items from the same collection, so every item can offer
- * the theme something to render.
+ * chronologically nearest items from the same collection.
  *
  * @param {object} currentItem - The target collection item
  * @param {Array<object>} allItems - Flat array of all collection items across the site
  * @param {number} [limit=3] - Maximum number of related items to return
+ * @param {{ skillToItems: Map<string, Array<object>>, byCollection: Map<string, Array<object>> }} [index=null] - Pre-built content graph index
  * @returns {Array<object>} Related item projections, strongest match first
  */
-export function computeRelatedItems(currentItem, allItems = [], limit = 3) {
+export function computeRelatedItems(currentItem, allItems = [], limit = 3, index = null) {
   if (!currentItem || !Array.isArray(allItems) || allItems.length === 0 || limit <= 0) {
     return [];
   }
 
   const isSelf = (other) => other.slug === currentItem.slug && other.collection === currentItem.collection;
+  const graphIndex = index || buildContentGraphIndex(allItems);
   const currentSkills = toSkillKeys(currentItem.skills);
   const scored = [];
 
   if (currentSkills.size > 0) {
-    for (const other of allItems) {
-      if (isSelf(other)) continue;
+    const candidates = new Set();
+    for (const skillKey of currentSkills) {
+      const matches = graphIndex.skillToItems.get(skillKey);
+      if (matches) {
+        for (const candidate of matches) {
+          if (!isSelf(candidate)) {
+            candidates.add(candidate);
+          }
+        }
+      }
+    }
 
+    for (const other of candidates) {
       const shared = (Array.isArray(other.skills) ? other.skills : []).filter((skill) =>
         currentSkills.has(String(skill).trim().toLowerCase())
       );
@@ -72,7 +126,7 @@ export function computeRelatedItems(currentItem, allItems = [], limit = 3) {
       }
     }
 
-    // Strongest skill overlap first, then the shared recency ordering
+    // Strongest skill overlap first, then recency ordering
     scored.sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       return compareByRecency(a.item, b.item);
@@ -84,14 +138,11 @@ export function computeRelatedItems(currentItem, allItems = [], limit = 3) {
 
   // Fill remaining slots with the most recent siblings from the same collection
   const taken = new Set(related.map((item) => `${item.collection}:${item.slug}`));
-  const siblings = sortByRecency(
-    allItems
-      .filter((other) => !isSelf(other) && other.collection === currentItem.collection)
-      .filter((other) => !taken.has(`${other.collection}:${other.slug}`))
-  );
+  const siblings = graphIndex.byCollection.get(currentItem.collection) || [];
 
   for (const sibling of siblings) {
     if (related.length >= limit) break;
+    if (isSelf(sibling) || taken.has(`${sibling.collection}:${sibling.slug}`)) continue;
     related.push(toRelatedItem(sibling, [], 'collection'));
   }
 
@@ -100,6 +151,7 @@ export function computeRelatedItems(currentItem, allItems = [], limit = 3) {
 
 /**
  * Attaches related items recommendations to every collection item in all collections.
+ * Precomputes an inverted graph index once for all collections.
  *
  * @param {Record<string, Array<object>>} collections - Synthesized collections map
  * @param {number} [limit=3] - Maximum number of related items per entry
@@ -107,12 +159,13 @@ export function computeRelatedItems(currentItem, allItems = [], limit = 3) {
  */
 export function attachRelatedItemsToCollections(collections = {}, limit = 3) {
   const allItems = Object.values(collections).flat();
+  const index = buildContentGraphIndex(allItems);
   const enriched = {};
 
   for (const [name, items] of Object.entries(collections)) {
     enriched[name] = items.map((item) => ({
       ...item,
-      related: computeRelatedItems(item, allItems, limit)
+      related: computeRelatedItems(item, allItems, limit, index)
     }));
   }
 

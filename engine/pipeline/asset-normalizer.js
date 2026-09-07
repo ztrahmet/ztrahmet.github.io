@@ -168,3 +168,51 @@ export function normalizeAsset(asset, options = {}) {
 
   return asset;
 }
+
+/**
+ * Infers a standard symbolic icon slug from a known destination URL.
+ * @param {string} url - Target URL
+ * @returns {string|null} Icon slug or null if unrecognized
+ */
+export function inferDomainIcon(url) {
+  if (typeof url !== 'string') return null;
+  const lower = url.toLowerCase().trim();
+  if (lower.startsWith('mailto:')) return 'mail';
+  try {
+    const parsed = new URL(lower);
+    const host = parsed.hostname.replace(/^www\./, '');
+    if (host === 'github.com') return 'github';
+    if (host === 'linkedin.com') return 'linkedin';
+    if (host === 'orcid.org') return 'orcid';
+    if (host === 'twitter.com' || host === 'x.com') return 'x';
+    if (host === 'mastodon.social' || host.includes('mastodon') || host === 'fosstodon.org') return 'mastodon';
+  } catch {
+    // ignore invalid URL
+  }
+  return null;
+}
+
+/**
+ * Normalizes a list of Link objects (used for profile.social and collection item links).
+ * Deduces domain icon if omitted, and normalizes icon asset paths.
+ *
+ * @param {Array<object>} links - Array of { label, url, icon? }
+ * @param {object} [options]
+ * @returns {Array<object>} Normalized links
+ */
+export function normalizeLinkList(links, options = {}) {
+  if (!Array.isArray(links)) return [];
+  return links.map((entry) => {
+    if (!entry || typeof entry !== 'object') return entry;
+    const cloned = { ...entry };
+    if (!cloned.icon && cloned.url) {
+      const inferred = inferDomainIcon(cloned.url);
+      if (inferred) cloned.icon = inferred;
+    }
+    if (cloned.icon) {
+      cloned.icon = normalizeAsset(cloned.icon, { ...options, isIcon: true });
+    }
+    return cloned;
+  });
+}
+

@@ -21,7 +21,8 @@ eleventyExcludeFromCollections: true
       <title>{{ item.title }}</title>
       <link>{{ item.permalink | absoluteUrl(site.url) }}</link>
       <guid isPermaLink="true">{{ item.permalink | absoluteUrl(site.url) }}</guid>
-      <pubDate>{{ item.primaryDate | rfc822Date }}</pubDate>
+      {%- set rfcPubDate = item.primaryDate | rfc822Date %}
+      {%- if rfcPubDate %}<pubDate>{{ rfcPubDate }}</pubDate>{% endif %}
       <category>{{ item.collection | collectionLabel(false) }}</category>
       <description>{{ item.seo.description }}</description>
       {%- if item.hasMarkdown %}

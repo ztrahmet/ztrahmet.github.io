@@ -3,7 +3,7 @@ import { loadYamlFile } from './yaml-loader.js';
 import { validateData, validateContent } from '../validation/validator.js';
 import { synthesizeAllCollections } from './collection-synthesizer.js';
 import { validateAndResolvePinnedContent } from './content-ref.js';
-import { normalizeAsset, resetMissingAssetWarnings } from './asset-normalizer.js';
+import { normalizeAsset, resetMissingAssetWarnings, normalizeLinkList } from './asset-normalizer.js';
 import { UI_MAPPINGS } from '../config/mappings.js';
 import { resolveContentDir, readProjectVersion } from '../config/paths.js';
 import { resolveLocale } from '../config/format.js';
@@ -80,8 +80,8 @@ export function normalizeDataAssets(data, contentDir) {
     normalizeOptionalAsset(cloned.profile, 'avatar', options);
     normalizeOptionalAsset(cloned.profile, 'resume', options);
 
-    for (const link of cloned.profile.social || []) {
-      normalizeOptionalAsset(link, 'icon', { ...options, isIcon: true });
+    if (Array.isArray(cloned.profile.social)) {
+      cloned.profile.social = normalizeLinkList(cloned.profile.social, options);
     }
 
     for (const entry of [...(cloned.profile.experience || []), ...(cloned.profile.education || [])]) {

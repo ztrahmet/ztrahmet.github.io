@@ -80,7 +80,7 @@ describe('Collection Synthesizer & Dual-Mode Resolution', () => {
       expect(mdItem.isMarkdown).toBe(true);
       expect(mdItem.collection).toBe('blog');
       expect(mdItem.permalink).toBe('/blog/test-post/');
-      expect(mdItem.url).toBe('https://example.com/test-post');
+      expect(mdItem.link).toEqual([{ label: 'Post Link', url: 'https://example.com/test-post' }]);
       expect(mdItem.title).toBe('Markdown Test Post');
       expect(mdItem.image).toBe('/blog/test-post/cover.png');
       expect(mdItem.content).toContain('# Markdown Test Post Body');

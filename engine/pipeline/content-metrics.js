@@ -1,7 +1,9 @@
+import readingTime from 'reading-time';
 import { stripMarkdownAndHtml, truncateText } from '../search/text-sanitizer.js';
 
 /**
  * Calculates word count and estimated reading time from Markdown/plain text content.
+ * Uses the industry-standard reading-time library with international word tokenization.
  * Assumes a standard reading speed of 200 words per minute.
  *
  * @param {string} content - Markdown or plain-text body content
@@ -16,18 +18,20 @@ export function calculateReadingMetrics(content) {
   }
 
   const plainText = stripMarkdownAndHtml(content);
-  const words = plainText.split(/\s+/).filter(Boolean);
-  const wordCount = words.length;
+  if (!plainText) {
+    return { wordCount: 0, readingTime: 0 };
+  }
+
+  const stats = readingTime(plainText, { wordsPerMinute: 200 });
+  const wordCount = stats.words;
 
   if (wordCount === 0) {
     return { wordCount: 0, readingTime: 0 };
   }
 
-  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
-
   return {
     wordCount,
-    readingTime
+    readingTime: Math.max(1, Math.ceil(stats.minutes))
   };
 }
 

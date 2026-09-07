@@ -2,7 +2,9 @@
 title: Faculty High Honors Graduate (Rank 2)
 issuer: University of Example
 date: 2022-06
-url: https://example.edu/honors/2022
+link:
+  - label: Honors
+    url: https://example.edu/honors/2022
 image: /images/awards/rank2-medal.png
 logo: /images/organizations/university-logo.svg
 description: Awarded to the second-ranked graduating student across the Faculty of Computer Engineering, on cumulative GPA over four years.
