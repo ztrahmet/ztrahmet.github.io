@@ -244,3 +244,38 @@
 {%- call button.link(href=href, extra="btn--small") %}<span>All {{ total }}</span>{{ i.ui("right") }}{% endcall %}
 {%- else %}{{ shown | length }}{% endif -%}
 {% endmacro %}
+
+{#- An expandable collection list with smooth slide-to-reveal drawer.
+    Renders initialCount items immediately. If total > initialCount,
+    renders the remaining items inside a collapsible drawer with an expand button at the bottom. -#}
+{% macro expandable(items, initialCount=5, layout=None, strip=true, expandLabel="Show all", collapseLabel="Show less") %}
+{%- set total = items | length %}
+<div class="cards-expandable" data-collapsible>
+  <ol class="cards">
+    {%- for entry in items %}
+      {%- if loop.index0 < initialCount %}
+        {{ item(entry, layout, strip) }}
+      {%- endif %}
+    {%- endfor %}
+  </ol>
+  {%- if total > initialCount %}
+  <div class="collapsible-drawer" data-collapsible-drawer aria-hidden="true">
+    <div class="collapsible-drawer__inner">
+      <ol class="cards cards--extra">
+        {%- for entry in items %}
+          {%- if loop.index0 >= initialCount %}
+            {{ item(entry, layout, strip) }}
+          {%- endif %}
+        {%- endfor %}
+      </ol>
+    </div>
+  </div>
+  <div class="cards-expandable__action">
+    <button type="button" class="btn btn--small btn--expand" data-expand-trigger aria-expanded="false" data-label-more="{{ expandLabel }} ({{ total }})" data-label-less="{{ collapseLabel }}">
+      <span class="btn__text">{{ expandLabel }} ({{ total }})</span>
+      <span class="btn__icon" aria-hidden="true">{{ i.ui("down") }}</span>
+    </button>
+  </div>
+  {%- endif %}
+</div>
+{% endmacro %}

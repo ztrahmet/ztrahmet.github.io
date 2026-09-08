@@ -1,32 +1,23 @@
 ---
 layout: base.njk
 permalink: /search/
-title: Search
+title: Everything
 section: search
-pageDescription: Everything on this site, grouped by type.
+pageDescription: Everything on this site, sorted by date.
 ---
 {% import "cards.njk" as cards %}
 {% import "pagehead.njk" as pagehead %}
-{%- set everythingSub %}{{ stats.totalItems }} entries across {{ collection_types | length }} collections.
-      Press <kbd class="key">/</kbd> anywhere for the search palette.{% endset %}
+{%- set recentAll = all_content | byDate %}
 <div class="page__body">
-  {{ pagehead.simple("Everything", sub=everythingSub) }}
+  {{ pagehead.simple("Everything", sub=(stats.totalItems ~ " entries across " ~ (collection_types | length) ~ " collections.")) }}
 
-  {#- Grouped from the engine's collection registry, so a new collection type
-      would appear here without this page being edited. -#}
-  {%- for type in collection_types %}
-  {%- if type.hasItems %}
-  <section class="block">
+  {%- include "searchbox.njk" %}
+
+  <section class="block block--flush" data-static-list>
     <div class="block__head">
-      <h2 class="block__title">{{ type.labelPlural }}</h2>
-      <span class="block__aux">{{ type.count }}</span>
+      <h2 class="block__title">Recent</h2>
+      <span class="block__aux">{{ recentAll | length }}</span>
     </div>
-    <ol class="cards">
-      {%- for item in all_content %}
-        {%- if item.collection == type.name %}{{ cards.compact(item) }}{% endif %}
-      {%- endfor %}
-    </ol>
+    {{ cards.collection(recentAll, "compact") }}
   </section>
-  {%- endif %}
-  {%- endfor %}
 </div>

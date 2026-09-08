@@ -20,13 +20,13 @@ section: home
   </header>
 
   {%- if all_content | length %}
-  {%- set recent = all_content | byDate | limit(5) %}
+  {%- set recentAll = all_content | byDate %}
   <section class="block">
     <div class="block__head">
       <h2 class="block__title">Recent</h2>
-      <span class="block__aux">{{ cards.aux(recent, stats.totalItems, "/search/") }}</span>
+      <span class="block__aux">{{ cards.aux(recentAll | limit(5), recentAll | length, "/search/") }}</span>
     </div>
-    {{ cards.collection(recent, "compact") }}
+    {{ cards.collection(recentAll | limit(5), "compact") }}
   </section>
   {%- endif %}
 
@@ -36,10 +36,7 @@ section: home
       <h2 class="block__title">Selected</h2>
       <span class="block__aux">{{ pinned_items | length }}</span>
     </div>
-    {#- Compact throughout, forced rather than left to each collection's
-        default: pinned work and recent posts sit side by side here and read
-        as one list, not as several defaults collided together. -#}
-    {{ cards.collection(pinned_items, "compact") }}
+    {{ cards.expandable(pinned_items, 5, "compact") }}
   </section>
   {%- endif %}
 </div>

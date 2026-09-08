@@ -4,8 +4,14 @@ import { fileURLToPath } from 'node:url';
 import { describe, it, expect, afterEach } from 'vitest';
 import {
   buildSearchIndex,
-  writeSearchIndexFile
+  writeSearchIndexFile,
+  extractLinksSearchText,
+  extractDateSearchText,
+  getCollectionSearchTokens,
+  calculateRelevance,
+  SEARCH_FIELD_WEIGHTS
 } from '../search/search-indexer.js';
+import MiniSearch from 'minisearch';
 import {
   stripMarkdownAndHtml,
   truncateText
@@ -237,5 +243,221 @@ describe('Search Text Extraction Quality', () => {
   it('still protects currency and sanitizes math', () => {
     expect(stripMarkdownAndHtml('costs $50 - $100 total')).toBe('costs $50 - $100 total');
     expect(stripMarkdownAndHtml('$E = mc^2$ energy')).toContain('energy');
+  });
+});
+
+describe('Search Field Extractors & Unified Index Capabilities', () => {
+  it('extracts link labels, URLs, domains, and icons into searchable tokens', () => {
+    const links = [
+      { label: 'Source Code', url: 'https://github.com/ztrahmet/glyphd', icon: 'github' },
+      { label: 'Live Demo', url: 'https://demo.example.dev/app/test', icon: 'external' }
+    ];
+    const text = extractLinksSearchText(links);
+    expect(text).toContain('Source Code');
+    expect(text).toContain('github');
+    expect(text).toContain('github.com');
+    expect(text).toContain('Live Demo');
+    expect(text).toContain('demo.example.dev');
+    expect(text).toContain('external');
+  });
+
+  it('extracts dates, ranges, and isolated 4-digit years into search tokens', () => {
+    const text = extractDateSearchText('2024-08', 'Aug 2024 – Present', '2024-08', 'present');
+    expect(text).toContain('2024');
+    expect(text).toContain('Aug 2024');
+    expect(text).toContain('Present');
+  });
+
+  it('generates singular and plural collection aliases for collection search', () => {
+    expect(getCollectionSearchTokens('blog', 'Blog')).toContain('posts');
+    expect(getCollectionSearchTokens('project', 'Project')).toContain('showcases');
+    expect(getCollectionSearchTokens('publication', 'Publication')).toContain('papers');
+    expect(getCollectionSearchTokens('certificate', 'Certificate')).toContain('certifications');
+    expect(getCollectionSearchTokens('award', 'Award')).toContain('honors');
+  });
+
+  it('searches all items with all fields and tolerates typos using MiniSearch', () => {
+    const engineData = loadEngineData(ROOT_CONTENT_DIR);
+    const searchIndex = buildSearchIndex(engineData);
+
+    const ms = new MiniSearch({
+      fields: [
+        'title', 'skills', 'subtitle', 'issuer', 'publisher', 'authors',
+        'typeLabel', 'type', 'credential_id', 'links', 'headings',
+        'dateDisplay', 'date', 'location', 'description', 'content', 'searchable'
+      ],
+      storeFields: ['title', 'subtitle', 'permalink', 'typeLabel', 'dateDisplay', 'type', 'id', 'skills', 'slug'],
+      searchOptions: {
+        boost: {
+          title: 8, skills: 7, subtitle: 5, issuer: 5, publisher: 5,
+          authors: 4, typeLabel: 3, type: 3, credential_id: 3, links: 3,
+          headings: 2.5, dateDisplay: 2, date: 2, description: 2, location: 2,
+          searchable: 1, content: 1
+        },
+        prefix: true,
+        fuzzy: (term) => /^\d+$/.test(term) ? 0 : (term.length <= 2 ? 0 : (term.length <= 3 ? 1 : 2)),
+        combineWith: 'OR'
+      }
+    });
+    ms.addAll(searchIndex.records);
+
+    // 1. Matches by skill even when layout might hide skills (e.g. typography)
+    const typoSkill = ms.search('typography');
+    expect(typoSkill.length).toBeGreaterThan(0);
+    expect(typoSkill.some((r) => r.id === 'project:glyphd')).toBe(true);
+
+    // 2. Tolerates mistypes on skills (e.g. "typogrphy" or "pythn" or "terrafrm")
+    const typoSearch = ms.search('typogrphy');
+    expect(typoSearch.length).toBeGreaterThan(0);
+    expect(typoSearch.some((r) => r.id === 'project:glyphd')).toBe(true);
+
+    const pythnSearch = ms.search('pythn');
+    expect(pythnSearch.length).toBeGreaterThan(0);
+
+    const terraformTypo = ms.search('terrafrm');
+    expect(terraformTypo.length).toBeGreaterThan(0);
+    expect(terraformTypo.some((r) => r.id === 'certificate:terraform-associate')).toBe(true);
+
+    // 3. Matches by link url / label / icon (e.g. github)
+    const githubSearch = ms.search('github');
+    expect(githubSearch.length).toBeGreaterThan(0);
+
+    // 4. Matches by issuer (e.g. "Google Cloud" or "Amazon Web Services")
+    const issuerSearch = ms.search('google cloud');
+    expect(issuerSearch.length).toBeGreaterThan(0);
+    expect(issuerSearch.some((r) => r.id === 'certificate:gcp-professional-architect')).toBe(true);
+
+    // 5. Matches by year / date
+    const dateSearch = ms.search('2024');
+    expect(dateSearch.length).toBeGreaterThan(0);
+
+    // 6. Matches by collection name
+    const collectionSearch = ms.search('certificates');
+    expect(collectionSearch.length).toBeGreaterThan(0);
+
+    // 7. Matches by credential ID
+    const credSearch = ms.search('GCP-PCA-4417923');
+    expect(credSearch.length).toBeGreaterThan(0);
+    expect(credSearch[0].id).toBe('certificate:gcp-professional-architect');
+  });
+});
+
+describe('Smart Relevance Ranking & Field Importance Calculation', () => {
+  it('defines an explicit importance hierarchy across item fields', () => {
+    expect(SEARCH_FIELD_WEIGHTS.title).toBeGreaterThan(SEARCH_FIELD_WEIGHTS.skills);
+    expect(SEARCH_FIELD_WEIGHTS.skills).toBeGreaterThan(SEARCH_FIELD_WEIGHTS.subtitle);
+    expect(SEARCH_FIELD_WEIGHTS.subtitle).toBeGreaterThan(SEARCH_FIELD_WEIGHTS.description);
+    expect(SEARCH_FIELD_WEIGHTS.description).toBeGreaterThan(SEARCH_FIELD_WEIGHTS.content);
+    expect(SEARCH_FIELD_WEIGHTS.issuer).toBeGreaterThan(SEARCH_FIELD_WEIGHTS.content);
+  });
+
+  it('ranks an exact title match higher than a skill or description match', () => {
+    const titleItem = {
+      id: 'skill:python',
+      title: 'Python',
+      skills: ['Python'],
+      description: 'The Python programming language.',
+      content: ''
+    };
+    const mentionItem = {
+      id: 'experience:backend',
+      title: 'Backend Engineer',
+      skills: ['Go', 'Docker'],
+      description: 'Worked with Python microservices and APIs.',
+      content: 'Extensive use of Python in production.'
+    };
+
+    const scoreTitle = calculateRelevance(titleItem, 'python');
+    const scoreMention = calculateRelevance(mentionItem, 'python');
+
+    expect(scoreTitle).toBeGreaterThan(scoreMention * 2);
+  });
+
+  it('ranks an explicit skill tag match higher than deep markdown body content mention', () => {
+    const skillItem = {
+      id: 'project:glyphd',
+      title: 'glyphd: Font Daemon',
+      skills: ['Typography', 'Go'],
+      description: 'Font subsetting engine.',
+      content: ''
+    };
+    const bodyItem = {
+      id: 'blog:random-article',
+      title: 'What I Read This Year',
+      skills: ['Reading'],
+      description: 'Reflections on various topics.',
+      content: 'In one chapter the author briefly mentioned typography principles.'
+    };
+
+    const scoreSkill = calculateRelevance(skillItem, 'typography');
+    const scoreBody = calculateRelevance(bodyItem, 'typography');
+
+    expect(scoreSkill).toBeGreaterThan(scoreBody * 3);
+  });
+
+  it('boosts items matching all query terms quadratically over items matching only one term', () => {
+    const bothTermsItem = {
+      id: 'award:best-paper',
+      title: 'Best Student Paper',
+      description: 'Award for the best research paper.',
+      content: ''
+    };
+    const singleTermItem = {
+      id: 'publication:other-paper',
+      title: 'A New Layout Engine',
+      description: 'Research paper on static generation.',
+      content: ''
+    };
+
+    const scoreBoth = calculateRelevance(bothTermsItem, 'best paper');
+    const scoreSingle = calculateRelevance(singleTermItem, 'best paper');
+
+    expect(scoreBoth).toBeGreaterThan(scoreSingle * 4);
+  });
+
+  it('awards a phrase bonus when multi-word query appears contiguously in title or metadata', () => {
+    const contiguousItem = {
+      id: 'cert:gcp',
+      title: 'Professional Cloud Architect',
+      issuer: 'Google Cloud',
+      subtitle: 'Google Cloud',
+      skills: ['Google Cloud'],
+      description: ''
+    };
+    const splitItem = {
+      id: 'exp:cloud',
+      title: 'Software Engineer',
+      subtitle: 'Google',
+      issuer: '',
+      skills: ['Cloud Architecture'],
+      description: 'Worked in the cloud computing division.'
+    };
+
+    const scoreContiguous = calculateRelevance(contiguousItem, 'google cloud');
+    const scoreSplit = calculateRelevance(splitItem, 'google cloud');
+
+    expect(scoreContiguous).toBeGreaterThan(scoreSplit);
+  });
+
+  it('breaks ties using item recency when relevance is identical', () => {
+    const newerItem = {
+      id: 'cert:2025',
+      title: 'Kubernetes Administrator',
+      skills: ['Kubernetes'],
+      date: '2025-06',
+      dateDisplay: '2025'
+    };
+    const olderItem = {
+      id: 'cert:2021',
+      title: 'Kubernetes Administrator',
+      skills: ['Kubernetes'],
+      date: '2021-06',
+      dateDisplay: '2021'
+    };
+
+    const scoreNewer = calculateRelevance(newerItem, 'kubernetes');
+    const scoreOlder = calculateRelevance(olderItem, 'kubernetes');
+
+    expect(scoreNewer).toBeGreaterThan(scoreOlder);
   });
 });

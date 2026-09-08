@@ -205,24 +205,47 @@ title: Home
 Any non-underscored directory inside `theme/` (such as `theme/static/` or `theme/assets/`) is copied directly to the compiled site root (`_site/static/`, `_site/assets/`).
 
 ### Search Integration
-The engine outputs `_site/search-index.json`. Themes can consume this file with client-side libraries like MiniSearch for instantaneous full-text fuzzy search:
+The engine outputs `_site/search-index.json`. Themes consume this file with client-side libraries like MiniSearch for instantaneous full-text fuzzy search, prefix matching, and typo tolerance across all fields (title, description, skills, dates, issuer, publisher, authors, links, headings, etc.).
+
+A smart relevance calculation algorithm (`calculateRelevance`) ranks matched results by field importance (`title > skills > subtitle/issuer > description > content`), awards bonuses for exact phrases and whole-word matches, boosts multi-term query coverage quadratically, and uses recency as a tie-breaker:
 
 ```javascript
 import MiniSearch from 'minisearch';
+import { calculateRelevance, SEARCH_FIELD_WEIGHTS } from './engine/search/search-indexer.js';
 
 const res = await fetch('/search-index.json');
 const data = await res.json();
+const records = data.records || [];
+const recordsById = Object.fromEntries(records.map(r => [r.id, r]));
+
 const miniSearch = new MiniSearch({
-  fields: ['title', 'skills', 'subtitle', 'description', 'content'],
-  storeFields: ['title', 'subtitle', 'permalink', 'typeLabel', 'dateDisplay'],
+  fields: [
+    'title', 'skills', 'subtitle', 'issuer', 'publisher', 'authors',
+    'typeLabel', 'type', 'credential_id', 'links', 'headings',
+    'dateDisplay', 'date', 'location', 'description', 'content', 'searchable'
+  ],
+  storeFields: ['title', 'subtitle', 'permalink', 'typeLabel', 'dateDisplay', 'date', 'type', 'id', 'skills', 'slug'],
   searchOptions: {
-    boost: { title: 4, skills: 3, subtitle: 2, description: 1 },
-    fuzzy: 0.2,
-    prefix: true
+    boost: {
+      title: 12, skills: 10, subtitle: 7, issuer: 7, publisher: 7,
+      credential_id: 6, authors: 5, headings: 4, links: 3.5, typeLabel: 3.5, type: 3.5,
+      description: 3, dateDisplay: 2.5, date: 2.5, location: 2,
+      content: 0.5, searchable: 0.5
+    },
+    prefix: true,
+    fuzzy: (term) => /^\d+$/.test(term) ? 0 : (term.length <= 3 ? 0 : (term.length === 4 ? 1 : 2)),
+    combineWith: 'OR'
   }
 });
-miniSearch.addAll(data.records || []);
-const results = miniSearch.search('typescript');
+miniSearch.addAll(records);
+
+// Search and order by smart calculated relevance
+function search(query) {
+  const matches = miniSearch.search(query);
+  return matches
+    .map(m => ({ ...m, score: calculateRelevance(recordsById[m.id] || m, query, m) }))
+    .sort((a, b) => b.score - a.score);
+}
 ```
 
 ---

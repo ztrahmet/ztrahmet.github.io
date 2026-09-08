@@ -1,75 +1,76 @@
 {% import "icons.njk" as i %}
 {% import "mark.njk" as m %}
-<header class="rail">
-  {#- The handle is the site's mark. The full name and role lead the home page. -#}
-  <a class="identity" href="/">
-    <span class="identity__at" aria-hidden="true">@</span>{{ profile.handle }}
-  </a>
-
-  <nav class="nav" aria-label="Sections">
-    {%- for item in nav %}
-      {#- Hubs carry at most two collections, which is what the count covers. -#}
-      {%- set c0 = item.collections[0] %}
-      {%- set c1 = item.collections[1] %}
-      {%- set n = (stats.collections[c0].total if c0 else 0) + (stats.collections[c1].total if c1 else 0) %}
-      {%- if item.id == 'skills' %}{% set n = taxonomy.totalUniqueSkills %}{% endif %}
-      {#- CV shows no count and isn't a collection listing itself (its real
-          content is profile experience/education), so it stays regardless of
-          how many certificates or awards exist. -#}
-      {%- if item.id == 'cv' or not c0 or n %}
-      <a class="nav__item" href="{{ item.permalink }}"{% if section == item.id %} aria-current="page"{% endif %}>
-        <span class="nav__label">{{ item.label }}</span>
-        {%- if item.id != 'cv' %}<span class="nav__count">{{ n }}</span>{% endif %}
-      </a>
-      {%- endif %}
-    {%- endfor %}
-  </nav>
-
-  <div class="rail__search">
-    {#- A real link to the full index. The script upgrades it to the palette and
-        adds the key hint, so nothing advertises a shortcut that cannot work. -#}
-    <a class="search" href="/search/" data-search-trigger>
-      <span>Search</span>
-      {#- Both labels ship and CSS picks one, so the hint is right from the first
-          paint rather than being appended once the script has loaded. -#}
-      <kbd class="search__key">
-        <span class="search__key--mac">⌘K</span>
-        <span class="search__key--std">Ctrl K</span>
-      </kbd>
+{% import "links.njk" as links %}
+<header class="rail" id="rail">
+  <div class="rail__bar">
+    {#- The handle is the site's mark. The full name and role lead the home page. -#}
+    <a class="identity" href="/">
+      <span class="identity__at" aria-hidden="true">@</span>{{ profile.handle }}
     </a>
+
+    <button class="rail__toggle" type="button" aria-expanded="false" aria-controls="rail-menu" aria-label="Toggle navigation menu" data-menu-toggle>
+      <span class="rail__toggle-icon rail__toggle-icon--menu" aria-hidden="true">{{ i.ui("menu") }}</span>
+      <span class="rail__toggle-icon rail__toggle-icon--close" aria-hidden="true">{{ i.ui("close") }}</span>
+    </button>
   </div>
 
-  <div class="rail__spacer"></div>
+  <div class="rail__menu" id="rail-menu">
+    <div class="rail__menu-inner">
+      <nav class="nav" aria-label="Sections">
+        {%- for item in nav %}
+          {#- Hubs carry at most two collections, which is what the count covers. -#}
+          {%- set c0 = item.collections[0] %}
+          {%- set c1 = item.collections[1] %}
+          {%- set n = (stats.collections[c0].total if c0 else 0) + (stats.collections[c1].total if c1 else 0) %}
+          {%- if item.id == 'skills' %}{% set n = taxonomy.totalUniqueSkills %}{% endif %}
+          {#- CV shows no count and isn't a collection listing itself (its real
+              content is profile experience/education), so it stays regardless of
+              how many certificates or awards exist. -#}
+          {%- if item.id == 'cv' or not c0 or n %}
+          <a class="nav__item" href="{{ item.permalink }}"{% if section == item.id %} aria-current="page"{% endif %}>
+            <span class="nav__label">{{ item.label }}</span>
+            {%- if item.id != 'cv' %}<span class="nav__count">{{ n }}</span>{% endif %}
+          </a>
+          {%- endif %}
+        {%- endfor %}
+      </nav>
 
-  {%- if profile.social | length %}
-  <ul class="social">
-    {%- for link in profile.social %}
-    <li>
-      <a href="{{ link.url }}"{% if '://' in link.url %} rel="me noopener"{% endif %}>
-        {#- A slug picks a theme glyph; a path or URL is rendered symbolically via the engine. -#}
-        {%- set glyph = i.icon(link.icon) | trim %}
-        {%- if glyph | length %}{{ glyph | safe }}
-        {%- else %}{{ link.icon | renderIcon | safe }}
-        {%- endif %}
-        <span>{{ link.label }}</span>
-      </a>
-    </li>
-    {%- endfor %}
-  </ul>
-  {%- endif %}
+      <div class="rail__search">
+        {#- A real link to the full index. The script upgrades it to the palette and
+            adds the key hint, so nothing advertises a shortcut that cannot work. -#}
+        <a class="search" href="/search/" data-search-trigger>
+          <span>Search</span>
+          {#- Both labels ship and CSS picks one, so the hint is right from the first
+              paint rather than being appended once the script has loaded. -#}
+          <kbd class="search__key">
+            <span class="search__key--mac">⌘K</span>
+            <span class="search__key--std">Ctrl K</span>
+          </kbd>
+        </a>
+      </div>
 
-  {#- The stage count the control's CSS needs is this list's length, not a
-      number written down separately — see the .scheme rule in styles.njk. -#}
-  {%- set schemeStages = [
-    { "value": "auto", "label": "Auto" },
-    { "value": "light", "label": "Light" },
-    { "value": "dark", "label": "Dark" }
-  ] %}
-  <div class="rail__scheme">
-    <div class="scheme" role="group" aria-label="Colour scheme" style="--stages: {{ schemeStages | length }}">
-      {%- for stage in schemeStages %}
-      <button type="button" class="scheme__btn" data-scheme="{{ stage.value }}" aria-pressed="{{ stage.value == 'auto' }}">{{ stage.label }}</button>
-      {%- endfor %}
+      <div class="rail__spacer"></div>
+
+      {%- if profile.social | length %}
+      {{ links.list(profile.social, asButton=false, listClass="social") }}
+      {%- endif %}
+
+      {#- The stage count the control's CSS needs is this list's length, not a
+          number written down separately — see the .scheme rule in styles.njk. -#}
+      {%- set schemeStages = [
+        { "value": "auto", "label": "Auto" },
+        { "value": "light", "label": "Light" },
+        { "value": "dark", "label": "Dark" }
+      ] %}
+      <div class="rail__scheme">
+        <div class="scheme" role="group" aria-label="Colour scheme" style="--stages: {{ schemeStages | length }}">
+          {%- for stage in schemeStages %}
+          <button type="button" class="scheme__btn" data-scheme="{{ stage.value }}" aria-pressed="{{ stage.value == 'auto' }}">{{ stage.label }}</button>
+          {%- endfor %}
+        </div>
+      </div>
     </div>
   </div>
+
+  <div class="rail__backdrop" data-menu-backdrop aria-hidden="true"></div>
 </header>

@@ -69,12 +69,15 @@
      column grew around it rather than the text shrinking into it. */
   --measure-text: 44rem;
 
-  --fast: 120ms;
-  --slow: 240ms;
+  --fast: 140ms;
+  --slow: 280ms;
   --ease: cubic-bezier(0.2, 0, 0, 1);
   /* Overshoots slightly, which is what makes a control feel sprung rather than
      merely animated. Used for anything that settles into place. */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-expand: 320ms;
   /* How far a control travels when pressed. One pixel reads as a press at this
      type size; more reads as a glitch. */
   --press: 1px;

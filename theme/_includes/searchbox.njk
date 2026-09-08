@@ -1,0 +1,20 @@
+{#- Inline search box. Rendered on collection index pages (Everything, Blog,
+    Projects, Publications, Skills). Shares the same MiniSearch engine and
+    search-index.json as the global search palette, so there is one index,
+    one loader, and one set of results — only the rendering surface differs.
+
+    The box filters results by the page's collection when data-filter is set,
+    and shows all results when it is empty (the Everything page).
+
+    Without JavaScript this is a plain, inert input inside a noscript-hidden
+    container; the static list below it already shows everything. -#}
+<div class="page-search" data-page-search{% if filterCollection %} data-filter="{{ filterCollection }}"{% endif %}>
+  <input
+    class="page-search__input"
+    type="search"
+    placeholder="{{ placeholder or 'Filter entries…' }}"
+    autocomplete="off"
+    spellcheck="false"
+    aria-label="{{ placeholder or 'Filter entries' }}">
+  <div class="page-search__results" aria-live="polite"></div>
+</div>

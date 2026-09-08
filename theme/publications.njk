@@ -8,12 +8,16 @@ pageDescription: Publications.
 {% import "cards.njk" as cards %}
 {% import "pagehead.njk" as pagehead %}
 {% set items = all_content | where("collection", "publication") %}
+{% set filterCollection = "publication" %}
+{% set placeholder = "Filter publications…" %}
 
 <div class="page__body">
   {{ pagehead.simple("Publications") }}
 
+  {%- include "searchbox.njk" %}
+
   {%- if items | length %}
-  <section class="block block--flush">
+  <section class="block block--flush" data-static-list>
     <div class="block__head">
       <h2 class="block__title">All publications</h2>
       <span class="block__aux">{{ items | length }}</span>

@@ -19,6 +19,7 @@ eleventyComputed:
 {% import "mark.njk" as m %}
 {% import "icons.njk" as i %}
 {% import "button.njk" as button %}
+{% import "links.njk" as links %}
 
 <div class="page__body">
   <article class="entry">
@@ -42,19 +43,9 @@ eleventyComputed:
               the title rather than after the body. A credential with no body would
               otherwise put its verification link at the foot of an empty page. -#}
           {%- if entry.link | length %}
-          <p class="pagehead__links">
-            {%- for l in entry.link %}
-            {% call button.link(href=l.url, extra="btn--out", rel="noopener") %}
-              {%- if l.icon %}
-                {%- set glyph = i.icon(l.icon) | trim %}
-                {%- if glyph | length %}{{ glyph | safe }}
-                {%- else %}{{ l.icon | renderIcon | safe }}
-                {%- endif %}
-              {%- endif %}
-              <span>{{ l.label }}</span>{{ i.ui("external") }}
-            {% endcall %}
-            {%- endfor %}
-          </p>
+          <div class="pagehead__links">
+            {{ links.list(entry.link, asButton=true, listClass="links-list links-list--buttons") }}
+          </div>
           {%- endif %}
         </div>
         {{ m.mark(entry.logo) }}
@@ -77,6 +68,73 @@ eleventyComputed:
 
     {%- if entry.description %}
     <div class="lede">{{ entry.description | markdown | safe }}</div>
+    {%- endif %}
+
+    {#- Mobile metadata and table of contents: on screens < 72rem, these
+        belong before the body rather than buried below adjacent navigation and
+        related records. On desktop (>= 72rem), they hide because .page__aside
+        carries them in the sticky margin rail. -#}
+    <div class="entry__meta">
+      <dl class="entry__meta-list">
+        <div class="entry__meta-item">
+          <dt>Date</dt>
+          <dd><time datetime="{{ entry.primaryDate }}">{{ entry.dateDisplay }}</time></dd>
+        </div>
+        {%- if entry.collection == 'project' %}
+        <div class="entry__meta-item">
+          <dt>Period</dt>
+          <dd>{{ entry.startDisplay }} – {% if entry.isOngoing %}Present{% else %}{{ entry.endDisplay }}{% endif %}</dd>
+        </div>
+        {%- endif %}
+        {%- if entry.credential_id %}
+        <div class="entry__meta-item">
+          <dt>Credential</dt>
+          <dd class="is-mono">{{ entry.credential_id }}</dd>
+        </div>
+        {%- endif %}
+        {%- if entry.expiresDisplay %}
+        <div class="entry__meta-item">
+          <dt>Expires</dt>
+          <dd>{{ entry.expiresDisplay }}{% if entry.isExpired %} <span class="flag">Expired</span>{% endif %}</dd>
+        </div>
+        {%- endif %}
+        {%- if entry.hasMarkdown and entry.readingTime %}
+        <div class="entry__meta-item">
+          <dt>Reading</dt>
+          <dd>{{ entry.readingTime }} min · {{ entry.wordCount }} words</dd>
+        </div>
+        {%- endif %}
+      </dl>
+
+      {%- if entry.skills | length %}
+      <div class="entry__meta-skills">
+        <ul class="tags">
+          {%- for skill in entry.skills %}
+          <li><a href="/skills/{{ skill | slugify }}/">{{ skill }}</a></li>
+          {%- endfor %}
+        </ul>
+      </div>
+      {%- endif %}
+    </div>
+
+    {%- if entry.toc | length %}
+    <details class="toc-mobile" open>
+      <summary class="toc-mobile__summary">
+        <span class="aside__label">Contents</span>
+        <span class="toc-mobile__icon" aria-hidden="true"></span>
+      </summary>
+      <div class="toc-mobile__drawer">
+        <div class="toc-mobile__inner">
+          <ol class="toc__list">
+            {%- for heading in entry.toc %}
+            <li class="toc__item toc__item--l{{ heading.level }}">
+              <a href="#{{ heading.id }}">{{ heading.text }}</a>
+            </li>
+            {%- endfor %}
+          </ol>
+        </div>
+      </div>
+    </details>
     {%- endif %}
 
     {%- if entry.hasMarkdown %}

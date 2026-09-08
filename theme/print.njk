@@ -90,7 +90,9 @@ body { font-size: 8.5pt; line-height: 1.26; background: #fff; }
    as text, so it is dropped rather than printed. */
 .rail, .foot, .skip, .search, .scheme, .cv-actions, .adjacent, .toc__fill,
 .palette, .totop, .masthead__avatar, .block__aux, .pagehead__kicker,
-.card__span, .card__tag, .mark { display: none !important; }
+.card__span, .card__tag, .mark, .toc-mobile, .btn--expand { display: none !important; }
+.collapsible-drawer { display: block !important; opacity: 1 !important; grid-template-rows: none !important; }
+.collapsible-drawer > div { overflow: visible !important; }
 
 /* Marks stay on screen: decorative, never the only carrier of a fact, and
    at print size an OCR fallback would read them as noise, not a logo. */

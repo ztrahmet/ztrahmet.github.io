@@ -1,0 +1,59 @@
+{% import "icons.njk" as i %}
+{% import "button.njk" as button %}
+
+{#- Common symbolic icon renderer. Resolves bundled theme glyphs or delegates
+    to the engine's renderIcon filter for CDN/local SVGs. -#}
+{% macro icon(iconName) %}
+{%- if iconName %}
+  {%- set glyph = i.icon(iconName) | trim %}
+  {%- if glyph | length %}{{ glyph | safe }}
+  {%- else %}{{ iconName | renderIcon | safe }}
+  {%- endif %}
+{%- endif %}
+{% endmacro %}
+
+{#- Single link item. Unified across profile social links and entry links.
+    linkItem: { url, label, icon }
+    asButton: boolean (true for button-style controls, false for inline text links)
+    extra: additional CSS classes
+    download: boolean (whether to include download attribute)
+-#}
+{% macro item(linkItem, asButton=false, extra="", download=false) %}
+{%- if asButton %}
+  {%- set isExternal = ("://" in linkItem.url) and not download %}
+  {% call button.link(
+    href=linkItem.url,
+    extra="btn--out" ~ (" " ~ extra if extra else ""),
+    download=download,
+    rel="noopener" if isExternal else ""
+  ) %}
+    {{ icon(linkItem.icon) }}
+    <span class="btn__label">{{ linkItem.label }}</span>
+    {%- if isExternal %}{{ i.ui("external") }}{% endif %}
+  {% endcall %}
+{%- else %}
+  {%- set isExternal = "://" in linkItem.url %}
+  <a class="link-item{% if extra %} {{ extra }}{% endif %}" href="{{ linkItem.url }}"{% if isExternal %} rel="me noopener"{% endif %}>
+    {{ icon(linkItem.icon) }}
+    <span class="link-item__label">{{ linkItem.label }}</span>
+  </a>
+{%- endif %}
+{% endmacro %}
+
+{#- Renders a unified list of links.
+    items: Array of { url, label, icon }
+    asButton: boolean
+    listClass: CSS class for the wrapper <ul>
+    itemClass: CSS class for individual items
+-#}
+{% macro list(items, asButton=false, listClass="links-list", itemClass="") %}
+{%- if items | length %}
+<ul class="{{ listClass }}">
+  {%- for l in items %}
+  <li class="links-list__item">
+    {{ item(l, asButton=asButton, extra=itemClass) }}
+  </li>
+  {%- endfor %}
+</ul>
+{%- endif %}
+{% endmacro %}
