@@ -37,12 +37,13 @@ pageDescription: Experience, education and credentials.
   <div class="block__head printonly">
     <h2 class="block__title">Summary</h2>
   </div>
-  <div class="lede cv-summary">{{ profile.summary | markdown | safe }}</div>
+  <div class="lede cv-summary" id="summary">{{ profile.summary | markdown | safe }}</div>
   {%- endif %}
 
 
   {%- if profile.experience | length %}
   <section class="block" id="experience">
+    <span id="experiences" class="anchor-target"></span>
     <div class="block__head">
       <h2 class="block__title">Experience</h2>
       <span class="block__aux">{{ profile.experience | length }}</span>
@@ -55,6 +56,7 @@ pageDescription: Experience, education and credentials.
 
   {%- if profile.education | length %}
   <section class="block" id="education">
+    <span id="educations" class="anchor-target"></span>
     <div class="block__head">
       <h2 class="block__title">Education</h2>
       <span class="block__aux">{{ profile.education | length }}</span>
@@ -72,7 +74,8 @@ pageDescription: Experience, education and credentials.
       section here, so the choice is never second guessed. -#}
   {%- set papers = pinned_items | where("collection", "publication") | limit(3) %}
   {%- if papers | length %}
-  <section class="block">
+  <section class="block" id="publications">
+    <span id="publication" class="anchor-target"></span>
     <div class="block__head">
       <h2 class="block__title">Publications</h2>
       <span class="block__aux">{{ cards.aux(papers, stats.collections.publication.total, "/publications/") }}</span>
@@ -83,7 +86,8 @@ pageDescription: Experience, education and credentials.
 
   {%- set projects = pinned_items | where("collection", "project") | limit(3) %}
   {%- if projects | length %}
-  <section class="block">
+  <section class="block" id="projects">
+    <span id="project" class="anchor-target"></span>
     <div class="block__head">
       <h2 class="block__title">Projects</h2>
       <span class="block__aux">{{ cards.aux(projects, stats.collections.project.total, "/projects/") }}</span>
@@ -98,7 +102,8 @@ pageDescription: Experience, education and credentials.
       indexed ones follow without repeating any of them. -#}
   {%- set cvSkills = profile.skills | union(taxonomy.skillNames) | limit(28) %}
   {%- if cvSkills | length %}
-  <section class="block printonly">
+  <section class="block printonly" id="skills">
+    <span id="skill" class="anchor-target"></span>
     <div class="block__head">
       <h2 class="block__title">Skills</h2>
     </div>
@@ -117,7 +122,10 @@ pageDescription: Experience, education and credentials.
       parser and to a person, where the sortable "2026-03" reads as neither. -#}
   {%- set certificates = collections_data.certificate %}
   {%- if certificates | length %}
-  <section class="block">
+  <section class="block" id="certifications">
+    <span id="certificates" class="anchor-target"></span>
+    <span id="certificate" class="anchor-target"></span>
+    <span id="certification" class="anchor-target"></span>
     <div class="block__head">
       <h2 class="block__title">Certifications</h2>
       <span class="block__aux">{{ certificates | length }}</span>
@@ -125,7 +133,7 @@ pageDescription: Experience, education and credentials.
     <ol class="cards">
       {%- for item in certificates %}
       {{ cards.line(href=item.permalink, title=item.title, meta=item.dateDisplay,
-                secondary=item.issuer, logo=item.logo) }}
+                secondary=item.issuer, logo=item.logo, id=item.slug) }}
       {%- endfor %}
     </ol>
   </section>
@@ -133,7 +141,8 @@ pageDescription: Experience, education and credentials.
 
   {%- set awards = collections_data.award %}
   {%- if awards | length %}
-  <section class="block">
+  <section class="block" id="awards">
+    <span id="award" class="anchor-target"></span>
     <div class="block__head">
       <h2 class="block__title">Awards</h2>
       <span class="block__aux">{{ awards | length }}</span>
@@ -141,7 +150,7 @@ pageDescription: Experience, education and credentials.
     <ol class="cards">
       {%- for item in awards %}
       {{ cards.line(href=item.permalink, title=item.title, meta=item.dateDisplay,
-                secondary=item.issuer, logo=item.logo) }}
+                secondary=item.issuer, logo=item.logo, id=item.slug) }}
       {%- endfor %}
     </ol>
   </section>
@@ -149,14 +158,15 @@ pageDescription: Experience, education and credentials.
 
 
   {%- if profile.languages | length %}
-  <section class="block">
+  <section class="block" id="languages">
+    <span id="language" class="anchor-target"></span>
     <div class="block__head">
       <h2 class="block__title">Languages</h2>
       <span class="block__aux">{{ profile.languages | length }}</span>
     </div>
     <ul class="languages">
       {%- for language in profile.languages %}
-      <li class="language">
+      <li class="language" id="{{ language.name | slugify }}">
         <span class="language__name">{{ language.name }}</span>
         <span class="language__level">{{ language.levelLabel }}</span>
       </li>

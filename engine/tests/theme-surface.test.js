@@ -202,5 +202,21 @@ describe('Theme Surface', () => {
       expect(outputWithResume).not.toContain('Print');
     });
   });
+
+  describe('CV section anchors', () => {
+    it('defines section anchor IDs matching PROFILE_ANCHORS in cv template', async () => {
+      const fs = await import('node:fs');
+      const cvTemplate = fs.readFileSync(path.resolve(__dirname, '../../theme/cv.njk'), 'utf8');
+
+      expect(cvTemplate).toContain('id="experience"');
+      expect(cvTemplate).toContain('id="education"');
+      expect(cvTemplate).toContain('id="publications"');
+      expect(cvTemplate).toContain('id="projects"');
+      expect(cvTemplate).toContain('id="certifications"');
+      expect(cvTemplate).toContain('id="awards"');
+      expect(cvTemplate).toContain('id="languages"');
+      expect(cvTemplate).toContain('id="certificates"');
+    });
+  });
 });
 

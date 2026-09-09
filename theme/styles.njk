@@ -542,6 +542,10 @@ body {
 /* On mobile and tablet screens, the rail becomes a slim sticky top bar with a hamburger menu.
    The navigation links, search, scheme toggle, and socials collapse cleanly into the drawer. */
 @media (max-width: 59.99rem) {
+  html {
+    scroll-padding-top: calc(4rem + var(--s4));
+  }
+
   .rail {
     position: sticky;
     top: 0;
@@ -961,7 +965,39 @@ body {
 
 /* --------------------------------------------------------------- blocks */
 
-.block { margin-top: var(--s8); }
+.block { margin-top: var(--s8); position: relative; }
+
+/* Hidden in-flow anchor aliases (zero height and width, never causes layout shift) */
+.anchor-target {
+  display: block;
+  position: relative;
+  height: 0;
+  width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Visual cue when section or card is targeted by hash navigation */
+.block:target > .block__head,
+.block:has(.anchor-target:target) > .block__head {
+  border-bottom-color: var(--accent);
+  transition: border-bottom-color var(--mid) var(--ease);
+}
+.block:target > .block__head .block__title,
+.block:has(.anchor-target:target) > .block__head .block__title {
+  color: var(--accent-ink);
+  transition: color var(--mid) var(--ease);
+}
+
+.cards > .card:target,
+.languages > .language:target {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
 .block__head {
   display: flex;
   align-items: baseline;

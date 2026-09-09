@@ -39,7 +39,13 @@ export const MODALITIES = Object.freeze([
 
 export const PROFILE_ANCHORS = Object.freeze({
   experience: '/cv/#experience',
-  education: '/cv/#education'
+  education: '/cv/#education',
+  publications: '/cv/#publications',
+  projects: '/cv/#projects',
+  skills: '/cv/#skills',
+  certifications: '/cv/#certifications',
+  awards: '/cv/#awards',
+  languages: '/cv/#languages'
 });
 
 export const COLLECTION_TYPES = Object.freeze([

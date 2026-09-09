@@ -23,8 +23,8 @@
     mark. Skill tags sit outside the link as their own row, since an <a>
     cannot nest another one. strip picks plain clamped text and one row of
     tags, or rendered Markdown and tags wrapping freely. -#}
-{% macro line(href, title, meta="", tag="", secondary="", description="", logo=None, ongoing=false, skills=[], strip=true, extra="") %}
-<li class="card{% if extra %} {{ extra }}{% endif %}">
+{% macro line(href, title, meta="", tag="", secondary="", description="", logo=None, ongoing=false, skills=[], strip=true, extra="", id="") %}
+<li class="card{% if extra %} {{ extra }}{% endif %}"{% if id %} id="{{ id }}"{% endif %}>
   <a class="card__link" href="{{ href }}">
     <span class="card__meta">
       {%- if meta %}<span class="card__date">{{ meta }}</span>{% endif %}
@@ -74,7 +74,8 @@
   tag=item.collection | collectionLabel(false),
   secondary=item.subtitle or (item.description | stripMarkdown),
   logo=item.logo,
-  ongoing=item.isOngoing
+  ongoing=item.isOngoing,
+  id=item.slug
 ) }}
 {% endmacro %}
 
@@ -94,7 +95,8 @@
   ongoing=item.isOngoing,
   skills=item.skills,
   strip=strip,
-  extra="card--relaxed"
+  extra="card--relaxed",
+  id=item.slug
 ) }}
 {% endmacro %}
 
@@ -110,8 +112,8 @@
     optional even on a ranged entry, since a project only ever carries the
     engine's single dateIso and prints its end as plain text rather than a
     second, absent, timestamp. -#}
-{% macro record(title, href="", sub="", subHref="", subExtra="", startDisplay="", startIso="", endDisplay="", endIso="", ongoing=false, dateDisplay="", dateIso="", duration=None, logo=None, note="", skills=[], current=false) %}
-<li class="card card--record{% if current %} is-current{% endif %}">
+{% macro record(title, href="", sub="", subHref="", subExtra="", startDisplay="", startIso="", endDisplay="", endIso="", ongoing=false, dateDisplay="", dateIso="", duration=None, logo=None, note="", skills=[], current=false, id="") %}
+<li class="card card--record{% if current %} is-current{% endif %}"{% if id %} id="{{ id }}"{% endif %}>
   <div class="card__heading">
     <h3 class="card__title">{% if href %}<a href="{{ href }}">{{ title }}</a>{% else %}{{ title }}{% endif %}</h3>
     {%- if sub %}
@@ -166,7 +168,8 @@
   logo=job.logo,
   note=job.description,
   skills=job.skills,
-  current=job.isOngoing
+  current=job.isOngoing,
+  id=job.slug or (job.organization | slugify)
 ) }}
 {% endmacro %}
 
@@ -195,7 +198,8 @@
   logo=school.logo,
   note=school.description,
   skills=school.skills,
-  current=school.isOngoing
+  current=school.isOngoing,
+  id=school.slug or (school.organization | slugify)
 ) }}
 {% endmacro %}
 
