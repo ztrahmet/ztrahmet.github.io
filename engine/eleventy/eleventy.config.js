@@ -6,6 +6,7 @@ import { loadEngineData } from '../pipeline/data-loader.js';
 import { registerFilters, resetInlinedSvgCache } from './filters.js';
 import { resolveContentDir, PROJECT_ROOT, SCHEMAS_DIR, THEME_DIR, THEME_DIR_NAME } from '../config/paths.js';
 import { writeSearchIndexFile } from '../search/search-indexer.js';
+import { minifyOutputDirectory } from '../pipeline/minifier.js';
 
 /** Files the engine reads as source, so they are never published as-is. */
 const SOURCE_EXTENSIONS = new Set(['.md', '.yaml', '.yml', '.json']);
@@ -127,9 +128,17 @@ export default function configureEleventy(eleventyConfig, options = {}) {
   let cache = null;
   const getData = () => (cache ??= loadEngineData(contentDir));
 
-  eleventyConfig.on('eleventy.before', () => {
+  eleventyConfig.on('eleventy.before', ({ directories, dir, runMode } = {}) => {
     cache = null;
     resetInlinedSvgCache();
+
+    if (runMode === 'build') {
+      const outputDir = directories?.output || dir?.output || '_site';
+      const resolvedOutput = path.resolve(PROJECT_ROOT, outputDir);
+      if (fs.existsSync(resolvedOutput)) {
+        fs.rmSync(resolvedOutput, { recursive: true, force: true });
+      }
+    }
   });
 
   // 3. Expose the engine data surface to templates.
@@ -169,10 +178,16 @@ export default function configureEleventy(eleventyConfig, options = {}) {
   //    A theme ships its own fonts and files, so it stays self-contained.
   registerThemeAssetPassthroughs(eleventyConfig, THEME_DIR, contentDir);
 
-  // 7. Emit the search artifact into the resolved output directory on every build
-  eleventyConfig.on('eleventy.after', ({ directories, dir }) => {
+  // 7. Emit search artifact and seamlessly minify all code & markup files on compilation
+  eleventyConfig.on('eleventy.after', async ({ directories, dir } = {}) => {
     const outputDir = directories?.output || dir?.output || '_site';
-    writeSearchIndexFile(getData(), path.resolve(PROJECT_ROOT, outputDir, 'search-index.json'));
+    const resolvedOutputDir = path.resolve(PROJECT_ROOT, outputDir);
+    writeSearchIndexFile(getData(), path.resolve(resolvedOutputDir, 'search-index.json'));
+
+    const shouldMinify = options.minify !== false && process.env.NO_MINIFY !== '1' && process.env.NO_MINIFY !== 'true';
+    if (shouldMinify && fs.existsSync(resolvedOutputDir)) {
+      await minifyOutputDirectory(resolvedOutputDir, options.minifierOptions);
+    }
   });
 
   // 8. Watch targets for live reload reactivity

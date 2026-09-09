@@ -49,6 +49,9 @@ npm run build -- --content ../site-content
 # Specify output directory
 npm run build -- --content ../site-content --output dist
 
+# Skip minification during build
+npm run build -- --no-minify
+
 # Run dev server on a custom port
 npm run dev -- --port 3000 --content ../site-content
 ```
@@ -73,6 +76,7 @@ When `loadEngineData()` or `node engine/cli.js build` executes, the engine runs 
 5. **Theme Views (`collection-views.js`):** Prepares navigation counters, sorted collection feeds, adjacent entry pointers (`newer`/`older`), and SEO metadata.
 6. **Search Indexing (`search-indexer.js`):** Builds a lightweight search document index written to `_site/search-index.json`.
 7. **Eleventy Compilation:** Eleventy renders the theme templates, writes static HTML, and publishes assets.
+8. **Lossless Minification (`minifier.js`):** Seamlessly minifies all compiled code and markup files (`.html`, `.css`, `.js`, `.svg`, `.xml`, `.json`) in-place on compile, stripping comments and redundant whitespace, shortening colors, and optimizing SVGs with `svgo` while strictly preserving `viewBox`, element IDs, and math/code formatting.
 
 ---
 

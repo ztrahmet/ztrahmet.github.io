@@ -30,14 +30,18 @@
     "@11ty/eleventy": "^3.1.6",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
+    "csso": "^5.0.5",
     "fast-glob": "^3.3.3",
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.12.0",
+    "html-minifier-terser": "^7.2.0",
     "js-yaml": "^5.4.1",
     "katex": "^0.18.4",
     "markdown-it": "^15.0.1",
     "minisearch": "^7.2.0",
-    "reading-time": "^1.5.0"
+    "reading-time": "^1.5.0",
+    "svgo": "^4.1.0",
+    "terser": "^5.51.2"
   },
   "devDependencies": {
     "vitest": "^3.2.4"

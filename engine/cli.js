@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-
+import fs from 'node:fs';
+import path from 'node:path';
 import Eleventy from '@11ty/eleventy';
 import { loadEngineData } from './pipeline/data-loader.js';
-import { extractArgValue, resolveContentDir } from './config/paths.js';
+import { extractArgValue, resolveContentDir, PROJECT_ROOT } from './config/paths.js';
 
 const KNOWN_COMMANDS = ['build', 'dev', 'serve', 'validate'];
 const VALUE_FLAGS = ['-c', '--content', '--content-dir', '-o', '--output', '-p', '--port'];
@@ -26,6 +27,7 @@ Options:
       --content-dir <dir>   Path to custom content directory
   -o, --output <dir>        Output directory for static site (default: _site)
   -p, --port <number>       Port for local dev server (default: 8080)
+      --no-minify           Skip code and markup minification on build
   -h, --help                Show help information
 
 Examples:
@@ -51,6 +53,8 @@ function parseCliArgs(rawArgs) {
       'content-dir': { type: 'string' },
       output: { type: 'string', short: 'o', default: '_site' },
       port: { type: 'string', short: 'p', default: '8080' },
+      minify: { type: 'boolean', default: true },
+      'no-minify': { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false }
     },
     allowPositionals: true,
@@ -77,6 +81,7 @@ function parseCliArgs(rawArgs) {
     contentDir,
     outputDir: values.output || '_site',
     port: parseInt(values.port || '8080', 10),
+    minify: values['no-minify'] ? false : Boolean(values.minify),
     help: Boolean(values.help)
   };
 }
@@ -118,7 +123,7 @@ function createEleventy(outputDir) {
  */
 async function main() {
   const rawArgs = process.argv.slice(2);
-  const { command, contentDir, outputDir, port, help } = parseCliArgs(rawArgs);
+  const { command, contentDir, outputDir, port, minify, help } = parseCliArgs(rawArgs);
 
   if (help) {
     printHelp();
@@ -128,6 +133,9 @@ async function main() {
   try {
     const targetDir = resolveContentDir(contentDir);
     process.env.CONTENT_DIR = targetDir;
+    if (!minify) {
+      process.env.NO_MINIFY = '1';
+    }
 
     if (command === 'validate') {
       console.log(`🔍 Validating content data in: ${targetDir}`);
@@ -137,6 +145,10 @@ async function main() {
 
     if (command === 'build') {
       console.log(`🔨 Building static site with content from: ${targetDir}`);
+      const resolvedOutput = path.resolve(PROJECT_ROOT, outputDir);
+      if (fs.existsSync(resolvedOutput)) {
+        fs.rmSync(resolvedOutput, { recursive: true, force: true });
+      }
       const elev = createEleventy(outputDir);
 
       await elev.init();

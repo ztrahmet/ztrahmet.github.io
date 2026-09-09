@@ -23,6 +23,7 @@ export * from './pipeline/collection-views.js';
 export * from './pipeline/profile-normalizer.js';
 export * from './pipeline/collection-synthesizer.js';
 export * from './pipeline/data-loader.js';
+export * from './pipeline/minifier.js';
 
 // Search
 export * from './search/index.js';
