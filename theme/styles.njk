@@ -94,6 +94,7 @@ body {
   line-height: var(--lh-prose);
   font-synthesis-weight: none;
   text-rendering: optimizeLegibility;
+  overflow-wrap: break-word;
 }
 
 /* One focus treatment for the whole site, on the accent so it reads as state. */
@@ -834,6 +835,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: var(--s2);
+  max-width: 100%;
   padding: 0.4rem var(--s3);
   border: 1px solid var(--btn-edge);
   border-radius: 2px;
@@ -1600,7 +1602,7 @@ body {
   gap: var(--s4);
   align-items: baseline;
 }
-.language__name { font-size: var(--t-small); }
+.language__name { font-size: var(--t-small); overflow-wrap: break-word; }
 .language__level {
   font-family: var(--mono);
   font-size: var(--t-mono-s);
@@ -1659,8 +1661,8 @@ body {
   gap: var(--s4);
 }
 .pagehead__id { min-width: 0; }
-.pagehead__sub { margin-top: var(--s2); font-size: var(--t-small); color: var(--ink-2); }
-.pagehead__byline { margin-top: var(--s1); font-size: var(--t-small); color: var(--ink-3); }
+.pagehead__sub { margin-top: var(--s2); font-size: var(--t-small); color: var(--ink-2); overflow-wrap: break-word; }
+.pagehead__byline { margin-top: var(--s1); font-size: var(--t-small); color: var(--ink-3); overflow-wrap: break-word; }
 
 /* The entry's external destinations, set with the title rather than after the
    body. They are controls: leaving the site is a decision, so it gets a target
@@ -1711,14 +1713,14 @@ body {
 .card--record + .card--record { border-top: 1px solid var(--rule); }
 .card__when { grid-column: 1; grid-row: 1; }
 .card--record > .mark { grid-column: 2; grid-row: 1; }
-.card__heading { grid-column: 1 / -1; grid-row: 2; }
-.card--record .card__detail { grid-column: 1 / -1; grid-row: 3; }
+.card__heading { grid-column: 1 / -1; grid-row: 2; min-width: 0; }
+.card--record .card__detail { grid-column: 1 / -1; grid-row: 3; min-width: 0; }
 
 @media (min-width: 46rem) {
   .card--record { grid-template-columns: 11rem minmax(0, 1fr) var(--mark-w); column-gap: var(--s5); }
-  .card__heading { grid-column: 2; grid-row: 1; }
+  .card__heading { grid-column: 2; grid-row: 1; min-width: 0; }
   .card--record > .mark { grid-column: 3; grid-row: 1; }
-  .card--record .card__detail { grid-column: 2 / span 2; grid-row: 2; }
+  .card--record .card__detail { grid-column: 2 / span 2; grid-row: 2; min-width: 0; }
 }
 /* The grid row gap already separates it from the heading. */
 .card--record .card__detail > :first-child { margin-top: 0; }
@@ -1734,7 +1736,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .card__span { flex-basis: 100%; color: var(--ink-3); }
-.card--record .card__title { font-size: var(--t-h3); font-weight: 600; line-height: var(--lh-tight); }
+.card--record .card__title { font-size: var(--t-h3); font-weight: 600; line-height: var(--lh-tight); overflow-wrap: break-word; }
 .card--record .card__sub {
   margin-top: var(--s1);
   font-size: var(--t-small);
@@ -1745,7 +1747,9 @@ body {
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
+  overflow-wrap: break-word;
 }
+.card__note { margin-top: var(--s3); font-size: var(--t-small); color: var(--ink-2); overflow-wrap: break-word; }
 
 /* An organisation mark, mounted the same way the avatar and the cover figures
    are, so every image on the site reads alike. Shared by CV records and by the
@@ -1949,6 +1953,8 @@ body {
 /* The margin column. Everything the engine precomputes lives here rather
    than crowding the space under a title. */
 
+.page__aside { min-width: 0; max-width: 100%; }
+.aside__block { min-width: 0; }
 .aside__block + .aside__block { margin-top: var(--s5); }
 .aside__label {
   padding-bottom: var(--s2);
@@ -1959,8 +1965,8 @@ body {
   text-transform: uppercase;
   color: var(--ink-3);
 }
-.aside__list { margin-top: var(--s3); display: grid; gap: var(--s3); }
-.aside__row { display: grid; gap: 0.1rem; }
+.aside__list { margin-top: var(--s3); display: grid; gap: var(--s3); min-width: 0; }
+.aside__row { display: grid; gap: 0.1rem; min-width: 0; }
 .aside__row dt {
   font-family: var(--mono);
   font-size: var(--t-label);
@@ -1968,10 +1974,22 @@ body {
   text-transform: uppercase;
   color: var(--ink-3);
 }
-.aside__row dd { font-size: var(--t-mono); line-height: var(--lh-ui); color: var(--ink-2); }
+.aside__row dd {
+  font-size: var(--t-mono);
+  line-height: var(--lh-ui);
+  color: var(--ink-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 .aside__row dd a { color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.18em; }
 .aside__row dd a:hover { color: var(--accent-ink); }
-.is-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.is-mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
 .flag {
   padding: 0 0.3rem;
   background: var(--accent);
@@ -2016,6 +2034,7 @@ body {
   line-height: 1.4;
   color: var(--ink-3);
   text-decoration: none;
+  overflow-wrap: break-word;
   transition: color var(--fast) var(--ease);
 }
 .toc__item a:hover { color: var(--ink); }
@@ -2044,11 +2063,17 @@ body {
   padding: var(--s4);
   background: var(--sunken);
   border: 1px solid var(--rule);
+  min-width: 0;
+  max-width: 100%;
 }
 .entry__meta-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
   gap: var(--s2) var(--s4);
+  min-width: 0;
+}
+.entry__meta-item {
+  min-width: 0;
 }
 .entry__meta-item dt {
   font-family: var(--mono);
@@ -2062,6 +2087,12 @@ body {
   margin-top: 0.15rem;
   font-size: var(--t-small);
   color: var(--ink);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.entry__meta-item dd.is-mono {
+  font-size: var(--t-mono);
 }
 .entry__meta-skills {
   margin-top: var(--s3);
@@ -2424,6 +2455,7 @@ body {
 .palette__title {
   font-size: var(--t-small);
   font-weight: 500;
+  overflow-wrap: break-word;
   transition: color var(--fast) var(--ease), transform var(--fast) var(--ease);
 }
 .palette__option[aria-selected='true'] .palette__title {
