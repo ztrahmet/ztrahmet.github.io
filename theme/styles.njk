@@ -899,33 +899,6 @@ body {
   box-shadow: 0 2px 8px -1px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
-/* ------------------------------------------------------------------ dither */
-/* An ordered 4x4 Bayer threshold, drawn as four offset dot grids at decreasing
-   opacity. Pixels rather than a smooth ramp, which is the same instrument
-   drawing as the rest of the site and survives being scaled. */
-.dither {
-  position: relative;
-  isolation: isolate;
-}
-.dither::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  --d: 4px;
-  background-image:
-    radial-gradient(var(--accent) 0.5px, transparent 0.5px),
-    radial-gradient(var(--accent) 0.5px, transparent 0.5px),
-    radial-gradient(var(--accent) 0.5px, transparent 0.5px);
-  background-size: var(--d) var(--d), var(--d) var(--d), var(--d) var(--d);
-  background-position: 0 0, 2px 2px, 1px 3px;
-  opacity: 0.65;
-  /* Fades out along the run, so the texture reads as a gradient of density. */
-  -webkit-mask-image: linear-gradient(to right, #000, transparent 78%);
-  mask-image: linear-gradient(to right, #000, transparent 78%);
-}
-
 /* ------------------------------------------------------------ scroll top */
 /* Appears once the page has actually been scrolled, which the script decides.
    Without JS it is never shown, and the page loses nothing. */

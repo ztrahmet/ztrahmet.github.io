@@ -184,9 +184,9 @@ describe('Theme Surface', () => {
         {% import "button.njk" as button %}
         <p class="cv-actions">
           {%- if profile.resume %}
-          {% call button.link(href=profile.resume, extra="btn--key dither", download=true) %}<span>Download PDF</span>{% endcall %}
+          {% call button.link(href=profile.resume, extra="btn--key", download=true) %}<span>Download PDF</span>{% endcall %}
           {%- else %}
-          {% call button.action(extra="btn--key dither", data="data-print") %}<span>Print</span>{% endcall %}
+          {% call button.action(extra="btn--key", data="data-print") %}<span>Print</span>{% endcall %}
           {%- endif %}
         </p>
       `;
