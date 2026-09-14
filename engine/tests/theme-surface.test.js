@@ -247,11 +247,29 @@ describe('Theme Surface', () => {
       expect(redOut).toContain('--ground: #140e0e');
       expect(redOut).toContain('--accent: #b23a2e');
 
-      // Petrol (default)
+      // Petrol
       const petrolOut = env.render('tokens.njk', { site: { accent: 'petrol' } });
       expect(petrolOut).toContain('--ground: #f5f6f7');
       expect(petrolOut).toContain('--ground: #0e1114');
       expect(petrolOut).toContain('--accent: #0a6f68');
+    });
+
+    it('defaults to blue theme when site.accent is omitted or undefined', async () => {
+      const nunjucks = (await import('nunjucks')).default;
+      const env = new nunjucks.Environment(new nunjucks.FileSystemLoader([
+        path.resolve(__dirname, '../../theme/_includes')
+      ]));
+      const defaultOut = env.render('tokens.njk', { site: {} });
+      expect(defaultOut).toContain('--ground: #f5f5f7');
+      expect(defaultOut).toContain('--ground: #0e1014');
+      expect(defaultOut).toContain('--accent: #1f5fae');
+      expect(defaultOut).toContain('--accent-ink: #164a87');
+    });
+
+    it('normalizes missing site.accent to blue in data loader', async () => {
+      const { normalizeDataAssets } = await import('../pipeline/data-loader.js');
+      const normalized = normalizeDataAssets({ site: {} });
+      expect(normalized.site.accent).toBe('blue');
     });
   });
 });

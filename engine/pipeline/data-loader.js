@@ -71,7 +71,7 @@ export function normalizeDataAssets(data, contentDir) {
     // Guarantee a language so templates never emit an empty lang attribute
     cloned.site.lang = cloned.site.lang || 'en';
     // Guarantee an accent so the stylesheet always has a palette to read
-    cloned.site.accent = cloned.site.accent || 'petrol';
+    cloned.site.accent = cloned.site.accent || 'blue';
     normalizeOptionalAsset(cloned.site, 'favicon', options);
     normalizeOptionalAsset(cloned.site, 'share_image', options);
   }

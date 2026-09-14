@@ -79,7 +79,7 @@ site:
   description: Software engineer work. # Meta description (required)
   lang: en                             # HTML lang attribute (default: en)
   locale: en_US                        # OpenGraph locale (default: en_US)
-  accent: petrol                       # Theme accent: petrol, amber, blue, green, red, purple, monochrome
+  accent: blue                         # Theme accent (default: blue): blue, petrol, amber, green, red, purple, monochrome
   favicon: /images/favicon.svg         # Site favicon
   share_image: /images/share.png       # Default social share card (1200x630 recommended)
 

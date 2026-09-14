@@ -9,7 +9,7 @@ site:
   locale: en_US
   favicon: /images/favicon.svg
   share_image: /images/share.png
-  accent: petrol # petrol, amber, blue, green, red, purple, monochrome
+  accent: blue # petrol, amber, blue, green, red, purple, monochrome
 
 profile:
   name: Name Surname

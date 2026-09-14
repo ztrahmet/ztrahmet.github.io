@@ -44,7 +44,7 @@
   "red":        { "light": "#f7f5f5", "dark": "#140e0e" },
   "purple":     { "light": "#f6f5f7", "dark": "#110e14" }
 } %}
-{%- set currentGround = themeGrounds[site.accent] or themeGrounds.petrol %}
+{%- set currentGround = themeGrounds[site.accent] or themeGrounds.blue %}
 <meta name="theme-color" content="{{ currentGround.light }}" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="{{ currentGround.dark }}" media="(prefers-color-scheme: dark)">
 
