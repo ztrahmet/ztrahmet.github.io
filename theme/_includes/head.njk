@@ -35,8 +35,18 @@
 <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="/feed.xml">
 
 {#- Mirrors --ground in each palette. Meta cannot read a custom property. -#}
-<meta name="theme-color" content="#f5f6f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0e1114" media="(prefers-color-scheme: dark)">
+{%- set themeGrounds = {
+  "petrol":     { "light": "#f5f6f7", "dark": "#0e1114" },
+  "monochrome": { "light": "#f6f6f6", "dark": "#101010" },
+  "blue":       { "light": "#f5f5f7", "dark": "#0e1014" },
+  "amber":      { "light": "#f7f6f5", "dark": "#14110e" },
+  "green":      { "light": "#f5f7f5", "dark": "#0e130e" },
+  "red":        { "light": "#f7f5f5", "dark": "#140e0e" },
+  "purple":     { "light": "#f6f5f7", "dark": "#110e14" }
+} %}
+{%- set currentGround = themeGrounds[site.accent] or themeGrounds.petrol %}
+<meta name="theme-color" content="{{ currentGround.light }}" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="{{ currentGround.dark }}" media="(prefers-color-scheme: dark)">
 
 {#- Preloaded so the first paint already has the real faces. font-display is
     block, so a face that somehow fails to arrive shows nothing rather than

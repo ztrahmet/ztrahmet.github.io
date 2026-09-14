@@ -96,7 +96,7 @@
     },
     "Accent": {
       "type": "string",
-      "enum": ["petrol", "amber", "blue", "green", "red", "purple"]
+      "enum": ["petrol", "amber", "blue", "green", "red", "purple", "monochrome"]
     },
     "LanguageLevel": {
       "description": "CEFR band or native, in any case: a1 a2 b1 b2 c1 c2 native",

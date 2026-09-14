@@ -185,6 +185,13 @@ describe('JSON Schemas & Ajv Validation Pipeline', () => {
         expect(validateMod(m)).toBe(true);
       }
       expect(validateMod('virtual')).toBe(false);
+
+      const validateAccent = validator.ajv.getSchema('common.defs.json#/definitions/Accent');
+      for (const a of ['petrol', 'amber', 'blue', 'green', 'red', 'purple', 'monochrome']) {
+        expect(validateAccent(a)).toBe(true);
+      }
+      expect(validateAccent('yellow')).toBe(false);
+      expect(validateAccent('')).toBe(false);
     });
 
     it('validates ContentRef (collection:slug format)', () => {
