@@ -184,6 +184,27 @@ export interface AdjacentNavigationPointer {
   date: string;
   dateDisplay: string;
   image: ThemedAsset | null;
+  imageMeta?: ImageDimensionMeta | null;
+}
+
+/**
+ * Normalized image dimension and aspect ratio metadata.
+ */
+export interface ImageDimensionMeta {
+  width: number;
+  height: number;
+  aspectRatio: string;
+  ratio: number;
+  isVertical: boolean;
+  clampedWidth: number;
+  clampedHeight: number;
+  clampedAspectRatio: string;
+  clampedRatio: number;
+  isClamped: boolean;
+  originalWidth: number;
+  originalHeight: number;
+  light?: ImageDimensionMeta | null;
+  dark?: ImageDimensionMeta | null;
 }
 
 /**
@@ -199,6 +220,7 @@ export interface RelatedItem {
   end: string;
   isOngoing: boolean;
   image: ThemedAsset | null;
+  imageMeta?: ImageDimensionMeta | null;
   logo: ThemedAsset | null;
   description: string;
   sharedSkills: string[];
@@ -257,6 +279,7 @@ export interface BaseCollectionItem {
   link?: LinkItem[];
   description?: string;
   image?: ThemedAsset;
+  imageMeta?: ImageDimensionMeta | null;
   logo?: ThemedAsset;
 }
 

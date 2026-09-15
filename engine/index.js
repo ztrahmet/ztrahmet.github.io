@@ -24,6 +24,7 @@ export * from './pipeline/profile-normalizer.js';
 export * from './pipeline/collection-synthesizer.js';
 export * from './pipeline/data-loader.js';
 export * from './pipeline/minifier.js';
+export * from './pipeline/image-probe.js';
 
 // Search
 export * from './search/index.js';

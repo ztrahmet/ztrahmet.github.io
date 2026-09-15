@@ -13,6 +13,7 @@ import { stripMarkdownAndHtml } from '../search/text-sanitizer.js';
 import { buildItemSeo } from './seo-normalizer.js';
 import { attachRelatedItemsToCollections } from './content-graph.js';
 import { sortByRecency, isOngoing } from './ordering.js';
+import { probeCoverImageDimensions } from './image-probe.js';
 
 /**
  * Properties synthesized by the pipeline that are not part of any content schema.
@@ -22,7 +23,7 @@ const SYNTHETIC_KEYS = new Set([
   'content', 'html', 'excerpt', 'hasMarkdown', 'isMarkdown', 'filePath', 'baseDir',
   'permalink', 'collection', 'newer', 'older', 'wordCount', 'readingTime', 'toc',
   'related', 'seo', 'primaryDate', 'dateDisplay', 'dateIso', 'year', 'startDisplay', 'endDisplay',
-  'isOngoing', 'isExpired', 'expiresDisplay', 'subtitle'
+  'isOngoing', 'isExpired', 'expiresDisplay', 'subtitle', 'imageMeta'
 ]);
 
 /**
@@ -190,7 +191,8 @@ export function attachNavigationPointers(sortedItems = [], locale = 'en-US') {
       collection: item.collection,
       date,
       dateDisplay: formatDate(date, locale),
-      image: item.image || null
+      image: item.image || null,
+      imageMeta: item.imageMeta || null
     };
   };
 
@@ -220,6 +222,7 @@ function buildMarkdownItem(mdItem, { collectionType, contentDir, siteData, local
   const rawContent = normalized.content || '';
   const { html, toc } = renderMarkdownDocument(rawContent);
   const metrics = calculateReadingMetrics(rawContent);
+  const imageMeta = probeCoverImageDimensions(normalized.image, contentDir);
 
   const item = {
     ...normalized,
@@ -233,6 +236,7 @@ function buildMarkdownItem(mdItem, { collectionType, contentDir, siteData, local
     readingTime: metrics.readingTime,
     excerpt: generateExcerpt(rawContent),
     subtitle: buildSubtitle(normalized),
+    imageMeta,
     ...buildDateFields(normalized, locale)
   };
 
@@ -276,8 +280,11 @@ function buildInlineItem(entry, { collectionType, contentDir, siteData, locale }
     `content.yaml [${collectionType} -> slug: '${entry.slug}']`
   );
 
+  const imageMeta = probeCoverImageDimensions(normalized.image, contentDir);
+
   const item = {
     ...normalized,
+    imageMeta,
     subtitle: buildSubtitle(normalized),
     ...buildDateFields(normalized, locale)
   };

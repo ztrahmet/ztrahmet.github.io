@@ -1844,7 +1844,15 @@ body {
   border: 1px solid var(--rule);
   counter-increment: figure;
 }
-.figure img { width: 100%; }
+.figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.figure--cover img {
+  aspect-ratio: var(--cover-aspect, auto);
+  object-fit: cover;
+}
 .figure figcaption {
   display: flex;
   align-items: baseline;
