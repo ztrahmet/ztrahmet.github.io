@@ -8,6 +8,8 @@ pageDescription: Posts.
 {% import "cards.njk" as cards %}
 {% import "pagehead.njk" as pagehead %}
 {% set items = all_content | where("collection", "blog") %}
+{% set pinnedPosts = items | where("isPinned", true) %}
+{% set otherPosts = items | whereNot("isPinned", true) %}
 {% set filterCollection = "blog" %}
 {% set placeholder = "Filter posts…" %}
 
@@ -17,13 +19,27 @@ pageDescription: Posts.
   {%- include "searchbox.njk" %}
 
   {%- if items | length %}
-  <section class="block block--flush" data-static-list>
-    <div class="block__head">
-      <h2 class="block__title">All posts</h2>
-      <span class="block__aux">{{ items | length }}</span>
-    </div>
-    {{ cards.collection(items) }}
-  </section>
+  <div data-static-list>
+    {%- if pinnedPosts | length %}
+    <section class="block block--flush">
+      <div class="block__head">
+        <h2 class="block__title">Pinned</h2>
+        <span class="block__aux">{{ pinnedPosts | length }}</span>
+      </div>
+      {{ cards.collection(pinnedPosts, "pinned") }}
+    </section>
+    {%- endif %}
+
+    {%- if otherPosts | length %}
+    <section class="block{% if not (pinnedPosts | length) %} block--flush{% endif %}">
+      <div class="block__head">
+        <h2 class="block__title">All posts</h2>
+        <span class="block__aux">{{ otherPosts | length }}</span>
+      </div>
+      {{ cards.collection(otherPosts) }}
+    </section>
+    {%- endif %}
+  </div>
   {%- else %}
   <p class="empty">Nothing published yet.</p>
   {%- endif %}

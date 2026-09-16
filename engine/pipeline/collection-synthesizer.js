@@ -23,7 +23,7 @@ const SYNTHETIC_KEYS = new Set([
   'content', 'html', 'excerpt', 'hasMarkdown', 'isMarkdown', 'filePath', 'baseDir',
   'permalink', 'collection', 'newer', 'older', 'wordCount', 'readingTime', 'toc',
   'related', 'seo', 'primaryDate', 'dateDisplay', 'dateIso', 'year', 'startDisplay', 'endDisplay',
-  'isOngoing', 'isExpired', 'expiresDisplay', 'subtitle', 'imageMeta'
+  'isOngoing', 'isExpired', 'expiresDisplay', 'subtitle', 'imageMeta', 'isPinned'
 ]);
 
 /**

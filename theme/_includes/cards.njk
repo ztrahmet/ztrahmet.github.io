@@ -100,6 +100,105 @@
 ) }}
 {% endmacro %}
 
+{# -------------------------------------------------------------- pinned -- #}
+
+{#- The dedicated card layout for pinned work across the site.
+    Disciplined, compact horizontal showcase card with optional thumbnail,
+    clean status / date / reading time, collection badges,
+    collection-specific details (publisher & authors for publications,
+    issuer for awards/certs), clamped description, skills pills,
+    and external actions. -#}
+{% macro pinnedCard(item) %}
+<li class="card card--pinned" id="{{ item.slug }}">
+  {%- if item.image %}
+  <div class="card__cover" aria-hidden="true">
+    {%- if item.image.light %}
+      {%- set lightMeta = item.imageMeta.light if (item.imageMeta and item.imageMeta.light) else item.imageMeta %}
+      {%- set darkMeta = item.imageMeta.dark if (item.imageMeta and item.imageMeta.dark) else item.imageMeta %}
+      <img class="light-only" src="{{ item.image.light }}" alt="" loading="lazy" decoding="async"{% if lightMeta %} width="{{ lightMeta.width }}" height="{{ lightMeta.height }}" style="--cover-aspect: {{ lightMeta.clampedAspectRatio or lightMeta.aspectRatio }};"{% endif %}>
+      <img class="dark-only" src="{{ item.image.dark }}" alt="" loading="lazy" decoding="async"{% if darkMeta %} width="{{ darkMeta.width }}" height="{{ darkMeta.height }}" style="--cover-aspect: {{ darkMeta.clampedAspectRatio or darkMeta.aspectRatio }};"{% endif %}>
+    {%- else %}
+      <img src="{{ item.image }}" alt="" loading="lazy" decoding="async"{% if item.imageMeta %} width="{{ item.imageMeta.width }}" height="{{ item.imageMeta.height }}" style="--cover-aspect: {{ item.imageMeta.clampedAspectRatio or item.imageMeta.aspectRatio }};"{% endif %}>
+    {%- endif %}
+  </div>
+  {%- else %}
+  <div class="card__cover card__cover--placeholder" aria-hidden="true">
+    <svg class="card__grid-svg" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <pattern id="card-grid-{{ item.slug }}" width="16" height="16" patternUnits="userSpaceOnUse">
+          <path d="M 16 0 L 0 0 0 16" fill="none" stroke="currentColor" stroke-width="0.75" opacity="0.25" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#card-grid-{{ item.slug }})" />
+      <circle cx="50%" cy="50%" r="2.5" fill="currentColor" opacity="0.4" />
+      <line x1="0" y1="50%" x2="100%" y2="50%" stroke="currentColor" stroke-width="0.75" stroke-dasharray="2 4" opacity="0.25" />
+      <line x1="50%" y1="0" x2="50%" y2="100%" stroke="currentColor" stroke-width="0.75" stroke-dasharray="2 4" opacity="0.25" />
+    </svg>
+  </div>
+  {%- endif %}
+  <div class="card__body">
+    <div class="card__header">
+      <div class="card__header-main">
+        <div class="card__meta">
+          <span class="card__tag">{{ item.collection | collectionLabel(false) }}</span>
+          {%- if item.isOngoing %}
+          <span class="card__status">
+            <span class="dot" aria-hidden="true"></span>
+            <span class="card__status-text">Ongoing</span>
+          </span>
+          {%- else %}
+          <span class="card__dot" aria-hidden="true">•</span>
+          <span class="card__date">{{ dateLabel(item) }}</span>
+          {%- endif %}
+          {%- if item.collection == 'blog' and item.readingTime %}
+          <span class="card__dot" aria-hidden="true">•</span>
+          <span class="card__read">{{ item.readingTime }} min read</span>
+          {%- endif %}
+        </div>
+        <h3 class="card__title"><a class="card__title-link" href="{{ item.permalink }}">{{ item.title }}</a></h3>
+      </div>
+      {%- if item.logo %}
+      {{- m.mark(item.logo) }}
+      {%- endif %}
+    </div>
+
+    {#- Collection-specific metadata: publisher/venue & authors for publications, issuer for awards/certs, subtitle for others -#}
+    {%- set hasSub = false %}
+    {%- if item.collection == 'publication' %}
+      {%- set pubVenue = item.publisher or item.venue %}
+      {%- if pubVenue or (item.authors | length) %}
+      {%- set hasSub = true %}
+      <p class="card__sub card__pub-meta">
+        {%- if pubVenue %}<span class="card__venue">{{ pubVenue }}</span>{% endif %}
+        {%- if pubVenue and (item.authors | length) %}<span class="card__sep" aria-hidden="true">•</span>{% endif %}
+        {%- if item.authors | length %}<span class="card__authors">{{ item.authors | join(", ") }}</span>{% endif %}
+      </p>
+      {%- endif %}
+    {%- elif item.issuer %}
+      {%- set hasSub = true %}
+      <p class="card__sub">{{ item.issuer }}</p>
+    {%- elif item.subtitle %}
+      {%- set hasSub = true %}
+      <p class="card__sub">{{ item.subtitle }}</p>
+    {%- endif %}
+
+    {%- if item.description %}
+    <div class="card__desc{% if hasSub %} card__desc--clamp-1{% endif %}">{{ item.description | stripMarkdown }}</div>
+    {%- endif %}
+
+    {%- if item.skills | length %}
+    <ul class="tags tags--clamp">
+      {%- for skill in item.skills %}<li><a href="/skills/{{ skill | slugify }}/">{{ skill }}</a></li>{% endfor %}
+    </ul>
+    {%- endif %}
+  </div>
+</li>
+{% endmacro %}
+
+{% macro selectedCard(item) %}
+{{ pinnedCard(item) }}
+{% endmacro %}
+
 {# -------------------------------------------------------------- record -- #}
 
 {#- A CV entry: a title (linked when href is given), an optional sub-line
@@ -219,7 +318,7 @@
   certificate: "compact",
   award: "compact"
 }[entry.collection] or "compact" %}
-{%- if mode == "relaxed" %}{{ relaxed(entry, strip) }}{% else %}{{ compact(entry) }}{% endif %}
+{%- if mode == "pinned" or mode == "selected" or mode == "featured" %}{{ pinnedCard(entry) }}{% elif mode == "relaxed" %}{{ relaxed(entry, strip) }}{% else %}{{ compact(entry) }}{% endif %}
 {% endmacro %}
 
 {#- A whole list of collection items. Leave layout out and each item renders
@@ -231,9 +330,21 @@
     reorders items or groups them by date; a page that wants a particular
     order passes items already in it. strip forwards to relaxed(). -#}
 {% macro collection(items, layout=None, strip=true) %}
-<ol class="cards">
+{%- set isPinned = (layout == "pinned" or layout == "selected" or layout == "featured") %}
+<ol class="cards{% if isPinned %} cards--pinned{% endif %}">
   {%- for entry in items %}{{ item(entry, layout, strip) }}{% endfor %}
 </ol>
+{% endmacro %}
+
+{#- A dedicated list of pinned cards -#}
+{% macro pinnedList(items) %}
+<ol class="cards cards--pinned">
+  {%- for entry in items %}{{ pinnedCard(entry) }}{% endfor %}
+</ol>
+{% endmacro %}
+
+{% macro selectedGrid(items) %}
+{{ pinnedList(items) }}
 {% endmacro %}
 
 {#- The block__aux slot for a capped list: the count when a section shows
@@ -254,8 +365,9 @@
     renders the remaining items inside a collapsible drawer with an expand button at the bottom. -#}
 {% macro expandable(items, initialCount=5, layout=None, strip=true, expandLabel="Show all", collapseLabel="Show less") %}
 {%- set total = items | length %}
+{%- set isPinned = (layout == "pinned" or layout == "selected" or layout == "featured") %}
 <div class="cards-expandable" data-collapsible>
-  <ol class="cards">
+  <ol class="cards{% if isPinned %} cards--pinned{% endif %}">
     {%- for entry in items %}
       {%- if loop.index0 < initialCount %}
         {{ item(entry, layout, strip) }}
@@ -265,7 +377,7 @@
   {%- if total > initialCount %}
   <div class="collapsible-drawer" data-collapsible-drawer aria-hidden="true">
     <div class="collapsible-drawer__inner">
-      <ol class="cards cards--extra">
+      <ol class="cards cards--extra{% if isPinned %} cards--pinned{% endif %}">
         {%- for entry in items %}
           {%- if loop.index0 >= initialCount %}
             {{ item(entry, layout, strip) }}

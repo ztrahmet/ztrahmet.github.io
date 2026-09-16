@@ -8,8 +8,6 @@ pinned_content:
   - project:glyphd
   - project:lattice-grid-debugger
   - publication:cache-oblivious-document-trees
-  - publication:optimizing-static-web-generators
-  - publication:icwe-2023-paper
   - blog:measuring-build-performance
   - award:icwe-best-paper
 

@@ -19,6 +19,16 @@ section: home
     <hr class="masthead__rule">
   </header>
 
+  {%- if pinned_items | length %}
+  <section class="block block--flush">
+    <div class="block__head">
+      <h2 class="block__title">Pinned</h2>
+      <span class="block__aux">{{ pinned_items | length }}</span>
+    </div>
+    {{ cards.expandable(pinned_items, 4, "pinned") }}
+  </section>
+  {%- endif %}
+
   {%- if all_content | length %}
   {%- set recentAll = all_content | byDate %}
   <section class="block">
@@ -27,16 +37,6 @@ section: home
       <span class="block__aux">{{ cards.aux(recentAll | limit(5), recentAll | length, "/search/") }}</span>
     </div>
     {{ cards.collection(recentAll | limit(5), "compact") }}
-  </section>
-  {%- endif %}
-
-  {%- if pinned_items | length %}
-  <section class="block">
-    <div class="block__head">
-      <h2 class="block__title">Selected</h2>
-      <span class="block__aux">{{ pinned_items | length }}</span>
-    </div>
-    {{ cards.expandable(pinned_items, 5, "compact") }}
   </section>
   {%- endif %}
 </div>

@@ -1129,7 +1129,7 @@ body {
   min-height: 0;
 }
 .collapsible-drawer[data-expanded='true'] .cards--extra > .card {
-  animation: card-reveal 320ms var(--ease-out) both;
+  animation: card-reveal 320ms var(--ease-out) backwards;
 }
 .collapsible-drawer[data-expanded='true'] .cards--extra > .card:nth-child(1) { animation-delay: 30ms; }
 .collapsible-drawer[data-expanded='true'] .cards--extra > .card:nth-child(2) { animation-delay: 60ms; }
@@ -1212,6 +1212,362 @@ body {
 .card__desc--full a { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 0.15em; }
 .card__desc--full a:hover { color: var(--ink); }
 .card__desc--full code { font-family: var(--mono); font-size: 0.85em; }
+
+/* ----------------------------------------------------- pinned cards list */
+.cards--pinned {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin-top: var(--s4);
+}
+.collapsible-drawer .cards--pinned {
+  margin-top: var(--s3);
+}
+.cards--extra > .card:first-child:not(.card--pinned) {
+  border-top: 1px solid color-mix(in srgb, var(--rule) 55%, transparent);
+}
+
+.card--pinned,
+.card--selected,
+.card--featured {
+  display: flex;
+  flex-direction: row;
+  background: var(--sunken);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+  min-height: 8.5rem;
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease),
+              transform var(--fast) var(--ease),
+              box-shadow var(--fast) var(--ease);
+}
+.card--pinned:hover,
+.card--selected:hover,
+.card--featured:hover {
+  border-color: var(--accent);
+  transform: translateY(-1.5px);
+  box-shadow: 0 2px 6px -1px color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.card--pinned:active,
+.card--selected:active,
+.card--featured:active {
+  transform: translateY(var(--press));
+  box-shadow: none;
+}
+.card--pinned:has(.card__title-link:focus-visible),
+.card--selected:has(.card__title-link:focus-visible),
+.card--featured:has(.card__title-link:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Thumbnail cover on the left */
+.card--pinned .card__cover,
+.card--selected .card__cover,
+.card--featured .card__cover {
+  width: clamp(7.5rem, 24%, 10rem);
+  flex: none;
+  align-self: stretch;
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ink) 3%, var(--sunken));
+  border-right: 1px solid var(--rule);
+  pointer-events: none;
+}
+.card--pinned .card__cover img,
+.card--selected .card__cover img,
+.card--featured .card__cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.card--pinned .card__cover--placeholder,
+.card--selected .card__cover--placeholder,
+.card--featured .card__cover--placeholder {
+  color: color-mix(in srgb, var(--ink) 14%, transparent);
+  background: color-mix(in srgb, var(--ink) 2%, var(--ground));
+}
+.card--pinned .card__grid-svg,
+.card--selected .card__grid-svg,
+.card--featured .card__grid-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Card interior body */
+.card--pinned .card__body,
+.card--selected .card__body,
+.card--featured .card__body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  padding: var(--s3) var(--s4);
+  gap: 0.3rem;
+}
+
+/* Card header: metadata + title on left, large logo mark on right */
+.card--pinned .card__header,
+.card--selected .card__header,
+.card--featured .card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+.card--pinned .card__header-main,
+.card--selected .card__header-main,
+.card--featured .card__header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Meta line: collection tag first, then dot, date, reading time */
+.card--pinned .card__meta,
+.card--selected .card__meta,
+.card--featured .card__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+}
+.card--pinned .card__tag,
+.card--selected .card__tag,
+.card--featured .card__tag {
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 500;
+}
+.card--pinned .card__status,
+.card--selected .card__status,
+.card--featured .card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  color: var(--ink-3);
+}
+.card--pinned .card__status .dot,
+.card--selected .card__status .dot,
+.card--featured .card__status .dot {
+  margin: 0;
+}
+.card--pinned .card__dot,
+.card--selected .card__dot,
+.card--featured .card__dot {
+  color: var(--ink-3);
+  opacity: 0.5;
+  font-size: 0.7em;
+  line-height: 1;
+  align-self: center;
+}
+.card--pinned .card__date,
+.card--selected .card__date,
+.card--featured .card__date {
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  color: var(--ink-3);
+}
+.card--pinned .card__read,
+.card--selected .card__read,
+.card--featured .card__read {
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  color: var(--ink-3);
+}
+
+/* Title: whole surface is clickable, title is clean without underline or accent color */
+.card--pinned .card__title,
+.card--selected .card__title,
+.card--featured .card__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card--pinned .card__title-link,
+.card--selected .card__title-link,
+.card--featured .card__title-link {
+  color: inherit;
+  text-decoration: none;
+}
+.card--pinned .card__title-link::after,
+.card--selected .card__title-link::after,
+.card--featured .card__title-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+.card--pinned .card__title-link:focus-visible,
+.card--selected .card__title-link:focus-visible,
+.card--featured .card__title-link:focus-visible {
+  outline: none;
+}
+.card--pinned:hover .card__title-link,
+.card--selected:hover .card__title-link,
+.card--featured:hover .card__title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Large logo mark */
+.card--pinned .card__header > .mark,
+.card--selected .card__header > .mark,
+.card--featured .card__header > .mark {
+  width: var(--mark-w-list);
+  height: var(--mark-w-list);
+  flex: none;
+  align-self: center;
+  pointer-events: none;
+}
+
+/* Collection-specific metadata: 1 clean sub-line */
+.card--pinned .card__sub,
+.card--selected .card__sub,
+.card--featured .card__sub {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card--pinned .card__venue,
+.card--selected .card__venue,
+.card--featured .card__venue {
+  font-family: var(--mono);
+  font-size: var(--t-mono-s);
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+.card--pinned .card__sep,
+.card--selected .card__sep,
+.card--featured .card__sep {
+  color: var(--ink-3);
+  opacity: 0.5;
+  margin-inline: 0.35rem;
+}
+.card--pinned .card__authors,
+.card--selected .card__authors,
+.card--featured .card__authors {
+  color: var(--ink-3);
+  font-style: italic;
+}
+
+/* Description: 2 lines when no sub-line, 1 line when sub-line exists */
+.card--pinned .card__desc,
+.card--selected .card__desc,
+.card--featured .card__desc {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ink-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card--pinned:has(.card__sub) .card__desc,
+.card--selected:has(.card__sub) .card__desc,
+.card--featured:has(.card__sub) .card__desc,
+.card--pinned .card__desc--clamp-1,
+.card--selected .card__desc--clamp-1,
+.card--featured .card__desc--clamp-1 {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+/* Footer: skill tag pills */
+.card--pinned .tags,
+.card--selected .tags,
+.card--featured .tags {
+  margin-top: 0.15rem;
+  margin-left: 0;
+  gap: 0.25rem;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+.card--pinned .tags a,
+.card--selected .tags a,
+.card--featured .tags a {
+  pointer-events: auto;
+}
+
+@media (max-width: 38rem) {
+  .card--pinned,
+  .card--selected,
+  .card--featured {
+    min-height: 0;
+  }
+  .card--pinned .card__cover,
+  .card--selected .card__cover,
+  .card--featured .card__cover {
+    width: 5.5rem;
+  }
+  .card--pinned .card__body,
+  .card--selected .card__body,
+  .card--featured .card__body {
+    padding: var(--s2) var(--s3);
+    gap: 0.25rem;
+  }
+  .card--pinned .card__title,
+  .card--selected .card__title,
+  .card--featured .card__title {
+    font-size: 0.875rem;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .card--pinned .card__header > .mark,
+  .card--selected .card__header > .mark,
+  .card--featured .card__header > .mark {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+@media (max-width: 28rem) {
+  .card--pinned,
+  .card--selected,
+  .card--featured {
+    flex-direction: column;
+  }
+  .card--pinned .card__cover,
+  .card--selected .card__cover,
+  .card--featured .card__cover {
+    width: 100%;
+    aspect-ratio: 2.2 / 1;
+    border-right: none;
+    border-bottom: 1px solid var(--rule);
+  }
+}
 
 /* ----------------------------------------------------------- skills map */
 /* Weight is the subject of this page, so the bar is the one place the accent

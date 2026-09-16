@@ -74,9 +74,11 @@ export function validateAndResolvePinnedContent(pinnedContent, collections) {
       );
     }
 
+    item.isPinned = true;
     resolved.push({
       ...item,
       collection: item.collection || collection,
+      isPinned: true,
       _ref: normalizedRef
     });
   }
