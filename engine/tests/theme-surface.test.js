@@ -229,7 +229,7 @@ describe('Theme Surface', () => {
       // Monochrome: pure neutral (0% saturation)
       const monoOut = env.render('tokens.njk', { site: { accent: 'monochrome' } });
       expect(monoOut).toContain('--ground: #f6f6f6');
-      expect(monoOut).toContain('--ground: #101010');
+      expect(monoOut).toContain('--ground: #0a0a0a');
       expect(monoOut).toContain('--accent: #171717');
       expect(monoOut).toContain('--accent-ink: #000000');
       expect(monoOut).toContain('--accent: #e0e0e0');
@@ -238,19 +238,19 @@ describe('Theme Surface', () => {
       // Blue: subtle blue tint
       const blueOut = env.render('tokens.njk', { site: { accent: 'blue' } });
       expect(blueOut).toContain('--ground: #f5f5f7');
-      expect(blueOut).toContain('--ground: #0e1014');
+      expect(blueOut).toContain('--ground: #080a0e');
       expect(blueOut).toContain('--accent: #1f5fae');
 
       // Red: subtle red tint
       const redOut = env.render('tokens.njk', { site: { accent: 'red' } });
       expect(redOut).toContain('--ground: #f7f5f5');
-      expect(redOut).toContain('--ground: #140e0e');
+      expect(redOut).toContain('--ground: #0e0808');
       expect(redOut).toContain('--accent: #b23a2e');
 
       // Petrol
       const petrolOut = env.render('tokens.njk', { site: { accent: 'petrol' } });
       expect(petrolOut).toContain('--ground: #f5f6f7');
-      expect(petrolOut).toContain('--ground: #0e1114');
+      expect(petrolOut).toContain('--ground: #080b0e');
       expect(petrolOut).toContain('--accent: #0a6f68');
     });
 
@@ -261,7 +261,7 @@ describe('Theme Surface', () => {
       ]));
       const defaultOut = env.render('tokens.njk', { site: {} });
       expect(defaultOut).toContain('--ground: #f5f5f7');
-      expect(defaultOut).toContain('--ground: #0e1014');
+      expect(defaultOut).toContain('--ground: #080a0e');
       expect(defaultOut).toContain('--accent: #1f5fae');
       expect(defaultOut).toContain('--accent-ink: #164a87');
     });
