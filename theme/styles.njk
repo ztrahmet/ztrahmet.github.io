@@ -1275,7 +1275,7 @@ body {
   align-self: stretch;
   position: relative;
   overflow: hidden;
-  background: color-mix(in srgb, var(--ink) 2%, var(--ground));
+  background: transparent;
   border-right: 1px solid var(--rule);
   pointer-events: none;
 }
@@ -1291,8 +1291,8 @@ body {
 .card--pinned .card__cover--placeholder,
 .card--selected .card__cover--placeholder,
 .card--featured .card__cover--placeholder {
-  color: color-mix(in srgb, var(--ink) 14%, transparent);
-  background: color-mix(in srgb, var(--ink) 2%, var(--ground));
+  color: var(--rule);
+  background: transparent;
 }
 .card--pinned .card__grid-svg,
 .card--selected .card__grid-svg,
