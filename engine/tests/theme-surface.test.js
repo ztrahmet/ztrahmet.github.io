@@ -229,7 +229,9 @@ describe('Theme Surface', () => {
       // Monochrome: pure neutral (0% saturation)
       const monoOut = env.render('tokens.njk', { site: { accent: 'monochrome' } });
       expect(monoOut).toContain('--ground: #f6f6f6');
+      expect(monoOut).toContain('--surface: #ffffff');
       expect(monoOut).toContain('--ground: #0a0a0a');
+      expect(monoOut).toContain('--surface: #121212');
       expect(monoOut).toContain('--accent: #171717');
       expect(monoOut).toContain('--accent-ink: #000000');
       expect(monoOut).toContain('--accent: #e0e0e0');
@@ -238,7 +240,11 @@ describe('Theme Surface', () => {
       // Blue: subtle blue tint
       const blueOut = env.render('tokens.njk', { site: { accent: 'blue' } });
       expect(blueOut).toContain('--ground: #f5f5f7');
+      expect(blueOut).toContain('--surface: #ffffff');
+      expect(blueOut).toContain('--shadow-sm: rgb(0 0 0 / 0.06)');
       expect(blueOut).toContain('--ground: #080a0e');
+      expect(blueOut).toContain('--surface: #101318');
+      expect(blueOut).toContain('--shadow-sm: rgb(0 0 0 / 0.45)');
       expect(blueOut).toContain('--accent: #1f5fae');
 
       // Red: subtle red tint
